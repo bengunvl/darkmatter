@@ -87,6 +87,7 @@ header{
 .thread-body{flex:1;min-width:0;}
 .thread-title{font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;}
 .thread-meta{display:flex;align-items:center;gap:4px;margin-top:1px;}
+.thread-preview{font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;margin-bottom:2px;}
 .thread-time{font-size:12px;color:var(--text3);}
 .thread-badges{display:flex;gap:3px;margin-left:auto;}
 .thread-badge{font-size:9px;padding:0 4px;border-radius:3px;line-height:15px;}
@@ -740,9 +741,16 @@ function renderThreadList() {
     return true;
   }).filter(t => {
     if (!q) return true;
-    return getThreadTitle(t).toLowerCase().includes(q) ||
-           (t.platform && t.platform.includes(q)) ||
-           (t.agentName && t.agentName.toLowerCase().includes(q));
+    // Search across: title, platform, preview text from any commit in thread
+    const titleMatch = getThreadTitle(t).toLowerCase().includes(q);
+    const platMatch  = (t.platform||'').toLowerCase().includes(q);
+    // Search commit payloads — text, summary, output, prompt
+    const textMatch  = t.commits.some(commit => {
+      const p = commit.payload || {};
+      const fields = [p.text, p.summary, p.output, p.input, p.prompt, p.convTitle, commit.agent_name];
+      return fields.some(f => f && String(f).toLowerCase().includes(q));
+    });
+    return titleMatch || platMatch || textMatch;
   });
 
   if (!threads.length) {
@@ -773,31 +781,42 @@ function renderThreadList() {
 }
 
 function renderThreadRow(t) {
-  const title   = escHtml(getThreadTitle(t));
-  const starred = isStarred(t.id);
+  const title    = escHtml(getThreadTitle(t));
+  const starred  = isStarred(t.id);
   const platColor = PLAT_COLORS[t.platform] || '#9ca3af';
   const platLabel = PLAT_LABELS[t.platform] || (t.isCapture ? t.platform : 'SDK');
   const isActive  = selectedThread?.id === t.id;
 
+  // Preview: first meaningful user message text
+  const sorted = [...t.commits].sort((a,b) =>
+    new Date(a.created_at||a.timestamp) - new Date(b.created_at||b.timestamp)
+  );
+  const firstUser = sorted.find(cm => {
+    const role = cm.payload?.role || cm.actors?.from?.role || '';
+    return role === 'user' || !role;
+  });
+  const preview = firstUser
+    ? (firstUser.payload?.text || firstUser.payload?.prompt || firstUser.payload?.summary || '').trim().slice(0, 65)
+    : '';
+
   return `<div class="thread-row ${isActive?'active':''}" id="tr-${escHtml(t.id)}" onclick="selectThread('${escHtml(t.id)}')">
-    <div class="thread-plat" style="background:${platColor}18;color:${platColor};" title="${escHtml(platLabel)}">
-      ${platLabel ? platLabel[0] : '↯'}
+    <div class="thread-plat" style="background:${platColor}18;color:${platColor};font-weight:700;" title="${escHtml(platLabel)}">
+      ${platLabel[0] || '↯'}
     </div>
     <div class="thread-body">
       <div class="thread-title">${title}</div>
+      ${preview ? `<div class="thread-preview">${escHtml(preview)}</div>` : ''}
       <div class="thread-meta">
         <span class="thread-time">${ago(t.latest)}</span>
         <div class="thread-badges">
           ${starred ? '<span class="thread-badge tb-star">★</span>' : ''}
           ${t.hasFork ? '<span class="thread-badge tb-fork">fork</span>' : ''}
-          ${t.isShared ? '<span class="thread-badge tb-shared">shared</span>' : ''}
         </div>
       </div>
     </div>
     <button class="thread-menu-btn" onclick="event.stopPropagation();openThreadMenu('${escHtml(t.id)}',this)">⋯</button>
   </div>`;
 }
-
 // ── Select thread → show conversation ─────────────────────────────────────────
 function selectThread(id) {
   selectedThread = allThreads.find(t => t.id === id) || null;
@@ -892,19 +911,65 @@ function renderConversation(thread) {
   area.scrollTop = area.scrollHeight;
 }
 
-// Format assistant message — preserve code blocks
+// Render assistant message with full markdown support
 function formatAssistantMessage(text) {
   if (!text) return '';
-  // Convert code blocks
-  let html = escHtml(text);
-  // Simple markdown-like code blocks
-  html = html.replace(/```([a-z]*)\n?([\s\S]*?)```/g, (_, lang, code) =>
-    `<pre><code>${code}</code></pre>`
-  );
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-  // Paragraphs
-  html = html.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
-  return `<p>${html}</p>`;
+  let t = text;
+
+  // ── Extract code blocks FIRST (before escaping anything) ────────────────
+  const codeBlocks = [];
+  t = t.replace(/```([a-zA-Z0-9]*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+    const idx = codeBlocks.length;
+    codeBlocks.push({ lang: lang || '', code });
+    return `\x00CODE${idx}\x00`;
+  });
+
+  // ── Escape HTML in remaining text ────────────────────────────────────────
+  t = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  // ── Inline formatting ────────────────────────────────────────────────────
+  // Inline code (backtick) — before bold/italic
+  t = t.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  // Bold **text** or __text__
+  t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  t = t.replace(/__(.+?)__/g, '<strong>$1</strong>');
+  // Italic *text* or _text_
+  t = t.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+
+  // ── Headers ──────────────────────────────────────────────────────────────
+  t = t.replace(/^### (.+)$/gm, '<h4 style="font-size:14px;font-weight:600;margin:12px 0 4px;">$1</h4>');
+  t = t.replace(/^## (.+)$/gm,  '<h3 style="font-size:15px;font-weight:600;margin:14px 0 6px;">$1</h3>');
+  t = t.replace(/^# (.+)$/gm,   '<h2 style="font-size:16px;font-weight:700;margin:16px 0 8px;">$1</h2>');
+
+  // ── Lists ────────────────────────────────────────────────────────────────
+  // Unordered: lines starting with - or *
+  t = t.replace(/^[-*] (.+)$/gm, '<li style="margin-left:20px;margin-bottom:3px;">$1</li>');
+  // Ordered: lines starting with 1. 2. etc
+  t = t.replace(/^\d+\. (.+)$/gm, '<li style="margin-left:20px;margin-bottom:3px;list-style-type:decimal;">$1</li>');
+  // Wrap consecutive <li> in <ul>
+  t = t.replace(/(<li[^>]*>[\s\S]*?<\/li>(\n|$))+/g, m => `<ul style="margin:8px 0;padding:0;">${m}</ul>`);
+
+  // ── Paragraphs ───────────────────────────────────────────────────────────
+  // Double newline = new paragraph
+  const paragraphs = t.split(/\n\n+/);
+  t = paragraphs.map(para => {
+    para = para.trim();
+    if (!para) return '';
+    // Don't wrap already-block elements
+    if (para.startsWith('<h') || para.startsWith('<ul') || para.startsWith('<li') || para.startsWith('\x00CODE')) {
+      return para.replace(/\n/g, '<br>');
+    }
+    return '<p style="margin:0 0 10px;">' + para.replace(/\n/g, '<br>') + '</p>';
+  }).join('');
+
+  // ── Restore code blocks ──────────────────────────────────────────────────
+  t = t.replace(/\x00CODE(\d+)\x00/g, (_, idx) => {
+    const { lang, code } = codeBlocks[parseInt(idx)];
+    const escaped = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<pre style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:12px 16px;overflow-x:auto;margin:10px 0;position:relative;">${lang ? `<span style="position:absolute;top:6px;right:10px;font-family:var(--mono);font-size:10px;color:var(--text3);">${escHtml(lang)}</span>` : ''}<code style="font-family:var(--mono);font-size:12.5px;line-height:1.7;white-space:pre;">${escaped}</code></pre>`;
+  });
+
+  return t;
 }
 
 // ── Thread menu ────────────────────────────────────────────────────────────────
