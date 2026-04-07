@@ -1,1763 +1,1395 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard — DarkMatter</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-    :root {
-      --bg:#ffffff; --bg2:#f8f9fa; --bg3:#f1f3f5;
-      --border:#e5e7eb; --border2:#d1d5db;
-      --text:#111827; --text2:#4b5563; --text3:#9ca3af;
-      --accent:#2563EB; --green:#10B981; --red:#EF4444;
-      --amber:#F59E0B; --purple:#A78BFA;
-      --mono:'IBM Plex Mono',monospace; --sans:'Inter',sans-serif; --display:'Space Grotesk',sans-serif;
-    }
-    body { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; -webkit-font-smoothing:antialiased; }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Dashboard — DarkMatter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#ffffff;--bg2:#f8f9fa;--bg3:#f1f3f5;--bg4:#e9ecef;
+  --border:#e5e7eb;--border2:#d1d5db;
+  --text:#111827;--text2:#4b5563;--text3:#9ca3af;
+  --accent:#2563EB;--green:#059669;--red:#dc2626;--amber:#d97706;
+  --violet:#7C3AED;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+  --sidebar-w:280px;--header-h:52px;
+}
+html,body{height:100%;overflow:hidden;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;}
 
-    /* ── HEADER ── */
-    header { background:var(--bg2); border-bottom:1px solid var(--border); height:66px; display:flex; align-items:center; padding:0 2rem; gap:1rem; position:sticky; top:0; z-index:100; }
+/* ── HEADER ── */
+header{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  height:var(--header-h);background:var(--bg);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 1rem;gap:0.75rem;
+}
+.logo{display:flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0;}
+.logo-mark{width:28px;height:28px;}
+.logo-name{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text);letter-spacing:-.02em;}
+.logo-grad{background:linear-gradient(90deg,#7C3AED,#2563EB,#22D3EE);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hsep{width:1px;height:18px;background:var(--border);flex-shrink:0;}
+.hpage{font-size:13px;color:var(--text2);font-weight:500;}
+.hright{margin-left:auto;display:flex;align-items:center;gap:0.6rem;}
+.hbtn{font-size:12px;color:var(--text2);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:5px;font-family:var(--sans);}
+.hbtn:hover{background:var(--bg3);color:var(--text);}
+.user-chip{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);}
+.user-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--accent));display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;font-family:var(--sans);flex-shrink:0;}
 
-    .logo { display:flex; align-items:center; gap:0.8rem; text-decoration:none; }
-    .logo-mark { width:38px; height:38px; flex-shrink:0; }
-    .logo-words { display:flex; flex-direction:column; line-height:1.2; }
-    .logo-name { font-weight:700; font-size:1.25rem; color:var(--text); letter-spacing:-0.02em; font-family:var(--display); }
-    .matter-grad { background:linear-gradient(90deg,#7C3AED 0%,#2563EB 55%,#22D3EE 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-    .logo-sub { font-family:var(--mono); font-size:0.56rem; color:var(--text3); letter-spacing:0.08em; }
+/* ── 3-COLUMN LAYOUT ── */
+.app{
+  display:grid;
+  grid-template-columns:var(--sidebar-w) 1fr;
+  height:calc(100vh - var(--header-h));
+  margin-top:var(--header-h);
+  overflow:hidden;
+}
 
-    .hsep { width:1px; height:20px; background:var(--border); }
-    .hpage { font-size:0.82rem; color:var(--text2); font-weight:500; }
-    .hright { margin-left:auto; display:flex; align-items:center; gap:0.75rem; }
-    .user-email { font-family:var(--mono); font-size:0.65rem; color:var(--text3); }
-    .logout-btn { background:var(--bg3); border:1px solid var(--border); color:var(--text2); padding:0.28rem 0.7rem; border-radius:6px; font-size:0.75rem; cursor:pointer; font-family:var(--sans); transition:all 0.15s; }
-    .logout-btn:hover { border-color:var(--red); color:var(--red); }
+/* ── LEFT SIDEBAR: Thread history ── */
+.sidebar{
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  background:var(--bg2);
+  overflow:hidden;
+}
+.sidebar-top{padding:10px 10px 0;flex-shrink:0;}
+.search-box{
+  display:flex;align-items:center;gap:6px;
+  background:var(--bg);border:1px solid var(--border);border-radius:7px;
+  padding:6px 10px;margin-bottom:10px;
+}
+.search-icon{color:var(--text3);font-size:13px;flex-shrink:0;}
+.search-input{
+  border:none;background:none;outline:none;
+  font-size:13px;color:var(--text);width:100%;
+  font-family:var(--sans);
+}
+.search-input::placeholder{color:var(--text3);}
+.search-kbd{font-family:var(--mono);font-size:9px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);padding:1px 4px;border-radius:3px;flex-shrink:0;}
+.sidebar-filters{display:flex;gap:4px;padding:0 0 8px;}
+.sf-btn{font-size:11px;padding:3px 8px;border-radius:20px;border:1px solid transparent;background:none;cursor:pointer;color:var(--text3);font-family:var(--sans);transition:all .12s;}
+.sf-btn.active{background:var(--bg);border-color:var(--border);color:var(--text);font-weight:500;}
+.sf-btn:hover:not(.active){color:var(--text2);}
+.thread-list{flex:1;overflow-y:auto;padding:0 6px 12px;}
+.thread-list::-webkit-scrollbar{width:3px;}
+.thread-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.thread-group-label{font-size:11px;color:var(--text3);font-weight:600;padding:10px 8px 4px;letter-spacing:.02em;}
+.thread-row{
+  position:relative;display:flex;align-items:center;gap:0;
+  padding:7px 8px;border-radius:7px;cursor:pointer;
+  transition:background .1s;margin-bottom:1px;
+}
+.thread-row:hover{background:var(--bg3);}
+.thread-row.active{background:var(--bg4);}
+.thread-plat{width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;margin-right:7px;}
+.thread-body{flex:1;min-width:0;}
+.thread-title{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;}
+.thread-meta{display:flex;align-items:center;gap:4px;margin-top:1px;}
+.thread-time{font-size:11px;color:var(--text3);}
+.thread-badges{display:flex;gap:3px;margin-left:auto;}
+.thread-badge{font-size:9px;padding:0 4px;border-radius:3px;line-height:15px;}
+.tb-fork{background:rgba(37,99,235,.08);color:var(--accent);}
+.tb-shared{background:rgba(5,150,105,.08);color:var(--green);}
+.tb-star{color:#f59e0b;font-size:11px;}
+.thread-menu-btn{
+  opacity:0;flex-shrink:0;
+  width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+  border-radius:5px;border:none;background:none;cursor:pointer;
+  font-size:14px;color:var(--text3);transition:all .1s;
+  margin-left:2px;
+}
+.thread-row:hover .thread-menu-btn,
+.thread-row.active .thread-menu-btn{opacity:1;}
+.thread-menu-btn:hover{background:var(--border);color:var(--text);}
 
-    /* ── LAYOUT ── */
-    .layout { max-width:1100px; margin:0 auto; padding:2rem; display:flex; flex-direction:column; gap:2rem; }
-    .top-row { display:grid; grid-template-columns:1fr 380px; gap:1.5rem; align-items:start; }
-    @media (max-width:860px) { .top-row { grid-template-columns:1fr; } }
+/* dropdown menu */
+.thread-menu{
+  position:fixed;z-index:500;
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;padding:4px;min-width:160px;
+  box-shadow:0 8px 24px rgba(0,0,0,.12);
+}
+.tm-item{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 10px;border-radius:5px;font-size:13px;color:var(--text2);
+  cursor:pointer;border:none;background:none;width:100%;text-align:left;
+  font-family:var(--sans);transition:background .1s;
+}
+.tm-item:hover{background:var(--bg3);color:var(--text);}
+.tm-item.danger:hover{background:rgba(220,38,38,.06);color:var(--red);}
+.tm-item .tm-icon{font-size:13px;width:16px;text-align:center;}
+.tm-sep{height:1px;background:var(--border);margin:3px 0;}
 
-    /* ── QUICKSTART BANNER ── */
-    .qs-banner {
-      background:var(--bg2); border:1px solid var(--border);
-      border-radius:10px; overflow:hidden;
-    }
+/* ── MAIN AREA ── */
+.main{display:flex;flex-direction:column;overflow:hidden;}
+.main-header{
+  padding:12px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;min-height:52px;
+}
+.main-title{font-size:14px;font-weight:600;color:var(--text);}
+.main-meta{font-size:12px;color:var(--text3);margin-top:1px;display:flex;align-items:center;gap:8px;}
+.main-actions{display:flex;gap:6px;}
+.mbtn{
+  font-size:12px;padding:5px 10px;border-radius:6px;
+  border:1px solid var(--border);background:var(--bg2);
+  color:var(--text2);cursor:pointer;font-family:var(--sans);
+  display:flex;align-items:center;gap:4px;transition:all .12s;
+}
+.mbtn:hover{border-color:var(--border2);color:var(--text);}
+.mbtn.primary{background:var(--accent);color:#fff;border-color:transparent;}
+.mbtn.primary:hover{filter:brightness(1.08);}
 
-    .qs-banner-head {
-      padding:1rem 1.25rem 0.75rem;
-      border-bottom:1px solid var(--border);
-      display:flex; align-items:center; justify-content:space-between;
-    }
+/* ── CONVERSATION AREA ── */
+.conv-area{flex:1;overflow-y:auto;padding:0;}
+.conv-area::-webkit-scrollbar{width:4px;}
+.conv-area::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
 
-    .qs-banner-title {
-      font-size:0.9rem; font-weight:600; color:var(--text);
-      display:flex; align-items:center; gap:0.5rem;
-    }
+/* Messages */
+.msg-group{padding:20px 24px 0;}
+.msg-group:last-child{padding-bottom:20px;}
+.msg-role{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.msg-role-icon{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;}
+.msg-bubble{
+  font-size:14px;color:var(--text);line-height:1.7;
+  max-width:720px;
+}
+.msg-bubble.user{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;padding:10px 14px;
+  max-width:600px;font-size:14px;
+}
+.msg-bubble.assistant{font-size:14px;}
+.msg-bubble code{font-family:var(--mono);font-size:12px;background:var(--bg3);padding:1px 4px;border-radius:3px;}
+.msg-bubble pre{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;font-family:var(--mono);font-size:12px;margin:8px 0;}
+.msg-footer{display:flex;align-items:center;gap:8px;margin-top:6px;}
+.msg-time{font-size:11px;color:var(--text3);}
+.msg-dm-badge{
+  font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:3px;
+  color:var(--green);background:rgba(5,150,105,.06);border:1px solid rgba(5,150,105,.15);
+}
+.msg-chain-btn{
+  font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;
+  font-family:var(--mono);padding:0;transition:color .12s;
+}
+.msg-chain-btn:hover{color:var(--accent);}
 
-    .qs-steps {
-      display:grid; grid-template-columns:repeat(3,1fr);
-      gap:0;
-    }
+/* Empty state */
+.empty-conv{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:3rem;text-align:center;color:var(--text3);
+}
+.empty-conv-icon{font-size:2.5rem;margin-bottom:1rem;opacity:.4;}
+.empty-conv-title{font-size:15px;font-weight:600;color:var(--text2);margin-bottom:6px;}
+.empty-conv-sub{font-size:13px;color:var(--text3);line-height:1.6;max-width:320px;}
 
-    .qs-step {
-      padding:1.1rem 1.25rem;
-      border-right:1px solid var(--border);
-    }
-    .qs-step:last-child { border-right:none; }
+/* Agents panel (below main) */
+.agents-panel{
+  border-top:1px solid var(--border);
+  background:var(--bg2);flex-shrink:0;
+}
+.agents-panel-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 16px;cursor:pointer;
+}
+.agents-panel-title{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;}
+.agents-panel-toggle{font-size:11px;color:var(--text3);}
+.agents-panel-body{padding:0 16px 12px;display:none;}
+.agents-panel-body.open{display:block;}
+.create-bar{display:flex;gap:6px;margin-bottom:12px;}
+.create-input{
+  flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:6px 10px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none;
+  transition:border-color .15s;
+}
+.create-input:focus{border-color:var(--accent);}
+.create-input::placeholder{color:var(--text3);}
+.create-btn{
+  background:var(--accent);color:#fff;font-weight:600;font-size:12px;
+  padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-family:var(--sans);
+  white-space:nowrap;transition:filter .15s;
+}
+.create-btn:hover{filter:brightness(1.08);}
+.create-btn:disabled{opacity:.5;cursor:not-allowed;}
+.agents-grid{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;}
+.agent-card{
+  background:var(--bg);border:1px solid var(--border);border-radius:7px;
+  padding:10px 12px;display:flex;align-items:center;gap:10px;
+}
+.agent-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.agent-info{flex:1;min-width:0;}
+.agent-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.agent-id-row{display:flex;align-items:center;gap:4px;margin-top:1px;}
+.agent-id{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.agent-key-row{display:flex;align-items:center;gap:4px;margin-top:4px;}
+.api-key-val{font-family:var(--mono);font-size:10px;color:var(--text2);background:var(--bg3);padding:2px 6px;border-radius:3px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.abtn{font-size:11px;padding:2px 7px;border-radius:4px;border:1px solid var(--border);background:none;color:var(--text2);cursor:pointer;font-family:var(--sans);}
+.abtn:hover{border-color:var(--accent);color:var(--accent);}
+.abtn.danger:hover{border-color:var(--red);color:var(--red);}
+.agents-empty{font-size:12px;color:var(--text3);padding:8px 0;}
 
-    .qs-step-num {
-      font-family:var(--mono); font-size:0.58rem;
-      color:var(--text3); letter-spacing:0.1em;
-      text-transform:uppercase; margin-bottom:0.5rem;
-      display:flex; align-items:center; gap:0.4rem;
-    }
+/* ── MODALS ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:600;align-items:center;justify-content:center;padding:1rem;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--bg);border:1px solid var(--border);border-radius:12px;width:100%;padding:1.5rem;max-height:90vh;overflow-y:auto;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);}
+.modal-close{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0;line-height:1;}
+.modal-close:hover{color:var(--text);}
+.field{margin-bottom:0.85rem;}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;font-family:var(--mono);}
+.field input,.field select,.field textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);}
+.field textarea{resize:vertical;min-height:80px;}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem;}
+.mfbtn{padding:7px 16px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--sans);border:1px solid var(--border);}
+.mfbtn.cancel{background:none;color:var(--text2);}
+.mfbtn.cancel:hover{background:var(--bg3);}
+.mfbtn.confirm{background:var(--accent);color:#fff;border-color:transparent;}
+.mfbtn.confirm:hover{filter:brightness(1.08);}
+.mfbtn.danger-confirm{background:var(--red);color:#fff;border-color:transparent;}
+.warn-box{background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.15);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1rem;}
+.info-box{background:rgba(5,150,105,.05);border:1px solid rgba(5,150,105,.15);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1rem;}
 
-    .qs-num-badge {
-      width:16px; height:16px; border-radius:50%;
-      display:flex; align-items:center; justify-content:center;
-      font-size:0.6rem; font-weight:700;
-    }
-    .n1 { background:rgba(88,166,255,0.15); color:var(--accent); }
-    .n2 { background:rgba(210,153,34,0.15);  color:var(--amber); }
-    .n3 { background:rgba(63,185,80,0.15);   color:var(--green); }
+/* Chain panel (right drawer) */
+.chain-drawer{
+  position:fixed;right:0;top:var(--header-h);bottom:0;
+  width:420px;background:var(--bg);border-left:1px solid var(--border);
+  z-index:300;transform:translateX(100%);transition:transform .2s ease;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.chain-drawer.open{transform:translateX(0);}
+.chain-drawer-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.chain-drawer-title{font-size:13px;font-weight:600;color:var(--text);}
+.chain-drawer-body{flex:1;overflow-y:auto;padding:12px 16px;}
+.chain-node{
+  position:relative;padding-left:24px;padding-bottom:16px;
+}
+.chain-node::before{content:'';position:absolute;left:6px;top:16px;bottom:0;width:1px;background:var(--border);}
+.chain-node:last-child::before{display:none;}
+.chain-dot{position:absolute;left:0;top:8px;width:13px;height:13px;border-radius:50%;border:2px solid var(--green);background:#fff;box-shadow:0 0 5px rgba(5,150,105,.3);}
+.chain-dot.fork{border-color:var(--amber);}
+.chain-dot.err{border-color:var(--red);}
+.chain-step-card{background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;}
+.chain-step-head{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.chain-step-num{font-family:var(--mono);font-size:9px;color:var(--text3);}
+.chain-step-name{font-size:12px;font-weight:500;color:var(--text);}
+.chain-step-time{margin-left:auto;font-size:10px;color:var(--text3);}
+.chain-step-hash{font-family:var(--mono);font-size:9px;color:var(--green);margin-top:2px;}
 
-    .qs-step-title { font-size:0.82rem; font-weight:600; color:var(--text); margin-bottom:0.3rem; }
-    .qs-step-desc  { font-size:0.73rem; color:var(--text2); line-height:1.6; }
+/* Toast */
+.toast{position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%);
+  background:var(--text);color:var(--bg);border-radius:8px;padding:8px 16px;
+  font-size:13px;z-index:999;display:none;white-space:nowrap;
+  box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.toast.show{display:block;animation:fadeUp .2s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
-    .qs-code {
-      background:var(--bg);
-      border-top:1px solid var(--border);
-      padding:1rem 1.25rem;
-    }
+/* Quickstart code */
+.qs-code{background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:12px 14px;font-family:var(--mono);font-size:12px;line-height:1.8;color:var(--text2);overflow-x:auto;}
+.qs-code .c{color:var(--text3);}
+.qs-code .cm{color:var(--text);}
+.qs-code .ok{color:var(--green);}
+.qs-code .st{color:#0550ae;}
 
-    .qs-code-head {
-      display:flex; align-items:center; justify-content:space-between;
-      margin-bottom:0.5rem;
-    }
-
-    .qs-code-label {
-      font-family:var(--mono); font-size:0.58rem;
-      color:var(--text3); letter-spacing:0.1em; text-transform:uppercase;
-    }
-
-    .qs-copy-btn {
-      background:var(--bg3); border:1px solid var(--border);
-      color:var(--text2); padding:0.2rem 0.55rem;
-      border-radius:5px; font-family:var(--mono); font-size:0.6rem;
-      cursor:pointer; transition:all 0.15s;
-    }
-    .qs-copy-btn:hover { border-color:var(--accent); color:var(--accent); }
-    .qs-copy-btn.copied { border-color:var(--green); color:var(--green); }
-
-    .qs-pre {
-      font-family:var(--mono); font-size:0.68rem;
-      line-height:1.85; color:var(--text2); overflow-x:auto;
-    }
-    .qs-pre .c  { color:var(--text3); }
-    .qs-pre .cm { color:var(--text); }
-    .qs-pre .fl { color:var(--accent); }
-    .qs-pre .st { color:#a5d6ff; }
-    .qs-pre .ok { color:var(--green); }
-    .qs-pre .sp { display:block; height:0.35rem; }
-    .qs-pre .key-placeholder { color:var(--amber); }
-
-    /* ── SEC HEADING ── */
-    .sec-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
-    .sec-title { font-size:0.95rem; font-weight:600; color:var(--text); }
-    .sec-sub   { font-size:0.78rem; color:var(--text2); margin-top:0.15rem; }
-
-    /* ── CREATE BAR ── */
-    .create-bar { display:flex; gap:0.65rem; align-items:center; margin-bottom:1.25rem; }
-    .create-input { flex:1; background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:0.6rem 0.85rem; color:var(--text); font-family:var(--sans); font-size:0.85rem; outline:none; transition:border-color 0.15s; max-width:320px; }
-    .create-input:focus { border-color:var(--accent); }
-    .create-input::placeholder { color:var(--text3); }
-    .create-btn { background:var(--accent); color:#ffffff; font-weight:600; font-size:0.82rem; padding:0.6rem 1.1rem; border-radius:6px; border:none; cursor:pointer; font-family:var(--sans); transition:filter 0.15s; white-space:nowrap; }
-    .create-btn:hover { filter:brightness(1.1); }
-    .create-btn:disabled { opacity:0.5; cursor:not-allowed; }
-
-    /* ── AGENT CARDS ── */
-    .agents-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(420px,1fr)); gap:1rem; }
-
-    .agent-card { background:var(--bg2); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
-
-    .agent-card-head { padding:1rem 1.1rem 0.75rem; border-bottom:1px solid var(--border2); display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; }
-
-    .agent-name-row { display:flex; align-items:center; gap:0.6rem; }
-    .agent-status { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); flex-shrink:0; }
-    .agent-status.expired { background:var(--red); box-shadow:0 0 6px var(--red); }
-    .agent-expired-badge { font-family:var(--mono); font-size:0.58rem; color:var(--red); border:1px solid rgba(248,81,73,0.3); background:rgba(248,81,73,0.08); border-radius:4px; padding:0.1rem 0.4rem; margin-left:0.3rem; }
-    .agent-name { font-size:0.9rem; font-weight:600; color:var(--text); }
-    .agent-id   { font-family:var(--mono); font-size:0.62rem; color:var(--text3); margin-top:0.15rem; }
-
-    .agent-actions { display:flex; gap:0.4rem; flex-shrink:0; }
-    .agent-btn { background:none; border:1px solid var(--border); color:var(--text2); padding:0.2rem 0.55rem; border-radius:5px; font-size:0.7rem; cursor:pointer; font-family:var(--sans); transition:all 0.12s; }
-    .agent-btn:hover { background:var(--bg3); color:var(--text); }
-    .agent-btn.danger:hover { border-color:var(--red); color:var(--red); }
-
-    .agent-card-body { padding:0.85rem 1.1rem; }
-
-    .api-key-label { font-family:var(--mono); font-size:0.58rem; color:var(--text3); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.35rem; }
-
-    .api-key-row { display:flex; align-items:center; gap:0.5rem; }
-
-    .api-key-val {
-      font-family:var(--mono); font-size:0.72rem; color:var(--text);
-      background:var(--bg); border:1px solid var(--border);
-      border-radius:5px; padding:0.45rem 0.7rem;
-      flex:1; min-width:0; overflow:hidden;
-      text-overflow:ellipsis; white-space:nowrap;
-      letter-spacing:0.02em;
-    }
-
-    .reveal-btn {
-      background:var(--bg3); border:1px solid var(--border);
-      color:var(--text2); padding:0.42rem 0.65rem;
-      border-radius:5px; font-size:0.7rem; cursor:pointer;
-      font-family:var(--sans); white-space:nowrap;
-      transition:all 0.12s; flex-shrink:0;
-    }
-    .reveal-btn:hover { border-color:var(--text2); color:var(--text); }
-
-    .copy-btn {
-      background:var(--bg3); border:1px solid var(--border);
-      color:var(--text2); padding:0.42rem 0.65rem;
-      border-radius:5px; font-size:0.72rem; cursor:pointer;
-      font-family:var(--mono); white-space:nowrap;
-      transition:all 0.12s; flex-shrink:0;
-    }
-    .copy-btn:hover { border-color:var(--accent); color:var(--accent); }
-    .copy-btn.copied { border-color:var(--green); color:var(--green); }
-
-    .agent-meta { font-size:0.68rem; color:var(--text3); margin-top:0.6rem; display:flex; gap:1rem; }
-
-    /* ── EMPTY ── */
-    .agents-empty { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:2.5rem; text-align:center; }
-    .agents-empty-icon  { font-size:2rem; margin-bottom:0.75rem; }
-    .agents-empty-title { font-size:0.9rem; font-weight:600; color:var(--text); margin-bottom:0.35rem; }
-    .agents-empty-sub   { font-size:0.8rem; color:var(--text2); }
-
-    /* ── LOG ── */
-    .log-wrap  { background:var(--bg2); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
-    .log-cols  { display:grid; grid-template-columns:1fr 80px; gap:1rem; padding:0.5rem 1.1rem; background:var(--bg3); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:0.57rem; color:var(--text3); letter-spacing:0.1em; text-transform:uppercase; }
-    .cr        { display:grid; grid-template-columns:1fr 80px; gap:1rem; padding:0.8rem 1.1rem; border-bottom:1px solid var(--border2); align-items:center; transition:background 0.1s; }
-    .cr:last-child { border-bottom:none; }
-    .cr:hover  { background:var(--bg3); }
-    .cbadge    { display:inline-flex; align-items:center; gap:0.25rem; font-family:var(--mono); font-size:0.57rem; padding:0.1rem 0.38rem; border-radius:100px; border:1px solid; flex-shrink:0; }
-    .cbadge.v  { color:var(--green); border-color:rgba(63,185,80,0.3);  background:rgba(63,185,80,0.08); }
-    .cbadge.r  { color:var(--red);   border-color:rgba(248,81,73,0.3);  background:rgba(248,81,73,0.08); }
-    .cbadge.commit     { color:var(--accent); border-color:rgba(88,166,255,0.3);  background:rgba(88,166,255,0.08); }
-    .cbadge.revert     { color:var(--amber);  border-color:rgba(210,153,34,0.3);  background:rgba(210,153,34,0.08); }
-    .cbadge.override   { color:#d2a8ff;       border-color:rgba(210,168,255,0.3); background:rgba(210,168,255,0.08); }
-    .cbadge.branch     { color:#79c0ff;       border-color:rgba(121,192,255,0.3); background:rgba(121,192,255,0.08); }
-    .cbadge.merge      { color:#56d364;       border-color:rgba(86,211,100,0.3);  background:rgba(86,211,100,0.08); }
-    .cbadge.error      { color:var(--red);    border-color:rgba(248,81,73,0.3);   background:rgba(248,81,73,0.08); }
-    .cbadge.spawn      { color:#79c0ff;       border-color:rgba(121,192,255,0.3); background:rgba(121,192,255,0.08); }
-    .cbadge.timeout    { color:var(--amber);  border-color:rgba(210,153,34,0.3);  background:rgba(210,153,34,0.08); }
-    .cbadge.retry      { color:#e3b341;       border-color:rgba(227,179,65,0.3);  background:rgba(227,179,65,0.08); }
-    .cbadge.checkpoint { color:#2563EB;       border-color:rgba(88,166,255,0.3);  background:rgba(88,166,255,0.08); }
-    .cbadge.consent    { color:#56d364;       border-color:rgba(86,211,100,0.3);  background:rgba(86,211,100,0.08); }
-    .cbadge.redact     { color:#f0883e;       border-color:rgba(240,136,62,0.3);  background:rgba(240,136,62,0.08); }
-    .cbadge.escalate   { color:var(--red);    border-color:rgba(248,81,73,0.3);   background:rgba(248,81,73,0.08); }
-    .cbadge.audit      { color:var(--text3);  border-color:rgba(139,148,158,0.3); background:rgba(139,148,158,0.08); }
-    .cmsg  { display:flex; align-items:center; gap:0.45rem; margin-bottom:0.15rem; min-width:0; }
-    .ctxt  { font-size:0.8rem; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .cby   { font-family:var(--mono); font-size:0.6rem; color:var(--text3); }
-    .choff { font-family:var(--mono); font-size:0.62rem; color:var(--amber); overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-    .tme   { font-family:var(--mono); font-size:0.6rem; color:var(--text3); text-align:right; }
-    .log-empty { padding:2rem; text-align:center; font-size:0.82rem; color:var(--text3); }
-
-    /* ── QS TABS ── */
-    .qs-tabs { display:flex; border-bottom:1px solid var(--border); background:var(--bg3); }
-    .qs-tab {
-      background:none; border:none; border-bottom:2px solid transparent;
-      color:var(--text2); padding:0.5rem 0.85rem; font-family:var(--mono);
-      font-size:0.65rem; cursor:pointer; transition:all 0.15s;
-      letter-spacing:0.06em; margin-bottom:-1px;
-    }
-    .qs-tab:hover { color:var(--text); }
-    .qs-tab.active { color:var(--accent); border-bottom-color:var(--accent); background:var(--bg2); }
-    .qs-panel { display:none; }
-    .qs-panel.active { display:block; }
-
-    /* ── TOAST ── */
-    /* ── CONTEXT MODAL ── */
-    .ctx-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:500; align-items:center; justify-content:center; padding:1.5rem; }
-    .ctx-modal.open { display:flex; }
-    .ctx-panel { background:var(--bg2); border:1px solid var(--border); border-radius:10px; width:100%; max-width:680px; max-height:80vh; display:flex; flex-direction:column; overflow:hidden; }
-    .ctx-panel-head { padding:1rem 1.25rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
-    .ctx-panel-title { font-size:0.88rem; font-weight:600; color:var(--text); }
-    .ctx-panel-meta { font-family:var(--mono); font-size:0.6rem; color:var(--text3); margin-top:0.15rem; }
-    .ctx-close { background:none; border:none; color:var(--text2); font-size:1.2rem; cursor:pointer; padding:0 0.25rem; line-height:1; }
-    .ctx-close:hover { color:var(--text); }
-    .ctx-tabs { display:flex; border-bottom:1px solid var(--border); background:var(--bg3); flex-shrink:0; }
-    .ctx-tab { background:none; border:none; border-bottom:2px solid transparent; color:var(--text2); padding:0.5rem 0.9rem; font-family:var(--mono); font-size:0.65rem; cursor:pointer; transition:all 0.15s; margin-bottom:-1px; letter-spacing:0.06em; }
-    .ctx-tab:hover { color:var(--text); }
-    .ctx-tab.active { color:var(--accent); border-bottom-color:var(--accent); background:var(--bg2); }
-    .ctx-body { flex:1; overflow-y:auto; padding:1.1rem 1.25rem; }
-    .ctx-pre { font-family:var(--mono); font-size:0.7rem; color:var(--text2); line-height:1.8; white-space:pre-wrap; word-break:break-word; }
-    .ctx-field { margin-bottom:0.85rem; }
-    .ctx-field-label { font-family:var(--mono); font-size:0.58rem; color:var(--text3); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.3rem; }
-    .ctx-field-val { font-size:0.8rem; color:var(--text); }
-    .ctx-badge-v { color:var(--green); font-family:var(--mono); font-size:0.7rem; }
-    .ctx-badge-r { color:var(--red);   font-family:var(--mono); font-size:0.7rem; }
-
-    .toast { position:fixed; bottom:1.5rem; right:1.5rem; background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:0.75rem 1rem; font-size:0.8rem; color:var(--text); box-shadow:0 8px 24px rgba(0,0,0,0.4); display:none; z-index:1000; }
-    .toast.show { display:block; animation:toastIn 0.2s ease; }
-    @keyframes toastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-
-    @media (max-width:640px) {
-      .agents-grid { grid-template-columns:1fr; }
-      .qs-steps { grid-template-columns:1fr; }
-      .qs-step { border-right:none; border-bottom:1px solid var(--border); }
-      .qs-step:last-child { border-bottom:none; }
-      .log-cols { display:none; }
-      .cr { grid-template-columns:1fr auto; }
-      .choff { display:none; }
-    }
-  </style>
+@media(max-width:768px){
+  :root{--sidebar-w:0px;}
+  .sidebar{display:none;}
+  .chain-drawer{width:100%;}
+}
+</style>
 </head>
 <body>
 
+<!-- ── HEADER ── -->
 <header>
   <a class="logo" href="/">
-    <div class="logo-mark">
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="dlg" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#7C3AED"/>
-            <stop offset="55%" stop-color="#2563EB"/>
-            <stop offset="100%" stop-color="#22D3EE"/>
-          </linearGradient>
-        </defs>
-        <circle cx="20" cy="20" r="17" stroke="#1e2d45" stroke-width="0.8" stroke-dasharray="2 3"/>
-        <circle cx="20" cy="20" r="12" stroke="#243040" stroke-width="0.5" opacity="0.6"/>
-        <circle cx="20" cy="5"  r="3.2" fill="#7C3AED" opacity="0.95"/>
-        <circle cx="20" cy="5"  r="5.5" stroke="#7C3AED" stroke-width="0.4" opacity="0.2"/>
-        <circle cx="33" cy="28" r="2.6" fill="#2563EB" opacity="0.95"/>
-        <circle cx="33" cy="28" r="4.5" stroke="#2563EB" stroke-width="0.4" opacity="0.2"/>
-        <circle cx="7"  cy="28" r="2.2" fill="#22D3EE" opacity="0.9"/>
-        <circle cx="7"  cy="28" r="3.8" stroke="#22D3EE" stroke-width="0.4" opacity="0.2"/>
-        <line x1="20" y1="8"  x2="31" y2="26" stroke="url(#dlg)" stroke-width="0.6" opacity="0.5"/>
-        <line x1="20" y1="8"  x2="9"  y2="26" stroke="#7C3AED" stroke-width="0.6" opacity="0.4"/>
-        <line x1="30" y1="27" x2="10" y2="27" stroke="#22D3EE" stroke-width="0.6" opacity="0.4"/>
-        <circle cx="20" cy="20" r="2.5" fill="url(#dlg)" opacity="0.6"/>
-      </svg>
-    </div>
-    <div class="logo-words">
-      <div class="logo-name">Dark<span class="matter-grad">Matter</span></div>
-      <div class="logo-sub">agent context network</div>
-    </div>
+    <svg class="logo-mark" viewBox="0 0 40 40" fill="none">
+      <circle cx="20" cy="20" r="17" stroke="#d0d0c8" stroke-width="0.8" stroke-dasharray="2 3"/>
+      <circle cx="20" cy="20" r="12" stroke="#e0e0d8" stroke-width="0.5" opacity="0.6"/>
+      <circle cx="20" cy="5"  r="3.2" fill="#0f7b4d" opacity="0.95"/>
+      <circle cx="33" cy="28" r="2.6" fill="#3a3a35" opacity="0.8"/>
+      <circle cx="7"  cy="28" r="2.2" fill="#6a6a62" opacity="0.7"/>
+      <line x1="20" y1="8"  x2="31" y2="26" stroke="#0f7b4d" stroke-width="0.6" opacity="0.4"/>
+      <line x1="20" y1="8"  x2="9"  y2="26" stroke="#3a3a35" stroke-width="0.6" opacity="0.3"/>
+      <line x1="30" y1="27" x2="10" y2="27" stroke="#6a6a62" stroke-width="0.6" opacity="0.3"/>
+      <circle cx="20" cy="20" r="2" fill="#0f7b4d" opacity="0.4"/>
+    </svg>
+    <span class="logo-name">Dark<span class="logo-grad">Matter</span></span>
   </a>
   <div class="hsep"></div>
-  <div class="hpage">Dashboard</div>
+  <span class="hpage">Captures</span>
   <div class="hright">
-    <a href="/demo" target="_blank"
-       style="font-size:0.78rem;color:var(--text2);text-decoration:none;font-weight:500;transition:color 0.15s;"
-       onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text2)'">Live Demo</a>
-    <a href="/blog"
-       style="font-size:0.78rem;color:var(--text2);text-decoration:none;font-weight:500;transition:color 0.15s;"
-       onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text2)'">Blog</a>
-    <a href="/docs"
-       style="font-size:0.78rem;color:var(--text2);text-decoration:none;font-weight:500;transition:color 0.15s;"
-       onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text2)'">
-       API Docs
-    </a>
-    <div class="user-email" id="user-email"></div>
-<button class="logout-btn" onclick="logout()">Sign out</button>
+    <a href="/docs" class="hbtn">Docs</a>
+    <a href="/compare" class="hbtn">Compare</a>
+    <button class="hbtn" onclick="openModal('settings-modal')">Settings</button>
+    <div class="user-chip">
+      <div class="user-avatar" id="user-initial">?</div>
+      <span id="user-email" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+    </div>
+    <button class="hbtn" onclick="logout()" style="color:var(--text3);">Sign out</button>
   </div>
 </header>
 
-<div class="layout">
+<!-- ── APP LAYOUT ── -->
+<div class="app">
 
-  <div class="top-row">
-  <!-- AGENTS (left) -->
-  <div>
-    <div class="sec-head">
+  <!-- LEFT SIDEBAR: Thread history -->
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="search-box">
+        <span class="search-icon">⌕</span>
+        <input class="search-input" id="search-input" placeholder="Search conversations..." autocomplete="off"/>
+        <span class="search-kbd">/</span>
+      </div>
+      <div class="sidebar-filters">
+        <button class="sf-btn active" data-filter="all" onclick="setFilter('all')">All</button>
+        <button class="sf-btn" data-filter="claude" onclick="setFilter('claude')">Claude</button>
+        <button class="sf-btn" data-filter="chatgpt" onclick="setFilter('chatgpt')">ChatGPT</button>
+        <button class="sf-btn" data-filter="sdk" onclick="setFilter('sdk')">SDK</button>
+        <button class="sf-btn" data-filter="starred" onclick="setFilter('starred')">★</button>
+      </div>
+    </div>
+    <div class="thread-list" id="thread-list">
+      <div class="thread-group-label">Loading...</div>
+    </div>
+  </aside>
+
+  <!-- MAIN AREA: Selected conversation + Agents panel -->
+  <div class="main">
+    <!-- Conversation header -->
+    <div class="main-header" id="main-header">
       <div>
-        <div class="sec-title">Your Agents</div>
-        <div class="sec-sub">Each agent gets a unique API key — use it in your code to commit and pull context</div>
+        <div class="main-title" id="conv-title">Select a conversation</div>
+        <div class="main-meta" id="conv-meta"></div>
+      </div>
+      <div class="main-actions" id="main-actions" style="display:none;">
+        <button class="mbtn" onclick="openChainDrawer()">⑂ Chain</button>
+        <button class="mbtn" onclick="shareThread()">↗ Share</button>
+        <button class="mbtn" onclick="forkThread()">Fork</button>
       </div>
     </div>
-    <div class="create-bar">
-      <input class="create-input" id="agent-name-input"
-        placeholder="e.g. analysis-agent, gpt-writer"
-        maxlength="60" />
-      <button class="create-btn" id="create-btn" onclick="createAgent()">+ Create Agent</button>
-    </div>
-    <div class="agents-grid" id="agents-grid">
-      <div class="agents-empty">
-        <div class="agents-empty-icon">🤖</div>
-        <div class="agents-empty-title">No agents yet</div>
-        <div class="agents-empty-sub">Create your first agent above to get an API key</div>
+
+    <!-- Conversation messages -->
+    <div class="conv-area" id="conv-area">
+      <div class="empty-conv" id="empty-conv">
+        <div class="empty-conv-icon">🌑</div>
+        <div class="empty-conv-title">No conversation selected</div>
+        <div class="empty-conv-sub">Choose a conversation from the sidebar, or install the browser extension to start capturing automatically.</div>
       </div>
+    </div>
+
+    <!-- Agents panel (collapsible) -->
+    <div class="agents-panel">
+      <div class="agents-panel-head" onclick="toggleAgentsPanel()">
+        <span class="agents-panel-title">
+          <span>Agents &amp; API Keys</span>
+          <span id="agent-count" style="font-family:var(--mono);font-size:11px;color:var(--text3);font-weight:400;"></span>
+        </span>
+        <span class="agents-panel-toggle" id="agents-toggle">▲</span>
+      </div>
+      <div class="agents-panel-body" id="agents-panel-body">
+        <div class="create-bar">
+          <input class="create-input" id="agent-name-input" placeholder="New agent name (e.g. analysis-agent)" maxlength="60"/>
+          <button class="create-btn" id="create-btn" onclick="createAgent()">+ Create</button>
+        </div>
+        <div class="agents-grid" id="agents-grid">
+          <div class="agents-empty">Create your first agent to get an API key</div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /main -->
+
+</div><!-- /app -->
+
+<!-- CHAIN DRAWER -->
+<div class="chain-drawer" id="chain-drawer">
+  <div class="chain-drawer-head">
+    <span class="chain-drawer-title">Chain lineage</span>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button class="mbtn" id="chain-verify-btn" onclick="verifyCurrentChain()">Verify</button>
+      <button class="mbtn" id="chain-export-btn" onclick="exportCurrentChain()">↓ Export</button>
+      <button style="background:none;border:none;font-size:18px;color:var(--text3);cursor:pointer;" onclick="closeChainDrawer()">×</button>
     </div>
   </div>
-
-  <!-- QUICKSTART (right) -->
-  <div class="qs-banner" id="qs-banner">
-    <div class="qs-banner-head">
-      <div class="qs-banner-title">⚡ API Quickstart</div>
-    </div>
-
-    <!-- TABS -->
-    <div class="qs-tabs">
-      <button class="qs-tab active" onclick="switchTab('curl')">darkmatter init</button>
-      <button class="qs-tab" onclick="switchTab('python')">Python SDK</button>
-      <button class="qs-tab" onclick="switchTab('node')">Node.js SDK</button>
-    </div>
-
-    <!-- INIT / CLI TAB -->
-    <div class="qs-panel active" id="tab-curl">
-      <div class="qs-code">
-        <div class="qs-code-head">
-          <div class="qs-code-label">// fastest path — no browser required</div>
-          <button class="qs-copy-btn" onclick="copyTab('curl')">Copy</button>
-        </div>
-        <div class="qs-pre">
-<span class="c"># 1. Install and set up (one time)</span>
-<span class="cm">pip install darkmatter-sdk</span>
-<span class="cm">darkmatter demo    <span class="c"># see replay, fork, diff locally — no signup</span></span>
-<span class="cm">darkmatter init    <span class="c"># creates agent + writes .env — no browser</span></span>
-<span class="sp"></span>
-<span class="c"># 2. Generate a runnable example</span>
-<span class="cm">darkmatter quickstart single</span>
-<span class="cm">python darkmatter_example.py</span>
-<span class="sp"></span>
-<span class="c"># 3. Open the chain in browser</span>
-<span class="cm">darkmatter open</span>
-<span class="sp"></span>
-<span class="c"># 4. Replay, fork, diff from CLI</span>
-<span class="cm">darkmatter replay &lt;ctx_id&gt;</span>
-<span class="cm">darkmatter fork   &lt;ctx_id&gt; --from 2 --model gpt-4o-mini</span>
-<span class="cm">darkmatter diff   &lt;ctx_id_a&gt; &lt;ctx_id_b&gt;</span>
-<span class="sp"></span>
-<span class="c"># 5. Check setup anytime</span>
-<span class="cm">darkmatter doctor</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- PYTHON SDK TAB -->
-    <div class="qs-panel" id="tab-python">
-      <div class="qs-code">
-        <div class="qs-code-head">
-          <div class="qs-code-label">// pip install darkmatter-sdk</div>
-          <button class="qs-copy-btn" onclick="copyTab('python')">Copy</button>
-        </div>
-        <div class="qs-pre">
-<span class="c"># darkmatter init writes .env — loaded automatically</span>
-<span class="cm">import darkmatter as dm</span>
-<span class="sp"></span>
-<span class="c"># Commit a step</span>
-<span class="cm">ctx = dm.commit(</span>
-<span class="cm">    to_agent_id=<span class="st">"YOUR_AGENT_ID"</span>,</span>
-<span class="cm">    payload={<span class="st">"output"</span>: result},</span>
-<span class="cm">    event_type=<span class="st">"commit"</span>,  <span class="c"># commit | checkpoint | fork | error</span></span>
-<span class="cm">)</span>
-<span class="ok"># → {"id": "ctx_...", "integrity": {"verification_status": "valid"}}</span>
-<span class="sp"></span>
-<span class="c"># Replay the chain</span>
-<span class="cm">replay = dm.replay(ctx[<span class="st">"id"</span>])</span>
-<span class="ok"># → {"chainIntact": true, "totalSteps": 3, "replay": [...]}</span>
-<span class="sp"></span>
-<span class="c"># Fork from a checkpoint</span>
-<span class="cm">fork = dm.fork(ctx[<span class="st">"id"</span>], to_agent_id=<span class="st">"YOUR_AGENT_ID"</span>)</span>
-<span class="sp"></span>
-<span class="c"># Diff two chains</span>
-<span class="cm">diff = dm.diff(ctx[<span class="st">"id"</span>], fork[<span class="st">"id"</span>])</span>
-<span class="ok"># → {"changedSteps": 1, "summary": {"modelsA": [...], "modelsB": [...]}}</span>
-<span class="sp"></span>
-<span class="c"># Share a chain link</span>
-<span class="cm">share = dm.share(ctx[<span class="st">"id"</span>], label=<span class="st">"my first chain"</span>)</span>
-<span class="ok"># → {"shareUrl": "https://darkmatterhub.ai/chain/share_..."}</span>
-<span class="sp"></span>
-<span class="c"># Spawn a child agent</span>
-<span class="cm">child = dm.spawn_client(<span class="st">"fact-checker"</span>, role=<span class="st">"validator"</span>)</span>
-<span class="cm">child.commit(to_agent_id=child.agent_id, payload={...})</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- NODE.JS SDK TAB -->
-    <div class="qs-panel" id="tab-node">
-      <div class="qs-code">
-        <div class="qs-code-head">
-          <div class="qs-code-label">// npm install darkmatter-js</div>
-          <button class="qs-copy-btn" onclick="copyTab('node')">Copy</button>
-        </div>
-        <div class="qs-pre">
-<span class="c">// npm install darkmatter-js</span>
-<span class="cm">const dm = require(<span class="st">'darkmatter-js'</span>);</span>
-<span class="sp"></span>
-<span class="c">// Commit a step</span>
-<span class="cm">const ctx = await dm.commit({</span>
-<span class="cm">  toAgentId: <span class="st">"YOUR_AGENT_ID"</span>,</span>
-<span class="cm">  payload:   { output: result },</span>
-<span class="cm">  eventType: <span class="st">"commit"</span>,</span>
-<span class="cm">});</span>
-<span class="ok">// → { id: "ctx_...", integrity: { verification_status: "valid" } }</span>
-<span class="sp"></span>
-<span class="c">// Replay the chain</span>
-<span class="cm">const replay = await dm.replay(ctx.id);</span>
-<span class="ok">// → { chainIntact: true, totalSteps: 3 }</span>
-<span class="sp"></span>
-<span class="c">// Fork from a checkpoint</span>
-<span class="cm">const fork = await dm.fork(ctx.id, { toAgentId: <span class="st">"YOUR_AGENT_ID"</span> });</span>
-<span class="sp"></span>
-<span class="c">// Diff two chains</span>
-<span class="cm">const diff = await dm.diff(ctx.id, fork.id);</span>
-<span class="ok">// → { changedSteps: 1 }</span>
-<span class="sp"></span>
-<span class="c">// Share a chain link</span>
-<span class="cm">const share = await dm.share(ctx.id, { label: <span class="st">"my chain"</span> });</span>
-<span class="ok">// → { shareUrl: "https://darkmatterhub.ai/chain/share_..." }</span>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /qs-banner -->
-  </div><!-- /top-row -->
-
-  <!-- COMMIT LOG -->
-  <div>
-    <div class="sec-head">
-      <div>
-        <div class="sec-title">Commit Log</div>
-        <div class="sec-sub">Context handoffs — click any row to inspect. Export for audits. View chain to replay lineage.</div>
-      </div>
-      <div style="display:flex;gap:0.5rem;align-items:center;">
-        <div style="display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:6px;overflow:hidden;">
-          <button id="tab-log" onclick="switchLogTab('log')" style="background:var(--bg2);border:none;color:var(--text);padding:0.28rem 0.75rem;font-size:0.72rem;cursor:pointer;font-family:var(--sans);font-weight:500;border-right:1px solid var(--border);">Log</button>
-          <button id="tab-chain" onclick="switchLogTab('chain')" style="background:none;border:none;color:var(--text2);padding:0.28rem 0.75rem;font-size:0.72rem;cursor:pointer;font-family:var(--sans);">Chain View</button>
-        </div>
-        <button class="logout-btn" onclick="exportLog()" style="border-color:var(--border2)">↓ Export</button>
-        <button class="logout-btn" id="refresh-btn" onclick="refreshCurrentTab()" style="border-color:var(--border2)">↻ Refresh</button>
-      </div>
-    </div>
-
-    <!-- LOG TAB -->
-    <div id="view-log">
-      <div class="log-wrap">
-        <div class="log-cols">
-          <div>Message · click to expand context</div>
-          <div style="text-align:right">Time</div>
-        </div>
-        <div id="commit-list">
-          <div class="log-empty" style="padding:2.5rem;">
-        <div style="font-size:1.5rem;margin-bottom:0.75rem;">🌑</div>
-        <div style="font-size:0.88rem;font-weight:600;color:var(--text);margin-bottom:0.35rem;">No commits yet</div>
-        <div style="font-size:0.78rem;color:var(--text2);margin-bottom:1.25rem;">Connect an agent and start committing context.</div>
-        <div style="display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap;">
-          <a href="/docs#quickstart"
-             style="font-size:0.75rem;background:var(--gradient);color:#fff;padding:0.4rem 1rem;border-radius:6px;text-decoration:none;font-weight:500;">
-             Quickstart guide →
-          </a>
-          <button onclick="switchLogTab('chain');document.getElementById('chain-ctx-input').value='';document.getElementById('chain-view-content').innerHTML='<div class=\'log-empty\'>Enter a context ID from your first commit to explore the chain view.</div>'"
-            class="agent-btn" style="font-size:0.75rem;padding:0.4rem 1rem;">
-            Explore Chain View
-          </button>
-        </div>
-      </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- CHAIN VIEW TAB -->
-    <div id="view-chain" style="display:none;">
-      <div style="display:flex;gap:0.75rem;align-items:center;margin-bottom:0.85rem;">
-        <input id="chain-ctx-input" type="text" placeholder="Enter context ID  e.g. ctx_1774358291224_bad9b976"
-          style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:0.4rem 0.75rem;font-size:0.72rem;color:var(--text);font-family:var(--mono);outline:none;"
-          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-          onkeydown="if(event.key==='Enter') loadChainView()"/>
-        <button class="logout-btn" onclick="loadChainView()" style="border-color:var(--border2);white-space:nowrap;">View Chain</button>
-      </div>
-      <div id="chain-view-content">
-        <div class="log-empty" style="padding:2.5rem;">
-          <div style="font-size:1.5rem;margin-bottom:0.75rem;">&#x2442;</div>
-          <div style="font-size:0.88rem;font-weight:600;color:var(--text);margin-bottom:0.35rem;">Chain viewer</div>
-          <div style="font-size:0.78rem;color:var(--text2);margin-bottom:1.25rem;">Enter any context ID from your commit log to visualize its full decision chain.</div>
-          <div style="font-size:0.72rem;color:var(--text3);font-family:var(--mono);">tip: click chain on any commit row to jump here instantly</div>
-        </div>
-      </div>
-    </div>
+  <div class="chain-drawer-body" id="chain-drawer-body">
+    <div style="color:var(--text3);font-size:13px;">Select a conversation to view its chain.</div>
   </div>
-
 </div>
 
-<!-- CONTEXT MODAL -->
-<div class="ctx-modal" id="ctx-modal" onclick="closeCtxModal(event)">
-  <div class="ctx-panel">
-    <div class="ctx-panel-head">
+<!-- ── MODALS ── -->
+
+<!-- Settings modal -->
+<div class="modal-bg" id="settings-modal" onclick="closeModalBg('settings-modal',event)">
+  <div class="modal" style="max-width:480px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">Settings</span>
+      <button class="modal-close" onclick="closeModal('settings-modal')">×</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
       <div>
-        <div class="ctx-panel-title" id="ctx-title">Commit Context</div>
-        <div class="ctx-panel-meta" id="ctx-meta"></div>
+        <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono);margin-bottom:8px;">Account</div>
+        <div style="font-size:13px;color:var(--text2);">Signed in as <strong id="settings-email"></strong></div>
       </div>
-      <button class="ctx-close" onclick="closeCtxModalDirect()">×</button>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono);margin-bottom:8px;">Export</div>
+        <button class="mbtn" onclick="exportAll()" style="font-size:13px;">↓ Export all commits (CSV)</button>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:16px;">
+        <div style="font-size:12px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono);margin-bottom:8px;">Danger zone</div>
+        <button class="mbtn" onclick="closeModal('settings-modal');openModal('delete-account-modal')" style="border-color:rgba(220,38,38,.3);color:var(--red);font-size:13px;">Delete account</button>
+      </div>
     </div>
-    <div class="ctx-tabs">
-      <button class="ctx-tab active" onclick="switchCtxTab('summary')">Summary</button>
-      <button class="ctx-tab" onclick="switchCtxTab('raw')">Raw JSON</button>
+  </div>
+</div>
+
+<!-- Delete account modal -->
+<div class="modal-bg" id="delete-account-modal" onclick="closeModalBg('delete-account-modal',event)">
+  <div class="modal" style="max-width:460px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">Delete account</span>
+      <button class="modal-close" onclick="closeModal('delete-account-modal')">×</button>
     </div>
-    <div class="ctx-body">
-      <div id="ctx-summary"></div>
-      <div id="ctx-raw" style="display:none;"></div>
+    <div class="warn-box">
+      <strong>This cannot be undone.</strong> Your account, all agents, and your access to DarkMatter will be permanently deleted.
+    </div>
+    <div class="info-box">
+      <strong>About your commit records:</strong> DarkMatter's core purpose is immutable execution records — records that can't be tampered with. Deleting your commit history breaks that guarantee for any chains you've shared or that others may be verifying. You can choose to delete them or leave them as anonymised records. Either way, your account access is removed.
+    </div>
+    <div class="field">
+      <label>What to do with your commit records</label>
+      <select id="delete-commits-choice">
+        <option value="keep">Keep commits (anonymised — chain integrity preserved)</option>
+        <option value="delete">Delete all commits (breaks any shared chain links)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Type DELETE to confirm</label>
+      <input type="text" id="delete-confirm-input" placeholder="DELETE"/>
+    </div>
+    <div class="modal-footer">
+      <button class="mfbtn cancel" onclick="closeModal('delete-account-modal')">Cancel</button>
+      <button class="mfbtn danger-confirm" onclick="deleteAccount()">Delete my account</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rename modal -->
+<div class="modal-bg" id="rename-modal" onclick="closeModalBg('rename-modal',event)">
+  <div class="modal" style="max-width:380px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">Rename conversation</span>
+      <button class="modal-close" onclick="closeModal('rename-modal')">×</button>
+    </div>
+    <div class="field">
+      <label>New title</label>
+      <input type="text" id="rename-input" placeholder="Conversation title" maxlength="100"/>
+    </div>
+    <div class="modal-footer">
+      <button class="mfbtn cancel" onclick="closeModal('rename-modal')">Cancel</button>
+      <button class="mfbtn confirm" onclick="confirmRename()">Rename</button>
+    </div>
+  </div>
+</div>
+
+<!-- Agent key modal (full key reveal) -->
+<div class="modal-bg" id="key-modal" onclick="closeModalBg('key-modal',event)">
+  <div class="modal" style="max-width:460px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title" id="key-modal-title">API Key</span>
+      <button class="modal-close" onclick="closeModal('key-modal')">×</button>
+    </div>
+    <div class="field">
+      <label>Agent ID</label>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--text2);background:var(--bg2);padding:6px 10px;border-radius:5px;border:1px solid var(--border);" id="key-modal-id"></div>
+    </div>
+    <div class="field">
+      <label>API Key — keep this secret</label>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--text);background:var(--bg2);padding:6px 10px;border-radius:5px;border:1px solid var(--border);word-break:break-all;" id="key-modal-key"></div>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button class="mfbtn confirm" onclick="copyFromModal()" style="flex:1;">Copy key</button>
+      <button class="mfbtn cancel" onclick="rotateKeyModal()">Rotate</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<!-- FEATURE REQUEST MODAL -->
-<div id="feature-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;display:none;align-items:center;justify-content:center;" onclick="closeModal('feature-modal',event)">
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1.75rem;width:100%;max-width:460px;margin:1rem;" onclick="event.stopPropagation()">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
-      <div style="font-size:0.95rem;font-weight:700;color:var(--text);">Request a Feature</div>
-      <button onclick="closeModal('feature-modal')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:1.2rem;line-height:1;">×</button>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:0.75rem;">
-      <div>
-        <div style="font-size:0.7rem;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.35rem;">Your email</div>
-        <input id="feature-email" type="email" placeholder="you@company.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:0.5rem 0.75rem;font-size:0.82rem;color:var(--text);outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"/>
-      </div>
-      <div>
-        <div style="font-size:0.7rem;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.35rem;">Feature request</div>
-        <textarea id="feature-body" rows="4" placeholder="Describe the feature you'd like to see..." style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:0.5rem 0.75rem;font-size:0.82rem;color:var(--text);outline:none;resize:vertical;font-family:var(--sans);box-sizing:border-box;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
-      </div>
-      <button onclick="submitFeatureRequest()" style="background:var(--accent);border:none;color:#fff;padding:0.55rem 1rem;border-radius:6px;font-size:0.82rem;font-weight:600;cursor:pointer;transition:opacity 0.15s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Send Request</button>
-      <div id="feature-status" style="font-size:0.75rem;color:var(--green);display:none;text-align:center;">✓ Sent — thank you!</div>
-    </div>
-  </div>
-</div>
-
-<!-- CONTACT SUPPORT MODAL -->
-<div id="support-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;" onclick="closeModal('support-modal',event)">
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1.75rem;width:100%;max-width:460px;margin:1rem;" onclick="event.stopPropagation()">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
-      <div style="font-size:0.95rem;font-weight:700;color:var(--text);">Report a Bug</div>
-      <button onclick="closeModal('support-modal')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:1.2rem;line-height:1;">×</button>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:0.75rem;">
-      <div>
-        <div style="font-size:0.7rem;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.35rem;">Your email</div>
-        <input id="support-email" type="email" placeholder="you@company.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:0.5rem 0.75rem;font-size:0.82rem;color:var(--text);outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"/>
-      </div>
-      <div>
-        <div style="font-size:0.7rem;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.35rem;">How can we help?</div>
-        <textarea id="support-body" rows="4" placeholder="Describe your issue..." style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:0.5rem 0.75rem;font-size:0.82rem;color:var(--text);outline:none;resize:vertical;font-family:var(--sans);box-sizing:border-box;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
-      </div>
-      <button onclick="submitSupport()" style="background:var(--accent);border:none;color:#fff;padding:0.55rem 1rem;border-radius:6px;font-size:0.82rem;font-weight:600;cursor:pointer;transition:opacity 0.15s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Send Message</button>
-      <div id="support-status" style="font-size:0.75rem;color:var(--green);display:none;text-align:center;">✓ Sent — we'll get back to you shortly.</div>
-    </div>
-  </div>
-</div>
-
-<footer style="border-top:1px solid var(--border);background:var(--bg2);padding:0.85rem 2rem;display:flex;align-items:center;justify-content:space-between;">
-  <div style="display:flex;align-items:center;gap:0.5rem;"><svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;flex-shrink:0;">
-      <defs><linearGradient id="flg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7C3AED"/><stop offset="55%" stop-color="#2563EB"/><stop offset="100%" stop-color="#22D3EE"/></linearGradient></defs>
-      <circle cx="20" cy="20" r="17" stroke="#1e2d45" stroke-width="0.8" stroke-dasharray="2 3"/>
-      <circle cx="20" cy="5" r="3.2" fill="#7C3AED" opacity="0.95"/>
-      <circle cx="33" cy="28" r="2.6" fill="#2563EB" opacity="0.95"/>
-      <circle cx="7" cy="28" r="2.2" fill="#22D3EE" opacity="0.9"/>
-      <line x1="20" y1="8" x2="31" y2="26" stroke="url(#flg)" stroke-width="0.6" opacity="0.5"/>
-      <line x1="20" y1="8" x2="9" y2="26" stroke="#7C3AED" stroke-width="0.6" opacity="0.4"/>
-      <line x1="30" y1="27" x2="10" y2="27" stroke="#22D3EE" stroke-width="0.6" opacity="0.4"/>
-      <circle cx="20" cy="20" r="2.5" fill="url(#flg)" opacity="0.6"/>
-    </svg><span style="font-size:0.7rem;color:var(--text3);">© 2026 Dark<span style="background:linear-gradient(90deg,#7C3AED 0%,#2563EB 55%,#22D3EE 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Matter</span></span></div>
-  <div style="display:flex;gap:1.25rem;align-items:center;">
-    <button onclick="openModal('feature-modal')" style="background:none;border:none;font-size:0.7rem;color:var(--text3);cursor:pointer;padding:0;font-family:var(--sans);transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">Request a feature</button>
-    <button onclick="openModal('support-modal')" style="background:none;border:none;font-size:0.7rem;color:var(--text3);cursor:pointer;padding:0;font-family:var(--sans);transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">Report a bug</button>
-    <a href="https://github.com/darkmatter-hub/darkmatter" target="_blank" style="font-size:0.7rem;color:var(--text3);text-decoration:none;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">GitHub</a>
-    <a href="/admin" id="admin-link" style="display:none;font-size:0.7rem;color:var(--violet);text-decoration:none;font-weight:500;" title="Superuser dashboard">Admin ↗</a>
-    <a href="https://github.com/darkmatter-hub/darkmatter/blob/main/PRODUCTION.md" target="_blank" style="font-size:0.7rem;color:var(--text3);text-decoration:none;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">Self-host</a>
-  </div>
-</footer>
-
 <script>
-  // ── Handle email confirmation token in hash ───────────
-  if (window.location.hash && window.location.hash.includes('access_token')) {
-    try {
-      const params = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken  = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-      const expiresAt    = params.get('expires_at');
-      if (accessToken) {
-        const payload = JSON.parse(atob(accessToken.split('.')[1]));
-        localStorage.setItem('dm_session', JSON.stringify({
-          access_token: accessToken, refresh_token: refreshToken,
-          expires_at: expiresAt,
-          user: { email: payload.email || '', id: payload.sub }
-        }));
-        window.history.replaceState({}, document.title, '/dashboard');
-      }
-    } catch(e) { console.error('Auth parse error', e); }
-  }
+'use strict';
+// ── Token refresh ─────────────────────────────────────────────────────────────
+// This is the fix for "commits disappear after staying logged in".
+// Supabase JWTs expire after 1 hour by default. We refresh proactively.
 
-  // ── Auth check ───────────────────────────────────────
+async function refreshSession() {
   const raw = localStorage.getItem('dm_session');
-  if (!raw) { window.location.href = '/login'; }
+  if (!raw) return null;
+  const session = JSON.parse(raw);
+  const expiresAt = parseInt(session.expires_at || '0', 10);
+  const now = Math.floor(Date.now() / 1000);
 
-  let session;
-  try { session = JSON.parse(raw); } catch(e) { window.location.href = '/login'; }
+  // Refresh if token expires within 5 minutes
+  if (expiresAt - now > 300) return session;
 
-  const token = session?.access_token;
-  if (!token) { window.location.href = '/login'; }
+  const refreshToken = session.refresh_token;
+  if (!refreshToken) return session;
 
-  // API key for DM API endpoints (requireApiKey middleware)
-  // Stored when user first creates/views an agent
-  let dmApiKey = session?.dm_api_key || localStorage.getItem('dm_api_key') || '';
-
-  const apiKeyHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${dmApiKey}`,
-    'User-Agent': 'darkmatter-dashboard/1.0',
-  });
-
-  document.getElementById('user-email').textContent = session?.user?.email || '';
-
-  // ── Tab switching ────────────────────────────────────
-  function switchTab(name) {
-    document.querySelectorAll('.qs-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.qs-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('tab-' + name).classList.add('active');
-    const tabs = ['curl','python','node'];
-    const tabIdx = tabs.indexOf(name);
-    if (tabIdx >= 0) document.querySelectorAll('.qs-tab')[tabIdx].classList.add('active');
-  }
-
-  // ── Copy per tab ──────────────────────────────────────
-  const tabCode = {
-    curl: `# 1. Install and set up
-pip install darkmatter-sdk
-darkmatter demo    # see it locally — no signup
-darkmatter init    # creates agent + writes .env
-
-# 2. Generate runnable example
-darkmatter quickstart single
-python darkmatter_example.py
-
-# 3. Open chain in browser
-darkmatter open
-
-# 4. Replay, fork, diff
-darkmatter replay <ctx_id>
-darkmatter fork   <ctx_id> --from 2 --model gpt-4o-mini
-darkmatter diff   <ctx_id_a> <ctx_id_b>
-
-# 5. Check setup
-darkmatter doctor`,
-
-    python: `# Install (one time)
-# pip install darkmatter-sdk
-# darkmatter init
-
-import darkmatter as dm   # auto-loads .env
-
-# Commit a step
-ctx = dm.commit(
-    to_agent_id="YOUR_AGENT_ID",
-    payload={"output": "result here"},
-    event_type="commit",
-)
-print(f"Context: {ctx['id']}")
-
-# Replay the chain
-replay = dm.replay(ctx["id"])
-print(f"Steps: {replay.get('totalSteps')}, intact: {replay.get('chainIntact')}")
-
-# Fork from a checkpoint
-fork = dm.fork(ctx["id"], to_agent_id="YOUR_AGENT_ID")
-
-# Diff two chains
-diff = dm.diff(ctx["id"], fork["id"])
-print(f"Changed steps: {diff.get('changedSteps')}")
-
-# Share a chain link
-share = dm.share(ctx["id"], label="my first chain")
-print(f"Share URL: {share['shareUrl']}")`,
-
-    node: `// npm install darkmatter-js
-const dm = require('darkmatter-js');
-
-// Commit a step
-const ctx = await dm.commit({
-  toAgentId: "YOUR_AGENT_ID",
-  payload:   { output: "result here" },
-  eventType: "commit",
-});
-console.log("Context:", ctx.id);
-
-// Replay the chain
-const replay = await dm.replay(ctx.id);
-console.log("Steps:", replay.totalSteps, "Intact:", replay.chainIntact);
-
-// Fork from a checkpoint
-const fork = await dm.fork(ctx.id, { toAgentId: "YOUR_AGENT_ID" });
-
-// Diff two chains
-const diff = await dm.diff(ctx.id, fork.id);
-console.log("Changed steps:", diff.changedSteps);
-
-// Share a chain link
-const share = await dm.share(ctx.id, { label: "my first chain" });
-console.log("Share URL:", share.shareUrl);`,
-  };
-
-  function copyTab(name) {
-    navigator.clipboard.writeText(tabCode[name]).then(() => {
-      // Find the clicked button and flash it
-      event.target.textContent = 'Copied!';
-      event.target.classList.add('copied');
-      setTimeout(() => {
-        event.target.textContent = 'Copy';
-        event.target.classList.remove('copied');
-      }, 2000);
+  try {
+    const res = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
     });
-  }
+    if (!res.ok) return session;
+    const data = await res.json();
+    if (data.access_token) {
+      const newSession = { ...session, access_token: data.access_token, expires_at: data.expires_at, refresh_token: data.refresh_token || refreshToken };
+      localStorage.setItem('dm_session', JSON.stringify(newSession));
+      return newSession;
+    }
+  } catch(e) { console.warn('[DM] Token refresh failed:', e.message); }
+  return session;
+}
 
-  // ── Auth helpers ─────────────────────────────────────
-  const authHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
+// Refresh every 4 minutes automatically
+setInterval(refreshSession, 4 * 60 * 1000);
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+if (window.location.hash?.includes('access_token')) {
+  try {
+    const p = new URLSearchParams(window.location.hash.substring(1));
+    const at = p.get('access_token');
+    if (at) {
+      const payload = JSON.parse(atob(at.split('.')[1]));
+      localStorage.setItem('dm_session', JSON.stringify({
+        access_token: at, refresh_token: p.get('refresh_token'),
+        expires_at: p.get('expires_at'),
+        user: { email: payload.email || '', id: payload.sub }
+      }));
+      history.replaceState({}, '', '/dashboard');
+    }
+  } catch(e) {}
+}
+
+const rawSession = localStorage.getItem('dm_session');
+if (!rawSession) { location.href = '/login'; throw 0; }
+let session;
+try { session = JSON.parse(rawSession); } catch(e) { location.href = '/login'; throw 0; }
+if (!session?.access_token) { location.href = '/login'; throw 0; }
+
+const email = session?.user?.email || '';
+document.getElementById('user-email').textContent = email;
+document.getElementById('settings-email').textContent = email;
+document.getElementById('user-initial').textContent = (email[0] || '?').toUpperCase();
+
+// ── Auth headers (always refreshed) ──────────────────────────────────────────
+async function authHeaders() {
+  const s = await refreshSession() || session;
+  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s.access_token}` };
+}
+
+// ── API key (for DM agent API) ────────────────────────────────────────────────
+let dmApiKey = session?.dm_api_key || localStorage.getItem('dm_api_key') || '';
+const apiKeyHeaders = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${dmApiKey}` });
+
+// ── Starred threads (persisted in localStorage) ───────────────────────────────
+const STARS_KEY = 'dm_starred_threads';
+function getStars() { try { return JSON.parse(localStorage.getItem(STARS_KEY)||'[]'); } catch{return [];} }
+function setStars(s) { localStorage.setItem(STARS_KEY, JSON.stringify(s)); }
+function isStarred(id) { return getStars().includes(id); }
+function toggleStar(id) {
+  const stars = getStars();
+  const idx = stars.indexOf(id);
+  if (idx >= 0) stars.splice(idx, 1); else stars.push(id);
+  setStars(stars);
+}
+
+// ── Thread rename (persisted locally until server supports it) ─────────────────
+const RENAME_KEY = 'dm_thread_renames';
+function getRenames() { try { return JSON.parse(localStorage.getItem(RENAME_KEY)||'{}'); } catch{return {};} }
+function getThreadTitle(thread) {
+  const renames = getRenames();
+  return renames[thread.id] || thread.title || thread.convTitle || thread.agent_name || 'Untitled conversation';
+}
+function saveRename(id, title) {
+  const r = getRenames(); r[id] = title; localStorage.setItem(RENAME_KEY, JSON.stringify(r));
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let allThreads = [];
+let selectedThread = null;
+let activeFilter = 'all';
+let searchQuery = '';
+let activeMenuId = null;
+let currentRenameId = null;
+let currentKeyModal = null;
+let agentsPanelOpen = false;
+
+// ── Platform colors ───────────────────────────────────────────────────────────
+const PLAT_COLORS = { claude:'#7C3AED', chatgpt:'#10a37f', grok:'#1DA1F2', gemini:'#4285f4', perplexity:'#20808d' };
+const PLAT_LABELS = { claude:'Claude', chatgpt:'ChatGPT', grok:'Grok', gemini:'Gemini', perplexity:'Perplexity' };
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function ago(ts) {
+  if (!ts) return '';
+  const d = Math.floor((Date.now() - new Date(ts)) / 1000);
+  if (d < 60) return 'just now';
+  if (d < 3600) return Math.floor(d/60) + 'm ago';
+  if (d < 86400) return Math.floor(d/3600) + 'h ago';
+  if (d < 86400*7) return Math.floor(d/86400) + 'd ago';
+  return new Date(ts).toLocaleDateString();
+}
+function relDate(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) return 'Today';
+  const yesterday = new Date(now); yesterday.setDate(now.getDate()-1);
+  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  const days = Math.floor((now - d) / 86400000);
+  if (days < 7) return 'Previous 7 days';
+  if (days < 30) return 'Previous 30 days';
+  return 'Older';
+}
+function toast(msg, dur=2800) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), dur);
+}
+function maskKey(k) {
+  if (!k) return '';
+  return k.slice(0,9) + '••••••••••••••' + k.slice(-4);
+}
+
+// ── Load threads ──────────────────────────────────────────────────────────────
+// Group commits by traceId (one conversation = one traceId)
+async function loadThreads() {
+  try {
+    const h = await authHeaders();
+    const res = await fetch('/dashboard/commits', { headers: h });
+    if (res.status === 401) { await refreshSession(); return loadThreads(); }
+    const commits = await res.json();
+
+    // Group commits by traceId/convId to build threads
+    const threadMap = new Map();
+
+    for (const c of commits) {
+      const traceId = c.trace_id || c.traceId || c.id;
+      const platform = c.payload?.platform || c.payload?.platformId || '';
+      const platformId = platform?.toLowerCase() || '';
+
+      if (!threadMap.has(traceId)) {
+        threadMap.set(traceId, {
+          id:        traceId,
+          platform:  platformId,
+          title:     c.payload?.convTitle || c.payload?.title || c.agent_name || 'Untitled',
+          commits:   [],
+          latest:    c.created_at || c.timestamp,
+          isCapture: !!platform,
+          agentName: c.agent_name,
+          agentId:   c.agent_id,
+          hasFork:   false,
+          isShared:  false,
+        });
+      }
+
+      const t = threadMap.get(traceId);
+      t.commits.push(c);
+      if (c.eventType === 'fork' || c.event_type === 'fork') t.hasFork = true;
+      if (c.created_at > t.latest) t.latest = c.created_at;
+    }
+
+    allThreads = [...threadMap.values()].sort((a,b) => new Date(b.latest) - new Date(a.latest));
+    renderThreadList();
+  } catch(e) {
+    console.error('[DM] loadThreads error:', e);
+    document.getElementById('thread-list').innerHTML = '<div class="thread-group-label" style="color:var(--red);">Failed to load — check connection</div>';
+  }
+}
+
+// ── Render thread list ────────────────────────────────────────────────────────
+function renderThreadList() {
+  const q = searchQuery.toLowerCase();
+  let threads = allThreads.filter(t => {
+    if (activeFilter === 'starred') return isStarred(t.id);
+    if (activeFilter === 'sdk') return !t.isCapture;
+    if (['claude','chatgpt','grok','gemini','perplexity'].includes(activeFilter)) return t.platform === activeFilter;
+    return true;
+  }).filter(t => {
+    if (!q) return true;
+    return getThreadTitle(t).toLowerCase().includes(q) ||
+           (t.platform && t.platform.includes(q)) ||
+           (t.agentName && t.agentName.toLowerCase().includes(q));
   });
 
-  // ── Toast ────────────────────────────────────────────
-  function toast(msg, duration = 2500) {
-    const el = document.getElementById('toast');
-    el.textContent = msg;
-    el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), duration);
+  if (!threads.length) {
+    document.getElementById('thread-list').innerHTML =
+      '<div class="thread-group-label">No conversations found</div>';
+    return;
   }
 
-  // ── Time ago ─────────────────────────────────────────
-  function ago(ts) {
-    if (!ts) return '—';
-    const d = Math.floor((Date.now() - new Date(ts)) / 1000);
-    if (isNaN(d)) return '—';
-    if (d < 60) return d + 's ago';
-    if (d < 3600) return Math.floor(d/60) + 'm ago';
-    if (d < 86400) return Math.floor(d/3600) + 'h ago';
-    return new Date(ts).toLocaleDateString();
-  }
+  // Group by time bucket
+  const groups = {};
+  threads.forEach(t => {
+    const g = relDate(t.latest);
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(t);
+  });
 
-  // ── Mask API key ─────────────────────────────────────
-  function maskKey(key) {
-    // Show prefix + last 4: dm_sk_••••••••••••••••a1b2
-    if (!key) return '';
-    const prefix = key.slice(0, 9); // "dm_sk_fd9"
-    const last4  = key.slice(-4);
-    return prefix + '••••••••••••••••' + last4;
-  }
+  const ORDER = ['Today','Yesterday','Previous 7 days','Previous 30 days','Older'];
+  let html = '';
+  ORDER.forEach(g => {
+    if (!groups[g]) return;
+    html += `<div class="thread-group-label">${g}</div>`;
+    groups[g].forEach(t => {
+      html += renderThreadRow(t);
+    });
+  });
 
-  // ── Create agent ─────────────────────────────────────
-  async function createAgent() {
-    const input = document.getElementById('agent-name-input');
-    const btn   = document.getElementById('create-btn');
-    const name  = input.value.trim();
-    if (!name) { toast('Enter a name for your agent'); return; }
+  document.getElementById('thread-list').innerHTML = html;
+}
 
-    btn.disabled = true;
-    btn.textContent = 'Creating...';
+function renderThreadRow(t) {
+  const title   = escHtml(getThreadTitle(t));
+  const starred = isStarred(t.id);
+  const platColor = PLAT_COLORS[t.platform] || '#9ca3af';
+  const platLabel = PLAT_LABELS[t.platform] || (t.isCapture ? t.platform : 'SDK');
+  const isActive  = selectedThread?.id === t.id;
 
-    try {
-      const res  = await fetch('/dashboard/agents', {
-        method: 'POST', headers: authHeaders(),
-        body: JSON.stringify({ agentName: name })
-      });
-      const data = await res.json();
-      if (data.error) { toast('Error: ' + data.error); return; }
-      input.value = '';
-      toast('✓ Agent created — copy your API key');
-      // Cache the new key for API calls
-      if (data.apiKey) {
-        dmApiKey = data.apiKey;
-        localStorage.setItem('dm_api_key', data.apiKey);
-        // Also update session
-        session.dm_api_key = data.apiKey;
-        localStorage.setItem('dm_session', JSON.stringify(session));
-      }
-      await loadAgents();
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '+ Create Agent';
-    }
-  }
-
-  // ── Load agents ───────────────────────────────────────
-  // ── Check if agent has active retention policy ───────
-  function isExpired(a) {
-    // Agents never expire — only their commits get cleaned up.
-    // Show "retention active" indicator if a retention policy is set.
-    return false; // reserved for future use
-  }
-
-  async function loadAgents() {
-    try {
-      const res  = await fetch('/dashboard/agents', { headers: authHeaders() });
-      const data = await res.json();
-      const grid = document.getElementById('agents-grid');
-
-      // Normalize fields
-      data.forEach(a => {
-        a.webhookUrl    = a.webhookUrl    || a.webhook_url    || null;
-        a.retentionDays = a.retentionDays ?? a.retention_days ?? null;
-      });
-
-      // Check if API key is available, prompt user if not
-      if (!dmApiKey) {
-        const stored = localStorage.getItem('dm_api_key');
-        if (stored) dmApiKey = stored;
-      }
-
-      if (!data.length) {
-        grid.innerHTML = `<div class="agents-empty">
-          <div class="agents-empty-icon">🤖</div>
-          <div class="agents-empty-title">No agents yet</div>
-          <div class="agents-empty-sub">Create your first agent above to get an API key</div>
-        </div>`;
-        return;
-      }
-
-      // Auto-populate dmApiKey from first visible agent key (for chain/share)
-      if (!dmApiKey) {
-        const stored = localStorage.getItem('dm_api_key');
-        if (stored) {
-          dmApiKey = stored;
-        } else if (data[0]?.apiKey && !data[0].apiKey.includes('···')) {
-          dmApiKey = data[0].apiKey;
-          localStorage.setItem('dm_api_key', data[0].apiKey);
-        }
-      }
-
-      grid.innerHTML = data.map(a => `
-        <div class="agent-card" id="card-${a.agentId}">
-          <div class="agent-card-head">
-            <div>
-              <div class="agent-name-row">
-                <div class="agent-status ${isExpired(a) ? 'expired' : ''}"></div>
-                <div class="agent-name">${escHtml(a.agentName)}</div>
-                ${isExpired(a) ? '<span class="agent-expired-badge">expired</span>' : ''}
-              </div>
-              <div class="agent-id" style="display:flex;align-items:center;gap:0.4rem;">
-                <span>${a.agentId}</span>
-                <button onclick="copyAgentId('${a.agentId}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:0.65rem;padding:0 0.2rem;font-family:var(--mono);transition:color 0.15s;user-select:none;-webkit-user-select:none;" title="Copy agent ID" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">⎘</button>
-              </div>
-            </div>
-            <div class="agent-actions">
-              <button class="agent-btn" onclick="rotateKey('${a.agentId}')">↻ Rotate key</button>
-              <button class="agent-btn danger" onclick="deleteAgent('${a.agentId}','${escHtml(a.agentName)}')">Delete</button>
-            </div>
-          </div>
-          <div class="agent-card-body">
-            <div class="api-key-label">API Key</div>
-            <div class="api-key-row">
-              <div class="api-key-val" id="key-display-${a.agentId}">${maskKey(a.apiKey)}</div>
-              <button class="reveal-btn" id="reveal-${a.agentId}"
-                onclick="toggleReveal('${a.agentId}','${a.apiKey}')">Reveal</button>
-              <button class="copy-btn" id="copy-${a.agentId}"
-                onclick="copyKey('${a.agentId}','${a.apiKey}')">Copy</button>
-            </div>
-            <div class="agent-meta">
-              <span>Created ${ago(a.createdAt)}</span>
-              ${a.lastActive ? `<span>Last active ${ago(a.lastActive)}</span>` : '<span>Never used</span>'}
-            </div>
-
-            <!-- Webhook settings -->
-            <div style="margin-top:0.85rem;padding-top:0.85rem;border-top:1px solid var(--border2);">
-              <div style="font-size:0.65rem;font-family:var(--mono);color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem;">Webhook</div>
-              <div style="display:flex;gap:0.4rem;align-items:center;">
-                <input id="webhook-${a.agentId}" type="url" placeholder="https://your-server.com/webhook"
-                  value="${escHtml(a.webhookUrl || '')}"
-                  style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:0.3rem 0.6rem;font-size:0.72rem;color:var(--text);font-family:var(--mono);outline:none;"
-                  onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"/>
-                <button class="agent-btn" onclick="saveWebhook('${a.agentId}')">Save</button>
-              </div>
-              <div style="font-size:0.67rem;color:var(--text3);margin-top:0.3rem;">
-                DarkMatter will POST to this URL when a commit arrives for this agent.
-              </div>
-            </div>
-
-            <!-- Retention settings -->
-            <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border2);">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
-                <div style="font-size:0.65rem;font-family:var(--mono);color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;">Retention</div>
-                ${a.retentionDays
-                  ? `<span style="font-family:var(--mono);font-size:0.65rem;color:var(--text3);">${retentionLabelStr(a.retentionDays)}</span>`
-                  : `<button class="agent-btn" id="add-ret-btn-${a.agentId}" onclick="showRetentionPicker('${a.agentId}')">+ Add retention</button>`
-                }
-              </div>
-              <div id="retention-picker-${a.agentId}" style="display:${a.retentionDays ? 'flex' : 'none'};flex-direction:column;gap:0.4rem;">
-                <div style="display:flex;gap:0.4rem;align-items:center;">
-                  <select id="retention-${a.agentId}"
-                    style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:0.3rem 0.6rem;font-size:0.72rem;color:var(--text);outline:none;cursor:pointer;"
-                    onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-                    onchange="handleRetentionChange('${a.agentId}')">
-                    <option value="null"   ${!a.retentionDays ? 'selected':''}>No retention</option>
-                    <option value="30"     ${a.retentionDays===30  ? 'selected':''}>1 month</option>
-                    <option value="90"     ${a.retentionDays===90  ? 'selected':''}>3 months</option>
-                    <option value="182"    ${a.retentionDays===182 ? 'selected':''}>6 months</option>
-                    <option value="365"    ${a.retentionDays===365 ? 'selected':''}>1 year</option>
-                    <option value="730"    ${a.retentionDays===730 ? 'selected':''}>2 years</option>
-                    <option value="custom" ${a.retentionDays && ![30,90,182,365,730].includes(a.retentionDays) ? 'selected':''}>Custom</option>
-                  </select>
-                  <button class="agent-btn" onclick="saveRetention('${a.agentId}')">Save</button>
-                </div>
-                <div id="retention-custom-${a.agentId}" style="display:none;align-items:center;gap:0.4rem;">
-                  <input id="retention-custom-val-${a.agentId}" type="number" min="1" placeholder="Days"
-                    style="width:80px;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:0.3rem 0.6rem;font-size:0.72rem;color:var(--text);outline:none;"
-                    onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"/>
-                  <span style="font-size:0.7rem;color:var(--text3);">days</span>
-                </div>
-              </div>
-            </div>
-          </div>
+  return `<div class="thread-row ${isActive?'active':''}" id="tr-${escHtml(t.id)}" onclick="selectThread('${escHtml(t.id)}')">
+    <div class="thread-plat" style="background:${platColor}18;color:${platColor};" title="${escHtml(platLabel)}">
+      ${platLabel ? platLabel[0] : '↯'}
+    </div>
+    <div class="thread-body">
+      <div class="thread-title">${title}</div>
+      <div class="thread-meta">
+        <span class="thread-time">${ago(t.latest)}</span>
+        <div class="thread-badges">
+          ${starred ? '<span class="thread-badge tb-star">★</span>' : ''}
+          ${t.hasFork ? '<span class="thread-badge tb-fork">fork</span>' : ''}
+          ${t.isShared ? '<span class="thread-badge tb-shared">shared</span>' : ''}
         </div>
-      `).join('');
-    } catch(e) { console.error(e); }
-  }
-
-  // ── Copy agent ID ────────────────────────────────────
-  // ── Share a commit chain ────────────────────────────────────
-  async function shareCommit(ctxId, btn) {
-    const orig = btn.textContent;
-    btn.textContent = '...';
-    try {
-      if (!dmApiKey) {
-        const stored = localStorage.getItem('dm_api_key');
-        if (stored) dmApiKey = stored;
-      }
-      if (!dmApiKey) {
-        toast('Copy your API key first — needed to create share links');
-        btn.textContent = orig;
-        return;
-      }
-      const res = await fetch(`/api/share/${ctxId}`, {
-        method: 'POST',
-        headers: { ...apiKeyHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ label: 'Shared from dashboard' }),
-      });
-      const data = await res.json();
-      if (data.shareUrl) {
-        // Copy to clipboard
-        await navigator.clipboard.writeText(data.shareUrl);
-        btn.textContent = '✓ copied';
-        btn.style.color = 'var(--green)';
-
-        // Show share popup
-        showSharePopup(data.shareUrl, ctxId);
-        setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2500);
-      } else {
-        btn.textContent = orig;
-        toast('Could not create share link');
-      }
-    } catch(e) {
-      btn.textContent = orig;
-      toast('Share failed');
-    }
-  }
-
-  function showSharePopup(shareUrl, ctxId) {
-    // Remove existing popup
-    const existing = document.getElementById('share-popup');
-    if (existing) existing.remove();
-
-    const popup = document.createElement('div');
-    popup.id = 'share-popup';
-    popup.style.cssText = `
-      position:fixed;bottom:1.5rem;right:1.5rem;
-      background:#fff;border:1px solid var(--border);border-radius:10px;
-      padding:1.1rem 1.25rem;box-shadow:0 8px 32px rgba(0,0,0,0.12);
-      z-index:9999;max-width:320px;font-family:var(--sans);
-    `;
-
-    const shortUrl = shareUrl.replace('https://darkmatterhub.ai','').slice(0,32) + '...';
-    const xText    = encodeURIComponent('Shared a DarkMatter chain — replayable AI workflow\n\n' + shareUrl);
-    const liUrl    = encodeURIComponent(shareUrl);
-
-    popup.innerHTML = `
-      <div style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:0.5rem;">Chain link created</div>
-      <div style="font-family:var(--mono);font-size:0.65rem;color:var(--text2);background:var(--bg2);padding:0.4rem 0.6rem;border-radius:5px;margin-bottom:0.75rem;word-break:break-all;">${shareUrl}</div>
-      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
-        <button onclick="navigator.clipboard.writeText('${shareUrl}');this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy link',1500);"
-          style="font-size:0.72rem;padding:0.3rem 0.65rem;border-radius:5px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;font-family:var(--sans);">Copy link</button>
-        <button onclick="copySummaryFromDash('${ctxId}',this)"
-          style="font-size:0.72rem;padding:0.3rem 0.65rem;border-radius:5px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;font-family:var(--sans);">Copy summary</button>
-        <a href="https://twitter.com/intent/tweet?text=${xText}" target="_blank"
-          style="font-size:0.72rem;padding:0.3rem 0.65rem;border-radius:5px;border:1px solid var(--border);background:#000;color:#fff;text-decoration:none;font-family:var(--sans);">X</a>
-        <a href="https://www.linkedin.com/sharing/share-offsite/?url=${liUrl}" target="_blank"
-          style="font-size:0.72rem;padding:0.3rem 0.65rem;border-radius:5px;border:1px solid var(--border);background:#0a66c2;color:#fff;text-decoration:none;font-family:var(--sans);">LinkedIn</a>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <a href="${shareUrl}" target="_blank" style="font-size:0.68rem;color:var(--accent);">Open chain page →</a>
-        <button onclick="document.getElementById('share-popup').remove()"
-          style="font-size:0.68rem;color:var(--text3);background:none;border:none;cursor:pointer;">Dismiss</button>
+    </div>
+    <button class="thread-menu-btn" onclick="event.stopPropagation();openThreadMenu('${escHtml(t.id)}',this)">⋯</button>
+  </div>`;
+}
+
+// ── Select thread → show conversation ─────────────────────────────────────────
+function selectThread(id) {
+  selectedThread = allThreads.find(t => t.id === id) || null;
+  if (!selectedThread) return;
+
+  // Update sidebar active state
+  document.querySelectorAll('.thread-row').forEach(r => r.classList.remove('active'));
+  const row = document.getElementById('tr-' + id);
+  if (row) row.classList.add('active');
+
+  // Update header
+  document.getElementById('conv-title').textContent = getThreadTitle(selectedThread);
+  const platLabel = PLAT_LABELS[selectedThread.platform] || (selectedThread.isCapture ? selectedThread.platform : 'SDK agent');
+  const turnCount = selectedThread.commits.length;
+  document.getElementById('conv-meta').innerHTML = `
+    <span style="color:${PLAT_COLORS[selectedThread.platform]||'var(--text3)'};">${escHtml(platLabel)}</span>
+    <span>·</span>
+    <span>${turnCount} turn${turnCount!==1?'s':''}</span>
+    <span>·</span>
+    <span>${ago(selectedThread.latest)}</span>
+  `;
+  document.getElementById('main-actions').style.display = 'flex';
+
+  // Render conversation
+  renderConversation(selectedThread);
+
+  // Close chain drawer if open
+  document.getElementById('chain-drawer').classList.remove('open');
+}
+
+// ── Render conversation as chat ────────────────────────────────────────────────
+function renderConversation(thread) {
+  const area = document.getElementById('conv-area');
+  const empty = document.getElementById('empty-conv');
+  if (empty) empty.style.display = 'none';
+
+  // Sort commits by timestamp
+  const commits = [...thread.commits].sort((a,b) =>
+    new Date(a.created_at||a.timestamp) - new Date(b.created_at||b.timestamp)
+  );
+
+  if (!commits.length) {
+    area.innerHTML = '<div class="empty-conv"><div class="empty-conv-title">No messages in this thread</div></div>';
+    return;
+  }
+
+  let html = '';
+  commits.forEach((c, i) => {
+    const p = c.payload || {};
+    const role = p.role || c.actors?.from?.role || (i % 2 === 0 ? 'user' : 'assistant');
+    const text = p.text || p.summary || p.output || p.input || p.prompt || JSON.stringify(p).slice(0,200);
+    const model = p.model || c.actors?.to?.model || c.agent_info?.model || '';
+    const isUser = role === 'user';
+    const timestamp = c.created_at || c.timestamp;
+    const ctxId = c.id || '';
+    const isVerified = c.verified || c.integrity?.verification_status === 'valid';
+
+    if (isUser) {
+      html += `<div class="msg-group">
+        <div class="msg-role">
+          <div class="msg-role-icon" style="background:#f3f4f6;">👤</div>
+          You
+        </div>
+        <div class="msg-bubble user">${escHtml(text)}</div>
+        <div class="msg-footer">
+          <span class="msg-time">${ago(timestamp)}</span>
+          ${isVerified ? '<span class="msg-dm-badge">✓ recorded</span>' : ''}
+          ${ctxId ? `<button class="msg-chain-btn" onclick="openChainDrawerForCtx('${escHtml(ctxId)}')">⑂ ${escHtml(ctxId.slice(-8))}</button>` : ''}
+        </div>
+      </div>`;
+    } else {
+      const platColor = PLAT_COLORS[thread.platform] || '#9ca3af';
+      const platLabel = PLAT_LABELS[thread.platform] || 'Agent';
+      html += `<div class="msg-group">
+        <div class="msg-role">
+          <div class="msg-role-icon" style="background:${platColor}18;color:${platColor};">${platLabel[0]||'A'}</div>
+          ${escHtml(platLabel)}${model ? ` <span style="font-size:10px;color:var(--text3);font-weight:400;">${escHtml(model)}</span>` : ''}
+        </div>
+        <div class="msg-bubble assistant">${formatAssistantMessage(text)}</div>
+        <div class="msg-footer">
+          <span class="msg-time">${ago(timestamp)}</span>
+          ${isVerified ? '<span class="msg-dm-badge">✓ verified</span>' : ''}
+          ${ctxId ? `<button class="msg-chain-btn" onclick="openChainDrawerForCtx('${escHtml(ctxId)}')">⑂ ${escHtml(ctxId.slice(-8))}</button>` : ''}
+        </div>
+      </div>`;
+    }
+  });
+
+  area.innerHTML = html;
+  area.scrollTop = area.scrollHeight;
+}
+
+// Format assistant message — preserve code blocks
+function formatAssistantMessage(text) {
+  if (!text) return '';
+  // Convert code blocks
+  let html = escHtml(text);
+  // Simple markdown-like code blocks
+  html = html.replace(/```([a-z]*)\n?([\s\S]*?)```/g, (_, lang, code) =>
+    `<pre><code>${code}</code></pre>`
+  );
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Paragraphs
+  html = html.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
+  return `<p>${html}</p>`;
+}
+
+// ── Thread menu ────────────────────────────────────────────────────────────────
+function openThreadMenu(id, btn) {
+  // Close any open menu
+  document.getElementById('tm-popup')?.remove();
+  if (activeMenuId === id) { activeMenuId = null; return; }
+  activeMenuId = id;
+
+  const thread = allThreads.find(t => t.id === id);
+  if (!thread) return;
+
+  const rect = btn.getBoundingClientRect();
+  const starred = isStarred(id);
+
+  const menu = document.createElement('div');
+  menu.id = 'tm-popup';
+  menu.className = 'thread-menu';
+  menu.style.top  = (rect.bottom + 4) + 'px';
+  menu.style.left = Math.max(4, rect.right - 180) + 'px';
+
+  menu.innerHTML = `
+    <button class="tm-item" onclick="starThread('${escHtml(id)}')">
+      <span class="tm-icon">${starred?'★':'☆'}</span>${starred?'Unstar':'Star'}
+    </button>
+    <button class="tm-item" onclick="renameThread('${escHtml(id)}')">
+      <span class="tm-icon">✏️</span>Rename
+    </button>
+    <div class="tm-sep"></div>
+    <button class="tm-item" onclick="shareThread('${escHtml(id)}')">
+      <span class="tm-icon">↗</span>Share
+    </button>
+    <button class="tm-item" onclick="forkThread('${escHtml(id)}')">
+      <span class="tm-icon">⑂</span>Fork
+    </button>
+    <button class="tm-item" onclick="copyThreadLink('${escHtml(id)}')">
+      <span class="tm-icon">🔗</span>Copy link
+    </button>
+    <div class="tm-sep"></div>
+    <button class="tm-item" onclick="viewThreadMeta('${escHtml(id)}')">
+      <span class="tm-icon">ℹ</span>View metadata
+    </button>
+    <button class="tm-item" onclick="exportThread('${escHtml(id)}')">
+      <span class="tm-icon">↓</span>Export
+    </button>
+    <div class="tm-sep"></div>
+    <button class="tm-item danger" onclick="deleteThread('${escHtml(id)}')">
+      <span class="tm-icon">🗑</span>Delete
+    </button>
+  `;
+
+  document.body.appendChild(menu);
+
+  // Close on outside click
+  const close = (e) => {
+    if (!menu.contains(e.target) && e.target !== btn) {
+      menu.remove(); activeMenuId = null;
+      document.removeEventListener('click', close);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', close), 0);
+}
+
+function starThread(id) {
+  toggleStar(id);
+  document.getElementById('tm-popup')?.remove();
+  activeMenuId = null;
+  renderThreadList();
+  toast(isStarred(id) ? '☆ Unstarred' : '★ Starred');
+}
+
+function renameThread(id) {
+  document.getElementById('tm-popup')?.remove();
+  activeMenuId = null;
+  const thread = allThreads.find(t => t.id === id);
+  if (!thread) return;
+  currentRenameId = id;
+  document.getElementById('rename-input').value = getThreadTitle(thread);
+  openModal('rename-modal');
+  setTimeout(() => document.getElementById('rename-input').select(), 50);
+}
+
+function confirmRename() {
+  const title = document.getElementById('rename-input').value.trim();
+  if (!title || !currentRenameId) return;
+  saveRename(currentRenameId, title);
+  closeModal('rename-modal');
+  renderThreadList();
+  if (selectedThread?.id === currentRenameId) {
+    document.getElementById('conv-title').textContent = title;
+  }
+  toast('✓ Renamed');
+}
+
+document.getElementById('rename-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmRename();
+  if (e.key === 'Escape') closeModal('rename-modal');
+});
+
+async function shareThread(id) {
+  id = id || selectedThread?.id;
+  if (!id) return;
+  const thread = allThreads.find(t => t.id === id);
+  document.getElementById('tm-popup')?.remove();
+  activeMenuId = null;
+  if (!thread?.commits?.length) { toast('No commits to share'); return; }
+  const tipCtx = thread.commits[thread.commits.length - 1]?.id;
+  if (!tipCtx) return;
+  if (!dmApiKey) { toast('Copy your API key first'); return; }
+  try {
+    const res = await fetch(`/api/share/${tipCtx}`, {
+      method: 'POST', headers: apiKeyHeaders(),
+      body: JSON.stringify({ label: getThreadTitle(thread) }),
+    });
+    const data = await res.json();
+    if (data.shareUrl) {
+      await navigator.clipboard.writeText(data.shareUrl);
+      toast('✓ Share link copied to clipboard');
+    }
+  } catch(e) { toast('Share failed: ' + e.message); }
+}
+
+async function forkThread(id) {
+  id = id || selectedThread?.id;
+  if (!id) return;
+  const thread = allThreads.find(t => t.id === id);
+  document.getElementById('tm-popup')?.remove();
+  activeMenuId = null;
+  if (!thread?.commits?.length) { toast('No commits to fork'); return; }
+  const tipCtx = thread.commits[thread.commits.length - 1]?.id;
+  if (!tipCtx || !dmApiKey) { toast('Need API key — copy it from an agent card'); return; }
+  try {
+    const res = await fetch(`/api/fork/${tipCtx}`, {
+      method: 'POST', headers: apiKeyHeaders(),
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    if (data.id) {
+      toast(`✓ Fork created → ${data.id.slice(-8)}`);
+      await loadThreads();
+    }
+  } catch(e) { toast('Fork failed: ' + e.message); }
+}
+
+function copyThreadLink(id) {
+  document.getElementById('tm-popup')?.remove();
+  activeMenuId = null;
+  navigator.clipboard.writeText(location.origin + '/dashboard?t=' + id);
+  toast('✓ Link copied');
+}
+
+function viewThreadMeta(id) {
+  document.getElementById('tm-popup')?.remove();
+  activeMenuId = null;
+  const t = allThreads.find(x => x.id === id);
+  if (!t) return;
+  toast(`${t.commits.length} commits · ${t.platform||'sdk'} · ${t.id.slice(-12)}`);
+}
+
+async function exportThread(id) {
+  document.getElementById('tm-popup')?.remove();
+  activeMenuId = null;
+  const thread = allThreads.find(t => t.id === id);
+  if (!thread) return;
+  const data = JSON.stringify(thread.commits, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `darkmatter-thread-${id.slice(-8)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✓ Exported');
+}
+
+async function deleteThread(id) {
+  document.getElementById('tm-popup')?.remove();
+  activeMenuId = null;
+  toast('Thread deletion not yet implemented — delete individual agents to remove their data.');
+}
+
+// ── Chain drawer ──────────────────────────────────────────────────────────────
+function openChainDrawer() {
+  if (!selectedThread) return;
+  const tipCtx = selectedThread.commits[selectedThread.commits.length - 1]?.id;
+  if (tipCtx) openChainDrawerForCtx(tipCtx);
+}
+
+async function openChainDrawerForCtx(ctxId) {
+  document.getElementById('chain-drawer').classList.add('open');
+  const body = document.getElementById('chain-drawer-body');
+  body.innerHTML = '<div style="color:var(--text3);font-size:13px;">Loading chain...</div>';
+
+  try {
+    const res  = await fetch(`/api/replay/${ctxId}?mode=summary`, {
+      headers: dmApiKey ? apiKeyHeaders() : await authHeaders()
+    });
+    if (!res.ok) throw new Error('Not found');
+    const data = await res.json();
+    renderChainDrawer(data);
+  } catch(e) {
+    body.innerHTML = `<div style="color:var(--red);font-size:13px;">${escHtml(e.message)}</div>`;
+  }
+}
+
+function renderChainDrawer(data) {
+  const intact = data.chainIntact;
+  let html = `<div style="margin-bottom:12px;">
+    <span style="font-family:var(--mono);font-size:11px;color:${intact?'var(--green)':'var(--red)'};">
+      ${intact?'✓ Chain intact':'✗ Chain broken'}
+    </span>
+    <span style="font-size:11px;color:var(--text3);margin-left:8px;">${data.totalSteps} steps</span>
+  </div>`;
+
+  (data.replay || []).forEach((step, i) => {
+    const isFork = step.eventType === 'fork';
+    const isErr  = step.integrity?.chainValid === false;
+    const agentName = step.createdBy?.agent_name || `Step ${step.step}`;
+    const h = step.integrity?.payload_hash?.slice(7,13) || '';
+    html += `<div class="chain-node">
+      <div class="chain-dot ${isFork?'fork':isErr?'err':''}"></div>
+      <div class="chain-step-card">
+        <div class="chain-step-head">
+          <span class="chain-step-num">Step ${step.step}</span>
+          <span class="chain-step-name">${escHtml(agentName)}</span>
+          <span class="chain-step-time">${ago(step.timestamp)}</span>
+        </div>
+        ${h ? `<div class="chain-step-hash">${h}···</div>` : ''}
       </div>
-    `;
+    </div>`;
+  });
 
-    document.body.appendChild(popup);
-    // Auto-dismiss after 12 seconds
-    setTimeout(() => { if (document.getElementById('share-popup')) popup.remove(); }, 12000);
+  document.getElementById('chain-drawer-body').innerHTML = html;
+  document.getElementById('chain-verify-btn').dataset.ctx = data.replay?.[data.replay.length-1]?.id || '';
+  document.getElementById('chain-export-btn').dataset.ctx = data.replay?.[0]?.id || '';
+}
+
+function closeChainDrawer() {
+  document.getElementById('chain-drawer').classList.remove('open');
+}
+
+async function verifyCurrentChain() {
+  const ctxId = document.getElementById('chain-verify-btn').dataset.ctx;
+  if (!ctxId) return;
+  try {
+    const res  = await fetch(`/api/verify/${ctxId}`, { headers: dmApiKey ? apiKeyHeaders() : await authHeaders() });
+    const data = await res.json();
+    toast(data.chain_intact ? `✓ Verified — ${data.length} steps intact` : `✗ Broken at step ${data.broken_at}`);
+  } catch(e) { toast('Verify failed'); }
+}
+
+async function exportCurrentChain() {
+  const ctxId = document.getElementById('chain-export-btn').dataset.ctx;
+  if (!ctxId || !dmApiKey) { toast('Need API key to export'); return; }
+  try {
+    const res = await fetch(`/api/export/${ctxId}`, { headers: apiKeyHeaders() });
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `proof_bundle_${ctxId.slice(-8)}.zip`; a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) { toast('Export failed: ' + e.message); }
+}
+
+// ── Filter / search ───────────────────────────────────────────────────────────
+function setFilter(f) {
+  activeFilter = f;
+  document.querySelectorAll('.sf-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === f);
+  });
+  renderThreadList();
+}
+
+document.getElementById('search-input').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  renderThreadList();
+});
+
+// Keyboard shortcut: / focuses search
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && document.activeElement !== document.getElementById('search-input')
+      && document.activeElement !== document.getElementById('agent-name-input')
+      && document.activeElement !== document.getElementById('rename-input')) {
+    e.preventDefault();
+    document.getElementById('search-input').focus();
   }
-
-  async function copySummaryFromDash(ctxId, btn) {
-    const orig = btn.textContent;
-    btn.textContent = '...';
-    try {
-      const res = await fetch(`/api/share/${ctxId}/markdown`, {
-        headers: dmApiKey ? apiKeyHeaders() : authHeaders(),
-      });
-      const data = await res.json();
-      if (data.markdown) {
-        await navigator.clipboard.writeText(data.markdown);
-        btn.textContent = '✓ Copied';
-        setTimeout(() => btn.textContent = orig, 1500);
-      }
-    } catch(e) {
-      btn.textContent = orig;
-    }
+  if (e.key === 'Escape') {
+    document.getElementById('search-input').blur();
+    closeChainDrawer();
+    document.getElementById('tm-popup')?.remove();
   }
+});
 
-  function copyAgentId(agentId) {
-    navigator.clipboard.writeText(agentId);
-    toast('Agent ID copied to clipboard');
-  }
+// ── Agents panel ──────────────────────────────────────────────────────────────
+function toggleAgentsPanel() {
+  agentsPanelOpen = !agentsPanelOpen;
+  document.getElementById('agents-panel-body').classList.toggle('open', agentsPanelOpen);
+  document.getElementById('agents-toggle').textContent = agentsPanelOpen ? '▼' : '▲';
+}
 
-  // ── Save webhook URL ─────────────────────────────────
-  async function saveWebhook(agentId) {
-    const url = document.getElementById('webhook-' + agentId)?.value?.trim() || null;
-    try {
-      const res = await fetch(`/dashboard/agents/${agentId}/webhook`, {
-        method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ webhookUrl: url || null }),
-      });
-      if (!res.ok) throw new Error((await res.json()).error);
-      toast(url ? '📡 Webhook saved' : 'Webhook removed');
-    } catch(e) { toast('Error: ' + e.message); }
-  }
-
-  // ── Retention helpers ────────────────────────────────
-  function retentionLabelStr(days) {
-    if (!days) return 'No retention';
-    if (days === 30)  return '1 month';
-    if (days === 90)  return '3 months';
-    if (days === 182) return '6 months';
-    if (days === 365) return '1 year';
-    if (days === 730) return '2 years';
-    return days + ' days';
-  }
-
-  function showRetentionPicker(agentId) {
-    const btn    = document.getElementById('add-ret-btn-' + agentId);
-    const picker = document.getElementById('retention-picker-' + agentId);
-    if (btn)    btn.style.display    = 'none';
-    if (picker) picker.style.display = 'flex';
-  }
-
-  function handleRetentionChange(agentId) {
-    const sel    = document.getElementById('retention-' + agentId);
-    const custom = document.getElementById('retention-custom-' + agentId);
-    if (custom) custom.style.display = sel?.value === 'custom' ? 'flex' : 'none';
-  }
-
-  // ── Save retention policy ────────────────────────────
-  async function saveRetention(agentId) {
-    const sel = document.getElementById('retention-' + agentId);
-    let days;
-    if (sel?.value === 'null') {
-      days = null;
-    } else if (sel?.value === 'custom') {
-      const customVal = document.getElementById('retention-custom-val-' + agentId)?.value;
-      days = parseInt(customVal);
-      if (!days || days < 1) { toast('Enter a valid number of days'); return; }
-    } else {
-      days = parseInt(sel?.value);
-    }
-    try {
-      const res = await fetch(`/dashboard/agents/${agentId}/retention`, {
-        method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ retentionDays: days }),
-      });
-      if (!res.ok) throw new Error((await res.json()).error);
-      toast(days ? `Retention set to ${retentionLabelStr(days)}` : 'Retention removed');
-      await loadAgents();
-    } catch(e) { toast('Error: ' + e.message); }
-  }
-
-  // ── Reveal / hide API key ────────────────────────────
-  const revealed = {};
-
-  function toggleReveal(agentId, fullKey) {
-    const display = document.getElementById('key-display-' + agentId);
-    const btn     = document.getElementById('reveal-' + agentId);
-    if (revealed[agentId]) {
-      display.textContent = maskKey(fullKey);
-      btn.textContent = 'Reveal';
-      revealed[agentId] = false;
-    } else {
-      display.textContent = fullKey;
-      btn.textContent = 'Hide';
-      revealed[agentId] = true;
-    }
-  }
-
-  // ── Copy API key ─────────────────────────────────────
-  function copyKey(agentId, key) {
-    // Also cache for API calls (chain view, share)
-    if (key && !key.includes('···')) {
-      dmApiKey = key;
-      localStorage.setItem('dm_api_key', key);
-      session.dm_api_key = key;
+async function createAgent() {
+  const input = document.getElementById('agent-name-input');
+  const btn   = document.getElementById('create-btn');
+  const name  = input.value.trim();
+  if (!name) { toast('Enter an agent name'); return; }
+  btn.disabled = true; btn.textContent = 'Creating...';
+  try {
+    const h = await authHeaders();
+    const res = await fetch('/dashboard/agents', { method:'POST', headers:h, body:JSON.stringify({agentName:name}) });
+    const data = await res.json();
+    if (data.error) { toast('Error: ' + data.error); return; }
+    input.value = '';
+    if (data.apiKey) {
+      dmApiKey = data.apiKey;
+      localStorage.setItem('dm_api_key', data.apiKey);
+      session.dm_api_key = data.apiKey;
       localStorage.setItem('dm_session', JSON.stringify(session));
     }
-    navigator.clipboard.writeText(key);
-    const btn = document.getElementById('copy-' + agentId);
-    btn.textContent = 'Copied!';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
-    toast('API key copied to clipboard');
+    toast('✓ Agent created — API key ready');
+    await loadAgents();
+  } finally {
+    btn.disabled = false; btn.textContent = '+ Create';
   }
+}
 
-  // ── Rotate key ───────────────────────────────────────
-  async function rotateKey(agentId) {
-    if (!confirm('Rotate API key? Your current key stops working immediately.')) return;
-    try {
-      const res  = await fetch(`/dashboard/agents/${agentId}/rotate`, { method:'POST', headers: authHeaders() });
-      const data = await res.json();
-      if (data.error) { toast('Error: ' + data.error); return; }
-      toast('✓ API key rotated — copy your new key');
-      delete revealed[agentId];
-      await loadAgents();
-    } catch(e) { toast('Something went wrong'); }
-  }
+async function loadAgents() {
+  try {
+    const h = await authHeaders();
+    const res = await fetch('/dashboard/agents', { headers: h });
+    if (res.status === 401) { await refreshSession(); return loadAgents(); }
+    const data = await res.json();
 
-  // ── Delete agent ─────────────────────────────────────
-  async function deleteAgent(agentId, name) {
-    if (!confirm(`Delete agent "${name}"? This cannot be undone.`)) return;
-    try {
-      await fetch(`/dashboard/agents/${agentId}`, { method:'DELETE', headers: authHeaders() });
-      toast('Agent deleted');
-      await loadAgents();
-      await loadCommits();
-    } catch(e) { toast('Something went wrong'); }
-  }
+    document.getElementById('agent-count').textContent = data.length ? `(${data.length})` : '';
 
-  // ── Log tab / Chain tab switching ────────────────────
-  function switchLogTab(tab) {
-    const logEl   = document.getElementById('view-log');
-    const chainEl = document.getElementById('view-chain');
-    const tabLog  = document.getElementById('tab-log');
-    const tabChn  = document.getElementById('tab-chain');
-    if (tab === 'log') {
-      logEl.style.display   = '';
-      chainEl.style.display = 'none';
-      tabLog.style.background  = 'var(--bg2)';
-      tabLog.style.color       = 'var(--text)';
-      tabChn.style.background  = 'none';
-      tabChn.style.color       = 'var(--text2)';
-    } else {
-      logEl.style.display   = 'none';
-      chainEl.style.display = '';
-      tabChn.style.background  = 'var(--bg2)';
-      tabChn.style.color       = 'var(--text)';
-      tabLog.style.background  = 'none';
-      tabLog.style.color       = 'var(--text2)';
+    if (!dmApiKey) {
+      const stored = localStorage.getItem('dm_api_key');
+      if (stored) dmApiKey = stored;
+      else if (data[0]?.apiKey && !data[0].apiKey.includes('···')) {
+        dmApiKey = data[0].apiKey;
+        localStorage.setItem('dm_api_key', data[0].apiKey);
+      }
     }
-  }
 
-  function refreshCurrentTab() {
-    const chainVisible = document.getElementById('view-chain')?.style.display !== 'none';
-    if (chainVisible) loadChainView();
-    else loadCommits();
-  }
+    const grid = document.getElementById('agents-grid');
+    if (!data.length) {
+      grid.innerHTML = '<div class="agents-empty">No agents yet — create one to get an API key</div>';
+      return;
+    }
 
-  // ── Chain viewer ──────────────────────────────────────
-  function shortId(id) {
-    return id ? id.slice(-8) : '?';
-  }
-
-  async function loadChainView() {
-    const ctxId  = document.getElementById('chain-ctx-input')?.value?.trim();
-    const content = document.getElementById('chain-view-content');
-    if (!ctxId) { toast('Enter a context ID'); return; }
-
-    content.innerHTML = '<div class="log-empty">Loading chain...</div>';
-
-    try {
-      // Use summary mode first for fast load, then can expand nodes
-      const res  = await fetch(`/api/replay/${ctxId}?mode=summary`, { headers: dmApiKey ? apiKeyHeaders() : authHeaders() });
-      if (!res.ok) throw new Error((await res.json()).error || 'Not found');
-      const data = await res.json();
-
-      const intactColor = data.chainIntact ? 'var(--green)' : 'var(--red)';
-      const intactLabel = data.chainIntact ? '✓ Chain intact' : '✗ Chain broken';
-
-      // Build one-line chain summary
-      const forkCount  = data.summary?.forkPoints?.length || 0;
-      const agentCount = data.summary?.agents?.length || 0;
-      const brokenStep = data.replay?.findIndex(s => s.integrity?.chainValid === false);
-      const lastValidNode = brokenStep > 0 ? data.replay[brokenStep - 1]?.id : null;
-      const summaryParts = [
-        `${data.totalSteps} step${data.totalSteps !== 1 ? 's' : ''}`,
-        agentCount > 0 ? `${agentCount} agent${agentCount !== 1 ? 's' : ''}` : null,
-        forkCount > 0 ? `forked at step ${data.replay?.findIndex(s => s.eventType === 'fork') + 1}` : null,
-        data.chainIntact ? 'chain intact' : `broken at step ${brokenStep + 1}`,
-        data.summary?.duration && data.summary.duration !== '0s' ? data.summary.duration : null,
-      ].filter(Boolean).join(' · ');
-
-      let html = `
-        <!-- Chain header -->
-        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:0.85rem 1rem;margin-bottom:1rem;">
-          <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.5rem;">
-            <div style="font-family:var(--mono);font-size:0.65rem;color:${intactColor};font-weight:600;">${intactLabel}</div>
-            <div style="font-size:0.7rem;color:var(--text3);">${summaryParts}</div>
+    grid.innerHTML = data.map(a => `
+      <div class="agent-card" id="acard-${a.agentId}">
+        <div class="agent-dot"></div>
+        <div class="agent-info">
+          <div class="agent-name">${escHtml(a.agentName)}</div>
+          <div class="agent-id-row">
+            <span class="agent-id">${escHtml(a.agentId)}</span>
+            <button class="abtn" onclick="navigator.clipboard.writeText('${escHtml(a.agentId)}');toast('Agent ID copied')">⎘</button>
           </div>
-          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-            <button onclick="replayFromStart('${ctxId}')" class="agent-btn" style="font-size:0.68rem;">▶ Replay</button>
-            <button onclick="verifyChain('${ctxId}')" class="agent-btn" style="font-size:0.68rem;">🔍 Verify</button>
-            <button onclick="copyVerifySummary('${ctxId}')" class="agent-btn" style="font-size:0.68rem;">⎘ Copy proof</button>
-            <button onclick="exportChain('${ctxId}')" class="agent-btn" style="font-size:0.68rem;">↓ Export</button>
+          <div class="agent-key-row">
+            <div class="api-key-val" id="akv-${a.agentId}">${maskKey(a.apiKey)}</div>
+            <button class="abtn" onclick="revealAgentKey('${escHtml(a.agentId)}','${escHtml(a.apiKey)}','${escHtml(a.agentName)}')">View</button>
+            <button class="abtn" onclick="copyAgentKey('${escHtml(a.agentId)}','${escHtml(a.apiKey)}')">Copy</button>
+            <button class="abtn danger" onclick="deleteAgent('${escHtml(a.agentId)}','${escHtml(a.agentName)}')">Delete</button>
           </div>
         </div>
-        ${!data.chainIntact ? `<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:6px;padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.75rem;color:var(--red);display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
-          <span>⚠ Chain integrity gap at step ${brokenStep + 1}. Commits allowed (permissive) but chain is untrusted.</span>
-          ${lastValidNode ? `<button onclick="forkFromNode('${lastValidNode}')" class="agent-btn" style="font-size:0.68rem;color:var(--amber);border-color:rgba(245,158,11,0.4);white-space:nowrap;">⑂ Fork from last valid node</button>` : ''}
-        </div>` : ''}
-        <!-- Color legend -->
-        <div style="display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
-          <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.65rem;color:var(--text3);"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);"></div>verified</div>
-          <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.65rem;color:var(--text3);"><div style="width:8px;height:8px;border-radius:50%;background:var(--amber);"></div>fork point</div>
-          <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.65rem;color:var(--text3);"><div style="width:8px;height:8px;border-radius:50%;background:var(--red);"></div>integrity broken</div>
-          <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.65rem;color:var(--text3);">Root: <span style="font-family:var(--mono);">${shortId(data.rootId)}</span></div>
-        </div>
-        <div style="position:relative;padding-left:1.5rem;">
-          <div style="position:absolute;left:9px;top:0;bottom:0;width:1px;background:var(--border);"></div>`;
+      </div>
+    `).join('');
+  } catch(e) { console.error('[DM] loadAgents error:', e); }
+}
 
-      data.replay.forEach((step, i) => {
-        const cb      = step.createdBy || {};
-        const isLast  = i === data.replay.length - 1;
-        const isFork  = step.eventType === 'fork';
-        const isBroken = step.integrity?.chainValid === false;
-        const dotColor = isFork ? 'var(--amber)' : isBroken ? 'var(--red)' : 'var(--green)';
-        const evBadge  = step.eventType || 'commit';
-        const nodeId   = step.id;
-        const nodeShort = shortId(nodeId);
+function revealAgentKey(id, key, name) {
+  currentKeyModal = { id, key, name };
+  document.getElementById('key-modal-title').textContent = name + ' — API Key';
+  document.getElementById('key-modal-id').textContent = id;
+  document.getElementById('key-modal-key').textContent = key;
+  openModal('key-modal');
+}
 
-        html += `
-          <div style="position:relative;margin-bottom:${isLast ? '0' : '0.85rem'};">
-            <div style="position:absolute;left:-1.5rem;top:0.65rem;width:10px;height:10px;border-radius:50%;background:${dotColor};box-shadow:0 0 5px ${dotColor};flex-shrink:0;"></div>
-            <div style="background:var(--bg2);border:1px solid ${isBroken ? 'rgba(239,68,68,0.3)' : 'var(--border)'};border-radius:8px;padding:0.75rem 0.9rem;">
-              <!-- Node header — always visible -->
-              <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-                <span style="font-family:var(--mono);font-size:0.6rem;color:var(--text3);">Step ${step.step}</span>
-                <span class="cbadge ${evBadge}" style="font-size:0.58rem;">${evBadge}</span>
-                ${isFork ? '<span style="font-size:0.62rem;color:var(--amber);font-weight:600;">⑂ Fork point</span>' : ''}
-                <span style="font-size:0.78rem;font-weight:600;color:var(--text);">${escHtml(cb.agent_name || cb.agent_id || '?')}</span>
-                ${cb.model ? `<span style="font-size:0.65rem;color:var(--text3);">${escHtml(cb.model)}</span>` : ''}
-                <span style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
-                  <span style="font-family:var(--mono);font-size:0.6rem;color:var(--text3);">${ago(step.timestamp)}</span>
-                  <!-- Short ID + copy -->
-                  <button onclick="event.stopPropagation();copyCtxId('${nodeId}','${nodeShort}')"
-                    style="font-family:var(--mono);font-size:0.58rem;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:0.08rem 0.35rem;cursor:pointer;transition:color 0.12s;"
-                    title="Copy full context ID"
-                    onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">${nodeShort} ⎘</button>
-                </span>
-              </div>
-              <!-- Action row -->
-              <div style="display:flex;gap:0.4rem;margin-top:0.5rem;flex-wrap:wrap;" id="actions-${nodeShort}">
-                <button onclick="loadNodePayload('${nodeId}','${nodeShort}')" class="agent-btn" style="font-size:0.65rem;">View payload</button>
-                <button onclick="forkFromNode('${nodeId}')" class="agent-btn" style="font-size:0.65rem;">⑂ Fork from here</button>
-                <button onclick="replayFromNode('${nodeId}')" class="agent-btn" style="font-size:0.65rem;">▶ Replay from here</button>
-              </div>
-              <!-- Payload — loaded on demand -->
-              <div id="payload-${nodeShort}" style="display:none;margin-top:0.65rem;border-top:1px solid var(--border2);padding-top:0.65rem;">
-                <div style="font-size:0.65rem;color:var(--text3);margin-bottom:0.25rem;font-family:var(--mono);">ctx_···${nodeShort}</div>
-              </div>
-            </div>
-          </div>`;
-      });
+function copyFromModal() {
+  if (!currentKeyModal) return;
+  const key = currentKeyModal.key;
+  navigator.clipboard.writeText(key);
+  dmApiKey = key;
+  localStorage.setItem('dm_api_key', key);
+  session.dm_api_key = key;
+  localStorage.setItem('dm_session', JSON.stringify(session));
+  toast('✓ API key copied');
+}
 
-      html += `</div>`;
-      content.innerHTML = html;
+async function rotateKeyModal() {
+  if (!currentKeyModal) return;
+  if (!confirm('Rotate this key? The current key stops working immediately.')) return;
+  try {
+    const h = await authHeaders();
+    const res = await fetch(`/dashboard/agents/${currentKeyModal.id}/rotate`, { method:'POST', headers:h });
+    const data = await res.json();
+    if (data.error) { toast('Error: ' + data.error); return; }
+    closeModal('key-modal');
+    toast('✓ Key rotated — copy the new key');
+    await loadAgents();
+  } catch(e) { toast('Rotate failed'); }
+}
 
-    } catch(e) {
-      content.innerHTML = `<div class="log-empty" style="color:var(--red);">Error: ${escHtml(e.message)}</div>`;
-    }
-  }
+function copyAgentKey(id, key) {
+  navigator.clipboard.writeText(key);
+  dmApiKey = key;
+  localStorage.setItem('dm_api_key', key);
+  session.dm_api_key = key;
+  localStorage.setItem('dm_session', JSON.stringify(session));
+  toast('✓ API key copied');
+}
 
-  function copyCtxId(fullId, shortId) {
-    navigator.clipboard.writeText(fullId);
-    toast(`Copied: ${shortId}···`);
-  }
+async function deleteAgent(id, name) {
+  if (!confirm(`Delete agent "${name}"? This cannot be undone.`)) return;
+  try {
+    const h = await authHeaders();
+    await fetch(`/dashboard/agents/${id}`, { method:'DELETE', headers:h });
+    toast('Agent deleted');
+    await loadAgents();
+    await loadThreads();
+  } catch(e) { toast('Delete failed'); }
+}
 
-  async function loadNodePayload(ctxId, nodeShort) {
-    const el = document.getElementById('payload-' + nodeShort);
-    if (!el) return;
-    if (el.style.display !== 'none') { el.style.display = 'none'; return; }
-    el.innerHTML = '<div style="font-size:0.7rem;color:var(--text3);">Loading…</div>';
-    el.style.display = '';
-    try {
-      const res  = await fetch(`/api/replay/${ctxId}?mode=full`, { headers: dmApiKey ? apiKeyHeaders() : authHeaders() });
-      const data = await res.json();
-      const step = data.replay?.[data.replay.length - 1];
-      if (!step?.payload) { el.innerHTML = '<div style="font-size:0.7rem;color:var(--text3);">No payload</div>'; return; }
-      if (step.integrity?.payload_hash) {
-        el.innerHTML += `<div style="font-family:var(--mono);font-size:0.62rem;color:var(--green);margin-bottom:0.35rem;">${escHtml(step.integrity.payload_hash.slice(0,30))}···</div>`;
-      }
-      el.innerHTML += `<pre style="font-size:0.68rem;color:var(--text2);white-space:pre-wrap;word-break:break-word;line-height:1.6;max-height:180px;overflow-y:auto;">${escHtml(JSON.stringify(step.payload, null, 2))}</pre>`;
-    } catch(e) {
-      el.innerHTML = `<div style="font-size:0.7rem;color:var(--red);">Failed: ${escHtml(e.message)}</div>`;
-    }
-  }
+// ── Account deletion ──────────────────────────────────────────────────────────
+async function deleteAccount() {
+  const input = document.getElementById('delete-confirm-input').value.trim();
+  if (input !== 'DELETE') { toast('Type DELETE to confirm'); return; }
+  const deleteCommits = document.getElementById('delete-commits-choice').value === 'delete';
 
-  async function forkFromNode(ctxId) {
-    const key = prompt('Enter your agent API key to fork from this node:');
-    if (!key) return;
-    try {
-      const res = await fetch(`/api/fork/${ctxId}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fromCheckpoint: ctxId }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      const newShort = shortId(data.id);
-      // Auto-switch to new branch in chain view
-      const input = document.getElementById('chain-ctx-input');
-      if (input) input.value = data.id;
-      // Show confirmation
-      toast(`✓ Fork created → ···${newShort}  Now viewing new branch`);
-      // Load the new branch immediately
-      setTimeout(() => loadChainView(), 300);
-    } catch(e) { toast('Fork failed: ' + e.message); }
-  }
-
-  function replayFromStart(ctxId) {
-    document.getElementById('chain-ctx-input').value = ctxId;
-    toast('Replaying from root — scroll up to see full chain');
-    loadChainView();
-  }
-
-  function replayFromNode(ctxId) {
-    document.getElementById('chain-ctx-input').value = ctxId;
-    loadChainView();
-  }
-
-  async function verifyChain(ctxId) {
-    try {
-      const res  = await fetch(`/api/verify/${ctxId}`, { headers: dmApiKey ? apiKeyHeaders() : authHeaders() });
-      const data = await res.json();
-      if (data.chain_intact) {
-        toast(`✓ Chain verified — ${data.length} steps, integrity intact`);
-      } else {
-        toast(`✗ Chain broken at ${data.broken_at}`);
-      }
-    } catch(e) { toast('Verify failed: ' + e.message); }
-  }
-
-  async function copyVerifySummary(ctxId) {
-    try {
-      const res  = await fetch(`/api/verify/${ctxId}`, { headers: dmApiKey ? apiKeyHeaders() : authHeaders() });
-      const data = await res.json();
-      const summary = [
-        `DarkMatter Verification Summary`,
-        `─────────────────────────────────`,
-        `Context ID    : ${data.ctx_id}`,
-        `Lineage Root  : ${data.lineage_root}`,
-        `Chain Length  : ${data.length} steps`,
-        `Chain Intact  : ${data.chain_intact ? '✓ YES' : '✗ BROKEN'}`,
-        data.broken_at ? `Broken At     : ${data.broken_at}` : null,
-        `Root Hash     : ${data.root_hash}`,
-        `Tip Hash      : ${data.tip_hash}`,
-        data.forked ? `Fork Points   : ${data.fork_points?.join(', ')}` : null,
-        `Verified At   : ${data.verified_at}`,
-        `─────────────────────────────────`,
-        `Verified by darkmatterhub.ai`,
-      ].filter(Boolean).join('\n');
-      await navigator.clipboard.writeText(summary);
-      toast('✓ Verification summary copied to clipboard');
-    } catch(e) { toast('Copy failed: ' + e.message); }
-  }
-
-  async function exportChain(ctxId) {
-    try {
-      const res  = await fetch(`/api/export/${ctxId}`, { headers: authHeaders() });
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = `darkmatter-export-${ctxId.slice(-8)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast('✓ Export downloaded');
-    } catch(e) { toast('Export failed: ' + e.message); }
-  }
-
-  // ── Load commits ─────────────────────────────────────
-  async function loadCommits() {
-    try {
-      const res  = await fetch('/dashboard/commits', { headers: authHeaders() });
-      const data = await res.json();
-      const list = document.getElementById('commit-list');
-
-      if (!data.length) {
-        list.innerHTML = [
-          '<div class="log-empty" style="padding:2.5rem;">',
-          '<div style="font-size:1.5rem;margin-bottom:0.75rem;">🌑</div>',
-          '<div style="font-size:0.88rem;font-weight:600;color:var(--text);margin-bottom:0.35rem;">No commits yet</div>',
-          '<div style="font-size:0.78rem;color:var(--text2);margin-bottom:1.25rem;">Connect an agent and start committing context.</div>',
-          '<div style="display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap;">',
-          '<a href="/docs#quickstart" style="font-size:0.75rem;background:linear-gradient(90deg,#7C3AED,#2563EB,#22D3EE);color:#fff;padding:0.4rem 1rem;border-radius:6px;text-decoration:none;font-weight:500;">Quickstart guide →</a>',
-          '</div>',
-          '</div>'
-        ].join('');
-        return;
-      }
-
-      // Store commits for modal access
-      window._commits = data;
-
-      list.innerHTML = data.map((c, i) => {
-        const p       = c.payload || c.context || {};
-        const preview = p.output || p.input || p.task || p.next_task || p.status ||
-                        (typeof (c.context||{}).output === 'string' ? c.context.output.slice(0,60) : '') ||
-                        Object.keys(p)[0] || 'context handoff';
-        const previewStr = typeof preview === 'object' ? JSON.stringify(preview) : String(preview);
-        const trimmed = previewStr.length > 58 ? previewStr.slice(0,58)+'...' : previewStr;
-        const evType  = c.event?.type || (c.context?._eventType) || c.eventType || 'commit';
-        const evLabel = { commit:'commit', revert:'revert', override:'override', branch:'branch', merge:'merge', error:'error', spawn:'spawn', timeout:'timeout', retry:'retry', checkpoint:'checkpoint', consent:'consent', redact:'redact', escalate:'escalate', audit:'audit', fork:'fork' }[evType] || 'commit';
-        const shortid = c.id ? c.id.slice(-8) : '';
-        return `
-        <div class="cr" style="cursor:pointer" onclick="openCtxModal(window._commits[${i}])" title="Click to inspect full context">
-          <div style="min-width:0;flex:1;">
-            <div class="cmsg">
-              <span class="cbadge ${(c.verified || c.integrity?.verification_status==='valid') ? 'v' : 'r'}">${(c.verified || c.integrity?.verification_status==='valid') ? '✓' : '✗'}</span>
-              <span class="cbadge ${evType}">${evLabel}</span>
-              <span class="ctxt">${escHtml(trimmed)}</span>
-            </div>
-            <div class="cby">
-              <span>${escHtml(c.from)} ──▶ ${escHtml(c.to)}</span>
-              ${shortid ? `<button onclick="event.stopPropagation();navigator.clipboard.writeText('${c.id}');this.textContent='✓';setTimeout(()=>this.textContent='${shortid} ⎘',1200);"
-                style="font-family:var(--mono);font-size:0.58rem;color:var(--text3);background:none;border:none;cursor:pointer;padding:0;user-select:none;"
-                title="Copy context ID">${shortid} ⎘</button>` : ''}
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:0.75rem;margin-left:0.75rem;flex-shrink:0;">
-            <div class="tme">${ago(c.timestamp)}</div>
-            ${c.id ? `<button onclick="event.stopPropagation();document.getElementById('chain-ctx-input').value='${c.id}';switchLogTab('chain');loadChainView();"
-              style="font-family:var(--mono);font-size:0.62rem;color:var(--text3);background:var(--bg2);border:1px solid var(--border);border-radius:4px;cursor:pointer;padding:0.15rem 0.45rem;white-space:nowrap;transition:all 0.12s;"
-              title="View chain" onmouseover="this.style.color='var(--accent)';this.style.borderColor='var(--accent)'" onmouseout="this.style.color='var(--text3)';this.style.borderColor='var(--border)'">⑂ chain</button>` : ''}
-            ${c.id ? `<button onclick="event.stopPropagation();shareCommit('${c.id}',this)"
-              style="font-family:var(--mono);font-size:0.62rem;color:var(--text3);background:var(--bg2);border:1px solid var(--border);border-radius:4px;cursor:pointer;padding:0.15rem 0.45rem;white-space:nowrap;transition:all 0.12s;"
-              title="Share chain link" onmouseover="this.style.color='var(--violet)';this.style.borderColor='var(--violet)'" onmouseout="this.style.color='var(--text3)';this.style.borderColor='var(--border)'">↗ share</button>` : ''}
-          </div>
-        </div>`;
-      }).join('');
-    } catch(e) { console.error(e); }
-  }
-
-  // ── Toggle context detail ────────────────────────────
-  function toggleCtx(row) {
-    const detail = row.querySelector('.ctx-detail');
-    if (detail) detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
-  }
-
-  // ── Context modal ────────────────────────────────────
-  let currentCommit = null;
-
-  function openCtxModal(c) {
-    currentCommit = c;
-    const ctx = c.context || {};
-
-    document.getElementById('ctx-title').textContent =
-      ctx.task || ctx.next_task || 'Context Handoff';
-    document.getElementById('ctx-meta').textContent =
-      `${c.from} ──▶ ${c.to}  ·  ${ago(c.timestamp)}  ·  ${c.verified ? '✓ verified' : '✗ rejected'}`;
-
-    // Summary tab — canonical v2 structure
-    let summaryHtml = '';
-
-    const createdBy = c.created_by || {};
-    const event     = c.event     || {};
-    const integrity = c.integrity || {};
-    const evType    = event.type  || c.eventType || ctx._eventType || 'commit';
-    const fromName  = createdBy.agent_name || c.from   || '';
-    const fromId    = createdBy.agent_id   || c.fromId || '';
-    const toName    = event.to_agent_name  || c.to     || '';
-    const toId      = event.to_agent_id    || c.toId   || '';
-    const intHash   = integrity.payload_hash || (c.integrityHash ? 'sha256:' + c.integrityHash : null);
-    const intStatus = integrity.verification_status || (c.verified ? 'valid' : 'rejected');
-    const parentId  = c.parent_id  || c.parentId  || null;
-    const traceId   = c.trace_id   || c.traceId   || null;
-    const branchKey = c.branch_key || c.branchKey || 'main';
-    const schemaVer = c.schema_version || c.schemaVersion || '0.9';
-    const createdAt = c.created_at || c.timestamp;
-    const role      = createdBy.role     || c.agentInfo?.role;
-    const provider  = createdBy.provider || c.agentInfo?.provider;
-    const model     = createdBy.model    || c.agentInfo?.model;
-
-    summaryHtml += `<div class="ctx-field"><div class="ctx-field-label">Status</div><div class="${intStatus === 'valid' ? 'ctx-badge-v' : 'ctx-badge-r'}">${intStatus === 'valid' ? '✓ Verified — immutable, chain intact' : '✗ Rejected — not delivered to recipient'}</div></div>`;
-    summaryHtml += `<div class="ctx-field"><div class="ctx-field-label">Event Type</div><div class="ctx-field-val"><span class="cbadge ${evType}" style="font-size:0.65rem;">${evType}</span></div></div>`;
-    summaryHtml += `<div class="ctx-field"><div class="ctx-field-label">Created By</div><div class="ctx-field-val">${escHtml(fromName)}${fromId && fromId !== fromName ? `<span style="font-family:var(--mono);font-size:0.62rem;color:var(--text3);margin-left:0.6rem;padding-left:0.6rem;border-left:1px solid var(--border2);">${escHtml(fromId)}</span>` : ''}</div></div>`;
-    summaryHtml += `<div class="ctx-field"><div class="ctx-field-label">Target Agent</div><div class="ctx-field-val">${escHtml(toName)}${toId && toId !== toName ? `<span style="font-family:var(--mono);font-size:0.62rem;color:var(--text3);margin-left:0.6rem;padding-left:0.6rem;border-left:1px solid var(--border2);">${escHtml(toId)}</span>` : ''}</div></div>`;
-    summaryHtml += `<div class="ctx-field"><div class="ctx-field-label">Created At</div><div class="ctx-field-val">${new Date(createdAt).toLocaleString()}</div></div>`;
-    if (parentId) summaryHtml += `<div class="ctx-field"><div class="ctx-field-label">Parent Context</div><div class="ctx-field-val" style="font-family:var(--mono);font-size:0.68rem;">${escHtml(parentId)}</div></div>`;
-    if (traceId)  summaryHtml += `<div class="ctx-field"><div class="ctx-field-label">Trace ID</div><div class="ctx-field-val" style="font-family:var(--mono);font-size:0.68rem;">${escHtml(traceId)}</div></div>`;
-    if (branchKey && branchKey !== 'main') summaryHtml += `<div class="ctx-field"><div class="ctx-field-label">Branch</div><div class="ctx-field-val">${escHtml(branchKey)}</div></div>`;
-    if (provider || model) summaryHtml += `<div class="ctx-field"><div class="ctx-field-label">Model</div><div class="ctx-field-val">${escHtml([provider, model].filter(Boolean).join(' / '))}</div></div>`;
-    if (role) summaryHtml += `<div class="ctx-field"><div class="ctx-field-label">Role</div><div class="ctx-field-val">${escHtml(role)}</div></div>`;
-    if (intHash) summaryHtml += `<div class="ctx-field"><div class="ctx-field-label">Integrity Hash</div><div class="ctx-field-val" style="font-family:var(--mono);font-size:0.62rem;color:var(--green);word-break:break-all;">${escHtml(intHash.slice(0,23))}···</div></div>`;
-    if (integrity.parent_hash) summaryHtml += `<div class="ctx-field"><div class="ctx-field-label">Parent Hash</div><div class="ctx-field-val" style="font-family:var(--mono);font-size:0.62rem;color:var(--text3);word-break:break-all;">${escHtml(integrity.parent_hash.slice(0,23))}···</div></div>`;
-    // Schema version shown in Raw JSON tab only
-
-    // Payload fields — use canonical payload or fall back to context
-    const payloadToRender = (c.payload && Object.keys(c.payload).length > 0) ? c.payload : ctx;
-    Object.entries(payloadToRender).forEach(([k, v]) => {
-      if (k === '_eventType') return;
-      const val = typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v);
-      summaryHtml += `<div class="ctx-field">
-        <div class="ctx-field-label">${escHtml(k)}</div>
-        <div class="ctx-pre">${escHtml(val)}</div>
-      </div>`;
+  try {
+    const h = await authHeaders();
+    const res = await fetch('/dashboard/account', {
+      method: 'DELETE', headers: h,
+      body: JSON.stringify({ deleteCommits }),
     });
+    if (!res.ok) { const d = await res.json(); toast('Error: ' + (d.error||'Failed')); return; }
+    localStorage.clear();
+    toast('Account deleted. Goodbye.');
+    setTimeout(() => location.href = '/', 2000);
+  } catch(e) { toast('Delete failed: ' + e.message); }
+}
 
-    document.getElementById('ctx-summary').innerHTML = summaryHtml;
-    document.getElementById('ctx-raw').innerHTML =
-      `<pre class="ctx-pre">${escHtml(JSON.stringify(c, null, 2))}</pre>`;
+// ── Export all commits ────────────────────────────────────────────────────────
+async function exportAll() {
+  try {
+    const h = await authHeaders();
+    const res = await fetch('/dashboard/commits', { headers:h });
+    const data = await res.json();
+    if (!data.length) { toast('No commits to export'); return; }
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], {type:'application/json'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `darkmatter-export-${new Date().toISOString().slice(0,10)}.json`; a.click();
+    URL.revokeObjectURL(url);
+    toast(`✓ Exported ${data.length} commits`);
+  } catch(e) { toast('Export failed'); }
+}
 
-    switchCtxTab('summary');
-    document.getElementById('ctx-modal').classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
+// ── Modals ────────────────────────────────────────────────────────────────────
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeModalBg(id, e) {
+  if (e.target === document.getElementById(id)) closeModal(id);
+}
 
-  function closeCtxModal(e) {
-    if (e.target === document.getElementById('ctx-modal')) closeCtxModalDirect();
-  }
-
-  function closeCtxModalDirect() {
-    document.getElementById('ctx-modal').classList.remove('open');
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-bg.open').forEach(m => m.classList.remove('open'));
     document.body.style.overflow = '';
   }
+});
 
-  function switchCtxTab(name) {
-    document.querySelectorAll('.ctx-tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('ctx-summary').style.display = name === 'summary' ? 'block' : 'none';
-    document.getElementById('ctx-raw').style.display     = name === 'raw'     ? 'block' : 'none';
-    document.querySelectorAll('.ctx-tab')[name === 'summary' ? 0 : 1].classList.add('active');
+// ── Auth ──────────────────────────────────────────────────────────────────────
+function logout() {
+  localStorage.removeItem('dm_session');
+  localStorage.removeItem('dm_api_key');
+  location.href = '/login';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.getElementById('agent-name-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') createAgent();
+});
+
+// Auto-open agents panel if no commits yet
+async function init() {
+  await Promise.all([loadThreads(), loadAgents()]);
+  if (!allThreads.length) {
+    agentsPanelOpen = true;
+    document.getElementById('agents-panel-body').classList.add('open');
+    document.getElementById('agents-toggle').textContent = '▼';
   }
+}
 
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeCtxModalDirect();
-  });
-
-  // ── Export commit log ─────────────────────────────────
-  async function exportLog() {
-    try {
-      const res  = await fetch('/dashboard/commits', { headers: authHeaders() });
-      const data = await res.json();
-      if (!data.length) { toast('No commits to export'); return; }
-
-      const rows = [
-        [
-          'context_id',
-          'created_by_agent', 'created_by_agent_id',
-          'target_agent',     'target_agent_id',
-          'event_type', 'verification_status',
-          'parent_context_id', 'trace_id', 'branch_key',
-          'agent_role', 'agent_provider', 'agent_model',
-          'payload_hash', 'parent_hash',
-          'created_at',
-          'input', 'output', 'memory', 'variables',
-          'full_payload',
-        ],
-        ...data.map(c => {
-          const cb = c.created_by || {};
-          const ev = c.event      || {};
-          const ig = c.integrity  || {};
-          const p  = c.payload    || c.context || {};
-          const { _eventType, ...cleanP } = p;
-          return [
-            c.id                || '',
-            cb.agent_name       || c.from   || '',
-            cb.agent_id         || c.fromId || '',
-            ev.to_agent_name    || c.to     || '',
-            ev.to_agent_id      || c.toId   || '',
-            ev.type             || c.eventType || 'commit',
-            ig.verification_status || (c.verified ? 'valid' : 'rejected'),
-            c.parent_id         || c.parentId  || '',
-            c.trace_id          || c.traceId   || '',
-            c.branch_key        || c.branchKey || 'main',
-            cb.role             || c.agentInfo?.role     || '',
-            cb.provider         || c.agentInfo?.provider || '',
-            cb.model            || c.agentInfo?.model    || '',
-            ig.payload_hash     || (c.integrityHash ? 'sha256:' + c.integrityHash : ''),
-            ig.parent_hash      || (c.parentHash  ? 'sha256:' + c.parentHash  : ''),
-            c.created_at        || c.timestamp || '',
-            typeof p.input     === 'object' ? JSON.stringify(p.input)     : (p.input     || ''),
-            typeof p.output    === 'object' ? JSON.stringify(p.output)    : (p.output    || ''),
-            typeof p.memory    === 'object' ? JSON.stringify(p.memory)    : (p.memory    || ''),
-            typeof p.variables === 'object' ? JSON.stringify(p.variables) : (p.variables || ''),
-            JSON.stringify(cleanP),
-          ];
-        })
-      ];
-
-      const csv  = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = `darkmatter-audit-${new Date().toISOString().slice(0,10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast('✓ Audit log exported as CSV');
-    } catch(e) {
-      toast('Export failed — try again');
-    }
-  }
-
-  // ── Logout ────────────────────────────────────────────
-  function logout() {
-    localStorage.removeItem('dm_session');
-    window.location.href = '/login';
-  }
-
-  // ── Escape HTML ───────────────────────────────────────
-  function escHtml(s) {
-    return String(s)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  // ── Enter key on input ────────────────────────────────
-  document.getElementById('agent-name-input')
-    .addEventListener('keydown', e => { if (e.key==='Enter') createAgent(); });
-
-  // ── Init ─────────────────────────────────────────────
-  // ── Feature request / Support modals ─────────────────
-  function openModal(id) {
-    const el = document.getElementById(id);
-    el.style.display = 'flex';
-    setTimeout(() => el.style.opacity = '1', 10);
-  }
-
-  function closeModal(id, e) {
-    if (e && e.target !== document.getElementById(id)) return;
-    document.getElementById(id).style.display = 'none';
-    // Clear fields
-    ['email','body'].forEach(f => {
-      const el = document.getElementById(id.replace('-modal','-'+f));
-      if (el) el.value = '';
-    });
-    const status = document.getElementById(id.replace('-modal','-status'));
-    if (status) status.style.display = 'none';
-  }
-
-  async function submitFeatureRequest() {
-    const email = document.getElementById('feature-email').value.trim();
-    const body  = document.getElementById('feature-body').value.trim();
-    if (!email || !body) { toast('Please fill in both fields'); return; }
-    try {
-      await fetch('/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'feature', email, message: body }),
-      });
-      document.getElementById('feature-status').style.display = 'block';
-      setTimeout(() => closeModal('feature-modal'), 2000);
-    } catch(e) { toast('Something went wrong — try again'); }
-  }
-
-  async function submitSupport() {
-    const email = document.getElementById('support-email').value.trim();
-    const body  = document.getElementById('support-body').value.trim();
-    if (!email || !body) { toast('Please fill in both fields'); return; }
-    try {
-      await fetch('/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'support', email, message: body }),
-      });
-      document.getElementById('support-status').style.display = 'block';
-      setTimeout(() => closeModal('support-modal'), 2000);
-    } catch(e) { toast('Something went wrong — try again'); }
-  }
-
-  loadAgents();
-  loadCommits();
-
-  // Show admin link if user has admin access (detected server-side on click)
-  // We check by pinging /admin/stats — if 200, show the link
-  (async () => {
-    try {
-      const r = await fetch('/admin/stats', { headers: authHeaders() });
-      if (r.ok) {
-        const link = document.getElementById('admin-link');
-        if (link) link.style.display = 'inline';
-      }
-    } catch(e) {}
-  })();
+init();
 </script>
 </body>
 </html>

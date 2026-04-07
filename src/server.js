@@ -2975,6 +2975,75 @@ app.delete('/api/policies/:policyId', apiLimiter, requireApiKey, async (req, res
   }
 });
 
+
+// ═══════════════════════════════════════════════════
+// TOKEN REFRESH — POST /api/auth/refresh
+// Fixes "commits disappear after staying logged in"
+// Supabase JWTs expire after 1 hour; this refreshes them
+// ═══════════════════════════════════════════════════
+app.post('/api/auth/refresh', async (req, res) => {
+  try {
+    const { refresh_token } = req.body;
+    if (!refresh_token) return res.status(400).json({ error: 'refresh_token required' });
+
+    const { data, error } = await supabaseService.auth.refreshSession({ refresh_token });
+    if (error) return res.status(401).json({ error: error.message });
+
+    res.json({
+      access_token:  data.session.access_token,
+      refresh_token: data.session.refresh_token,
+      expires_at:    data.session.expires_at,
+    });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════
+// ACCOUNT DELETION — DELETE /dashboard/account
+// deleteCommits: true  → hard delete all commit records
+// deleteCommits: false → anonymise (null user_id) — preserves chain integrity
+// Honest: we tell users what each choice means before they confirm
+// ═══════════════════════════════════════════════════
+app.delete('/dashboard/account', requireAuth, async (req, res) => {
+  try {
+    const userId       = req.user.id;
+    const deleteCommits = req.body?.deleteCommits === true;
+
+    // 1. Handle commits
+    if (deleteCommits) {
+      // Hard delete — breaks any shared chain links
+      const { data: agentIds } = await supabaseService
+        .from('agents').select('agent_id').eq('user_id', userId);
+      if (agentIds?.length) {
+        const ids = agentIds.map(a => a.agent_id);
+        await supabaseService.from('commits').delete().in('agent_id', ids);
+        await supabaseService.from('commit_content').delete().in('id',
+          (await supabaseService.from('commits').select('id').in('agent_id', ids)).data?.map(c=>c.id)||[]
+        );
+      }
+    } else {
+      // Anonymise — set user_id to null on agents so commits are orphaned but chain stays intact
+      await supabaseService.from('agents').update({ user_id: null }).eq('user_id', userId);
+    }
+
+    // 2. Delete agents
+    if (deleteCommits) {
+      await supabaseService.from('agents').delete().eq('user_id', userId);
+    }
+
+    // 3. Delete user account via Supabase admin API
+    const { error } = await supabaseService.auth.admin.deleteUser(userId);
+    if (error) throw error;
+
+    res.json({ deleted: true, commitsDeleted: deleteCommits });
+
+  } catch(err) {
+    console.error('Account deletion error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Static page routes ────────────────────────────────────────────────────────
 app.get('/compare',      (req, res) => res.sendFile(path.join(__dirname, '../public/compare.html')));
 app.get('/compliance',   (req, res) => res.sendFile(path.join(__dirname, '../public/compliance.html')));
