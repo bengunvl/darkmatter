@@ -11,303 +11,323 @@
 :root{
   --bg:#ffffff;--bg2:#f8f9fa;--bg3:#f1f3f5;--bg4:#e9ecef;
   --border:#e5e7eb;--border2:#d1d5db;
-  --text:#111827;--text2:#4b5563;--text3:#9ca3af;
-  --accent:#2563EB;--green:#059669;--red:#dc2626;--amber:#d97706;
-  --violet:#7C3AED;
+  --text:#111827;--text2:#4b5563;--text3:#9ca3af;--text4:#d1d5db;
+  --accent:#2563EB;--green:#059669;--red:#dc2626;--amber:#d97706;--violet:#7C3AED;
   --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
-  --sidebar-w:290px;--header-h:56px;--font-base:15px;
+  --sb:260px;--hh:52px;
 }
 html,body{height:100%;overflow:hidden;}
 body{font-family:var(--sans);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;font-size:15px;}
 
-/* ── HEADER ── */
+/* HEADER */
 header{
-  position:fixed;top:0;left:0;right:0;z-index:200;
-  height:var(--header-h);background:var(--bg);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 1rem;gap:0.75rem;
+  position:fixed;inset:0 0 auto 0;z-index:100;
+  height:var(--hh);background:var(--bg);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;gap:10px;
 }
 .logo{display:flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0;}
-.logo-mark{width:28px;height:28px;}
+.logo-svg{width:26px;height:26px;}
 .logo-name{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text);letter-spacing:-.02em;}
 .logo-grad{background:linear-gradient(90deg,#7C3AED,#2563EB,#22D3EE);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.hsep{width:1px;height:18px;background:var(--border);flex-shrink:0;}
-.hpage{font-size:13px;color:var(--text2);font-weight:500;}
-.hright{margin-left:auto;display:flex;align-items:center;gap:0.6rem;}
-.hbtn{font-size:12px;color:var(--text2);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:5px;font-family:var(--sans);}
-.hbtn:hover{background:var(--bg3);color:var(--text);}
-.user-chip{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);}
-.user-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--accent));display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;font-family:var(--sans);flex-shrink:0;}
+.h-sep{width:1px;height:16px;background:var(--border);}
+.h-label{font-size:13px;color:var(--text3);}
+.h-right{margin-left:auto;display:flex;align-items:center;gap:4px;}
+.h-btn{font-size:13px;color:var(--text2);background:none;border:none;cursor:pointer;padding:5px 9px;border-radius:6px;font-family:var(--sans);transition:background .12s;}
+.h-btn:hover{background:var(--bg3);}
+.avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--accent));display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;flex-shrink:0;cursor:pointer;}
 
-/* ── 3-COLUMN LAYOUT ── */
-.app{
-  display:grid;
-  grid-template-columns:var(--sidebar-w) 1fr;
-  height:calc(100vh - var(--header-h));
-  margin-top:var(--header-h);
-  overflow:hidden;
-}
+/* LAYOUT */
+.app{display:grid;grid-template-columns:var(--sb) 1fr;height:calc(100vh - var(--hh));margin-top:var(--hh);overflow:hidden;}
 
-/* ── LEFT SIDEBAR: Thread history ── */
-.sidebar{
-  border-right:1px solid var(--border);
-  display:flex;flex-direction:column;
-  background:var(--bg2);
-  overflow:hidden;
-}
-.sidebar-top{padding:10px 10px 0;flex-shrink:0;}
-.search-box{
-  display:flex;align-items:center;gap:6px;
-  background:var(--bg);border:1px solid var(--border);border-radius:7px;
-  padding:6px 10px;margin-bottom:10px;
-}
-.search-icon{color:var(--text3);font-size:13px;flex-shrink:0;}
-.search-input{font-size:14px;
-  border:none;background:none;outline:none;
-  font-size:13px;color:var(--text);width:100%;
-  font-family:var(--sans);
-}
-.search-input::placeholder{color:var(--text3);}
-.search-kbd{font-family:var(--mono);font-size:9px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);padding:1px 4px;border-radius:3px;flex-shrink:0;}
-.sidebar-filters{display:flex;gap:4px;padding:0 0 8px;}
-.sf-btn{font-size:11px;padding:3px 8px;border-radius:20px;border:1px solid transparent;background:none;cursor:pointer;color:var(--text3);font-family:var(--sans);transition:all .12s;}
-.sf-btn.active{background:var(--bg);border-color:var(--border);color:var(--text);font-weight:500;}
-.sf-btn:hover:not(.active){color:var(--text2);}
-.thread-list{flex:1;overflow-y:auto;padding:0 6px 12px;}
-.thread-list::-webkit-scrollbar{width:3px;}
-.thread-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
-.thread-group-label{font-size:11px;color:var(--text3);font-weight:600;padding:10px 8px 4px;letter-spacing:.02em;}
-.thread-row{
+/* SIDEBAR */
+.sb{border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--bg2);overflow:hidden;}
+.sb-top{padding:10px;flex-shrink:0;}
+
+/* Search */
+.search{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 10px;margin-bottom:8px;transition:border-color .15s;}
+.search:focus-within{border-color:var(--accent);}
+.search-ic{font-size:14px;color:var(--text3);flex-shrink:0;}
+.search-inp{border:none;background:none;outline:none;font-size:14px;color:var(--text);width:100%;font-family:var(--sans);}
+.search-inp::placeholder{color:var(--text3);}
+.search-kbd{font-family:var(--mono);font-size:9px;color:var(--text4);background:var(--bg3);border:1px solid var(--border);padding:2px 4px;border-radius:3px;flex-shrink:0;}
+
+/* Source filters */
+.filters{display:flex;gap:3px;flex-wrap:wrap;padding-bottom:8px;}
+.f-btn{font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid transparent;background:none;cursor:pointer;color:var(--text3);font-family:var(--sans);transition:all .12s;white-space:nowrap;}
+.f-btn.on{background:var(--bg);border-color:var(--border2);color:var(--text);font-weight:500;}
+.f-btn:hover:not(.on){color:var(--text2);}
+
+/* Thread list */
+.tlist{flex:1;overflow-y:auto;padding:0 6px 16px;}
+.tlist::-webkit-scrollbar{width:3px;}
+.tlist::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.tg-label{font-size:11px;color:var(--text3);font-weight:600;padding:10px 6px 3px;letter-spacing:.03em;}
+
+/* Thread row */
+.tr{
   position:relative;display:flex;align-items:center;gap:0;
-  padding:7px 8px;border-radius:7px;cursor:pointer;
+  padding:8px 8px 8px 10px;border-radius:8px;cursor:pointer;
   transition:background .1s;margin-bottom:1px;
 }
-.thread-row:hover{background:var(--bg3);}
-.thread-row.active{background:var(--bg4);}
-.thread-plat{width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;margin-right:7px;}
-.thread-body{flex:1;min-width:0;}
-.thread-title{font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;}
-.thread-meta{display:flex;align-items:center;gap:4px;margin-top:1px;}
-.thread-preview{font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;margin-bottom:2px;}
-.thread-time{font-size:12px;color:var(--text3);}
-.thread-badges{display:flex;gap:3px;margin-left:auto;}
-.thread-badge{font-size:9px;padding:0 4px;border-radius:3px;line-height:15px;}
-.tb-fork{background:rgba(37,99,235,.08);color:var(--accent);}
-.tb-shared{background:rgba(5,150,105,.08);color:var(--green);}
-.tb-star{color:#f59e0b;font-size:11px;}
-.thread-menu-btn{
-  opacity:0;flex-shrink:0;
-  width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+.tr:hover{background:var(--bg3);}
+.tr.active{background:var(--bg4);border-left:2px solid var(--accent);padding-left:8px;}
+.tr-plat{
+  width:20px;height:20px;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;flex-shrink:0;margin-right:8px;
+}
+.tr-body{flex:1;min-width:0;}
+.tr-title{font-size:13.5px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;}
+.tr-preview{font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;line-height:1.3;}
+.tr-foot{display:flex;align-items:center;gap:4px;margin-top:3px;}
+.tr-time{font-size:11px;color:var(--text4);}
+.tr-tags{display:flex;gap:3px;margin-left:auto;}
+.tr-tag{font-size:9px;padding:1px 5px;border-radius:3px;line-height:14px;font-family:var(--mono);}
+.tt-fork{background:rgba(37,99,235,.07);color:var(--accent);}
+.tt-shared{background:rgba(5,150,105,.07);color:var(--green);}
+.tt-star{color:#f59e0b;}
+.tr-dots{
+  opacity:0;flex-shrink:0;width:24px;height:24px;
+  display:flex;align-items:center;justify-content:center;
   border-radius:5px;border:none;background:none;cursor:pointer;
-  font-size:14px;color:var(--text3);transition:all .1s;
-  margin-left:2px;
+  font-size:16px;color:var(--text3);transition:all .1s;margin-left:2px;
 }
-.thread-row:hover .thread-menu-btn,
-.thread-row.active .thread-menu-btn{opacity:1;}
-.thread-menu-btn:hover{background:var(--border);color:var(--text);}
+.tr:hover .tr-dots,.tr.active .tr-dots{opacity:1;}
+.tr-dots:hover{background:var(--border);color:var(--text);}
 
-/* dropdown menu */
-.thread-menu{
-  position:fixed;z-index:500;
-  background:var(--bg);border:1px solid var(--border);
-  border-radius:8px;padding:4px;min-width:160px;
-  box-shadow:0 8px 24px rgba(0,0,0,.12);
+/* Dropdown */
+.dropdown{
+  position:fixed;z-index:500;background:var(--bg);border:1px solid var(--border);
+  border-radius:10px;padding:4px;min-width:176px;
+  box-shadow:0 8px 30px rgba(0,0,0,.12);
 }
-.tm-item{
-  display:flex;align-items:center;gap:8px;
-  padding:6px 10px;border-radius:5px;font-size:13px;color:var(--text2);
-  cursor:pointer;border:none;background:none;width:100%;text-align:left;
-  font-family:var(--sans);transition:background .1s;
+.dd-item{
+  display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:7px;
+  font-size:13px;color:var(--text2);cursor:pointer;border:none;background:none;
+  width:100%;text-align:left;font-family:var(--sans);transition:background .1s;
 }
-.tm-item:hover{background:var(--bg3);color:var(--text);}
-.tm-item.danger:hover{background:rgba(220,38,38,.06);color:var(--red);}
-.tm-item .tm-icon{font-size:13px;width:16px;text-align:center;}
-.tm-sep{height:1px;background:var(--border);margin:3px 0;}
+.dd-item:hover{background:var(--bg3);color:var(--text);}
+.dd-item.red:hover{background:rgba(220,38,38,.05);color:var(--red);}
+.dd-ic{width:16px;text-align:center;font-size:13px;flex-shrink:0;}
+.dd-sep{height:1px;background:var(--border);margin:3px 0;}
 
-/* ── MAIN AREA ── */
+/* MAIN */
 .main{display:flex;flex-direction:column;overflow:hidden;}
-.main-header{
+
+/* Conversation header */
+.conv-head{
   padding:12px 20px;border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;
-  flex-shrink:0;min-height:52px;
+  flex-shrink:0;min-height:56px;gap:12px;
 }
-.main-title{font-size:16px;font-weight:600;color:var(--text);}
-.main-meta{font-size:13px;color:var(--text3);margin-top:1px;display:flex;align-items:center;gap:8px;}
-.main-actions{display:flex;gap:6px;}
-.mbtn{
-  font-size:12px;padding:5px 10px;border-radius:6px;
-  border:1px solid var(--border);background:var(--bg2);
+.conv-head-left{flex:1;min-width:0;}
+.conv-head-title{font-size:16px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.conv-head-meta{display:flex;align-items:center;gap:8px;margin-top:2px;flex-wrap:wrap;}
+.ch-badge{
+  font-size:11px;padding:2px 8px;border-radius:4px;font-family:var(--mono);
+  border:1px solid var(--border);color:var(--text3);background:var(--bg2);
+}
+.conv-head-actions{display:flex;gap:6px;flex-shrink:0;}
+.cbtn{
+  font-size:12.5px;padding:5px 12px;border-radius:7px;
+  border:1px solid var(--border);background:var(--bg);
   color:var(--text2);cursor:pointer;font-family:var(--sans);
-  display:flex;align-items:center;gap:4px;transition:all .12s;
+  display:flex;align-items:center;gap:5px;transition:all .12s;white-space:nowrap;
 }
-.mbtn:hover{border-color:var(--border2);color:var(--text);}
-.mbtn.primary{background:var(--accent);color:#fff;border-color:transparent;}
-.mbtn.primary:hover{filter:brightness(1.08);}
-
-/* ── CONVERSATION AREA ── */
-.conv-area{flex:1;overflow-y:auto;padding:0;}
-.conv-area::-webkit-scrollbar{width:4px;}
-.conv-area::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.cbtn:hover{border-color:var(--border2);color:var(--text);background:var(--bg2);}
+.cbtn.accent{background:var(--accent);color:#fff;border-color:transparent;}
+.cbtn.accent:hover{filter:brightness(1.08);}
 
 /* Messages */
-.msg-group{padding:20px 24px 0;}
-.msg-group:last-child{padding-bottom:20px;}
-.msg-role{font-size:12px;font-weight:600;color:var(--text3);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
-.msg-role-icon{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;}
-.msg-bubble{
-  font-size:14px;color:var(--text);line-height:1.7;
-  max-width:720px;
-}
-.msg-bubble.user{
-  background:#1d4ed8;color:#fff;
-  border-radius:18px 18px 4px 18px;padding:10px 16px;
-  max-width:560px;font-size:15px;margin-left:auto;
-}
-.msg-bubble.assistant{font-size:15px;line-height:1.75;}
-.msg-bubble code{font-family:var(--mono);font-size:12px;background:var(--bg3);padding:1px 4px;border-radius:3px;}
-.msg-bubble pre{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;font-family:var(--mono);font-size:12px;margin:8px 0;}
-.msg-footer{display:flex;align-items:center;gap:8px;margin-top:6px;}
-.msg-time{font-size:11px;color:var(--text3);}
-.msg-dm-badge{
-  font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:3px;
-  color:var(--green);background:rgba(5,150,105,.06);border:1px solid rgba(5,150,105,.15);
-}
-.msg-chain-btn{
-  font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;
-  font-family:var(--mono);padding:0;transition:color .12s;
-}
-.msg-chain-btn:hover{color:var(--accent);}
+.conv-area{flex:1;overflow-y:auto;padding:0;}
+.conv-area::-webkit-scrollbar{width:4px;}
+.conv-area::-webkit-scrollbar-thumb{background:var(--border2);}
 
-/* Empty state */
-.empty-conv{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:3rem;text-align:center;color:var(--text3);
-}
-.empty-conv-icon{font-size:2.5rem;margin-bottom:1rem;opacity:.4;}
-.empty-conv-title{font-size:15px;font-weight:600;color:var(--text2);margin-bottom:6px;}
-.empty-conv-sub{font-size:13px;color:var(--text3);line-height:1.6;max-width:320px;}
+.msg-wrap{max-width:780px;margin:0 auto;padding:0 24px;}
+.msg-group{padding-top:24px;}
+.msg-group:last-child{padding-bottom:28px;}
 
-/* Agents panel (below main) */
-.agents-panel{
-  border-top:1px solid var(--border);
-  background:var(--bg2);flex-shrink:0;
+/* User messages — right aligned */
+.msg-user-outer{display:flex;flex-direction:column;align-items:flex-end;}
+.msg-user-label{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;text-transform:uppercase;margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.msg-user-bubble{
+  background:#1e40af;color:#eff6ff;
+  border-radius:16px 16px 3px 16px;padding:10px 15px;
+  max-width:520px;font-size:15px;line-height:1.65;word-break:break-word;
 }
-.agents-panel-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:8px 16px;cursor:pointer;
-}
-.agents-panel-title{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;}
-.agents-panel-toggle{font-size:11px;color:var(--text3);}
-.agents-panel-body{padding:0 16px 12px;display:none;}
-.agents-panel-body.open{display:block;}
-.create-bar{display:flex;gap:6px;margin-bottom:12px;}
-.create-input{
-  flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;
-  padding:6px 10px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none;
-  transition:border-color .15s;
-}
-.create-input:focus{border-color:var(--accent);}
-.create-input::placeholder{color:var(--text3);}
-.create-btn{
-  background:var(--accent);color:#fff;font-weight:600;font-size:12px;
-  padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-family:var(--sans);
-  white-space:nowrap;transition:filter .15s;
-}
-.create-btn:hover{filter:brightness(1.08);}
-.create-btn:disabled{opacity:.5;cursor:not-allowed;}
-.agents-grid{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;}
-.agent-card{
-  background:var(--bg);border:1px solid var(--border);border-radius:7px;
-  padding:10px 12px;display:flex;align-items:center;gap:10px;
-}
-.agent-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
-.agent-info{flex:1;min-width:0;}
-.agent-name{font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.agent-id-row{display:flex;align-items:center;gap:4px;margin-top:1px;}
-.agent-id{font-family:var(--mono);font-size:10px;color:var(--text3);}
-.agent-key-row{display:flex;align-items:center;gap:4px;margin-top:4px;}
-.api-key-val{font-family:var(--mono);font-size:10px;color:var(--text2);background:var(--bg3);padding:2px 6px;border-radius:3px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.abtn{font-size:11px;padding:2px 7px;border-radius:4px;border:1px solid var(--border);background:none;color:var(--text2);cursor:pointer;font-family:var(--sans);}
-.abtn:hover{border-color:var(--accent);color:var(--accent);}
-.abtn.danger:hover{border-color:var(--red);color:var(--red);}
-.agents-empty{font-size:12px;color:var(--text3);padding:8px 0;}
+.msg-user-foot{display:flex;align-items:center;gap:6px;margin-top:4px;justify-content:flex-end;}
 
-/* ── MODALS ── */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:600;align-items:center;justify-content:center;padding:1rem;}
+/* Assistant messages — left aligned */
+.msg-ai-outer{display:flex;flex-direction:column;align-items:flex-start;}
+.msg-ai-label{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.04em;text-transform:uppercase;margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.msg-ai-plat{width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;}
+.msg-ai-body{font-size:15px;line-height:1.75;color:var(--text);max-width:660px;word-break:break-word;}
+.msg-ai-body p{margin-bottom:10px;}
+.msg-ai-body p:last-child{margin-bottom:0;}
+.msg-ai-body h2,.msg-ai-body h3,.msg-ai-body h4{font-weight:600;color:var(--text);margin:14px 0 6px;}
+.msg-ai-body h2{font-size:16px;} .msg-ai-body h3{font-size:15px;} .msg-ai-body h4{font-size:14px;}
+.msg-ai-body strong{font-weight:600;color:var(--text);}
+.msg-ai-body em{font-style:italic;}
+.msg-ai-body code{font-family:var(--mono);font-size:12.5px;background:var(--bg3);padding:1px 5px;border-radius:4px;color:var(--text2);}
+.msg-ai-body pre{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;margin:10px 0;position:relative;}
+.msg-ai-body pre code{background:none;padding:0;border-radius:0;font-size:13px;line-height:1.7;}
+.msg-ai-body ul,.msg-ai-body ol{margin:8px 0 8px 22px;}
+.msg-ai-body li{margin-bottom:4px;}
+.msg-ai-foot{display:flex;align-items:center;gap:6px;margin-top:6px;}
+
+/* Shared footer items */
+.msg-time{font-size:11px;color:var(--text4);}
+.msg-verified{font-family:var(--mono);font-size:9.5px;color:var(--green);background:rgba(5,150,105,.06);border:1px solid rgba(5,150,105,.14);padding:1px 6px;border-radius:3px;}
+.msg-chain-id{font-family:var(--mono);font-size:10px;color:var(--text4);background:none;border:none;cursor:pointer;padding:0;transition:color .12s;}
+.msg-chain-id:hover{color:var(--accent);}
+
+/* Metadata strip — collapsible under each message */
+.msg-meta-strip{
+  font-family:var(--mono);font-size:11px;color:var(--text3);
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+  padding:7px 10px;margin-top:6px;line-height:1.7;
+  display:none;
+}
+.msg-meta-strip.open{display:block;}
+
+/* Empty states */
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem;text-align:center;}
+.empty-icon{font-size:2.5rem;margin-bottom:1rem;opacity:.35;}
+.empty-title{font-size:15px;font-weight:600;color:var(--text2);margin-bottom:6px;}
+.empty-sub{font-size:13.5px;color:var(--text3);line-height:1.6;max-width:340px;}
+.empty-actions{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap;justify-content:center;}
+.ea-btn{font-size:13px;padding:7px 16px;border-radius:7px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:var(--sans);text-decoration:none;transition:all .12s;}
+.ea-btn:hover{border-color:var(--border2);color:var(--text);}
+.ea-btn.primary{background:var(--accent);color:#fff;border-color:transparent;}
+.ea-btn.primary:hover{filter:brightness(1.08);}
+
+/* LINEAGE PANEL (right drawer) */
+.lineage{
+  position:fixed;right:0;top:var(--hh);bottom:0;width:400px;
+  background:var(--bg);border-left:1px solid var(--border);
+  z-index:200;transform:translateX(100%);transition:transform .2s ease;
+  display:flex;flex-direction:column;
+}
+.lineage.open{transform:translateX(0);}
+.lineage-head{
+  padding:14px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.lineage-title{font-size:14px;font-weight:600;color:var(--text);}
+.lineage-actions{display:flex;gap:6px;align-items:center;}
+.lineage-body{flex:1;overflow-y:auto;padding:14px 16px;}
+.ln-node{position:relative;padding-left:24px;padding-bottom:16px;}
+.ln-node::before{content:'';position:absolute;left:6px;top:18px;bottom:0;width:1px;background:var(--border);}
+.ln-node:last-child::before{display:none;}
+.ln-dot{position:absolute;left:0;top:8px;width:13px;height:13px;border-radius:50%;border:2px solid var(--green);background:#fff;}
+.ln-dot.fork{border-color:var(--amber);}
+.ln-dot.err{border-color:var(--red);}
+.ln-card{background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:9px 11px;}
+.ln-card-head{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.ln-step{font-family:var(--mono);font-size:9px;color:var(--text3);}
+.ln-name{font-size:12.5px;font-weight:500;color:var(--text);}
+.ln-time{margin-left:auto;font-size:10px;color:var(--text3);}
+.ln-hash{font-family:var(--mono);font-size:9px;color:var(--green);margin-top:2px;}
+.ln-role{font-size:10px;color:var(--text3);margin-top:2px;}
+.ln-actions{display:flex;gap:4px;margin-top:6px;}
+.ln-btn{font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid var(--border);background:none;color:var(--text3);cursor:pointer;font-family:var(--sans);}
+.ln-btn:hover{color:var(--accent);border-color:var(--accent);}
+
+/* AGENTS PANEL */
+.agents-panel{border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0;}
+.agents-head{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;cursor:pointer;user-select:none;}
+.agents-head-title{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;}
+.agents-head-count{font-family:var(--mono);font-size:11px;color:var(--text3);font-weight:400;}
+.agents-head-toggle{font-size:11px;color:var(--text3);}
+.agents-body{padding:0 16px 14px;display:none;}
+.agents-body.open{display:block;}
+.create-row{display:flex;gap:6px;margin-bottom:10px;}
+.create-inp{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13.5px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s;}
+.create-inp:focus{border-color:var(--accent);}
+.create-inp::placeholder{color:var(--text3);}
+.create-btn-el{background:var(--accent);color:#fff;font-weight:600;font-size:12.5px;padding:7px 16px;border-radius:7px;border:none;cursor:pointer;font-family:var(--sans);white-space:nowrap;transition:filter .15s;}
+.create-btn-el:hover{filter:brightness(1.08);}
+.create-btn-el:disabled{opacity:.5;cursor:not-allowed;}
+.agents-list{display:flex;flex-direction:column;gap:7px;max-height:260px;overflow-y:auto;}
+.ag-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;}
+.ag-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.ag-info{flex:1;min-width:0;}
+.ag-name{font-size:13.5px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ag-id{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:1px;}
+.ag-key{display:flex;align-items:center;gap:4px;margin-top:5px;}
+.ag-key-val{font-family:var(--mono);font-size:10px;color:var(--text2);background:var(--bg3);padding:2px 7px;border-radius:3px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ag-btn{font-size:11px;padding:3px 8px;border-radius:5px;border:1px solid var(--border);background:none;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all .12s;}
+.ag-btn:hover{border-color:var(--accent);color:var(--accent);}
+.ag-btn.red:hover{border-color:var(--red);color:var(--red);}
+.agents-empty{font-size:13px;color:var(--text3);padding:6px 0;}
+
+/* MODALS */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:600;align-items:center;justify-content:center;padding:1rem;}
 .modal-bg.open{display:flex;}
-.modal{background:var(--bg);border:1px solid var(--border);border-radius:12px;width:100%;padding:1.5rem;max-height:90vh;overflow-y:auto;}
-.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
-.modal-title{font-size:15px;font-weight:700;color:var(--text);}
-.modal-close{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0;line-height:1;}
-.modal-close:hover{color:var(--text);}
-.field{margin-bottom:0.85rem;}
-.field label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;font-family:var(--mono);}
-.field input,.field select,.field textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s;}
+.modal{background:var(--bg);border:1px solid var(--border);border-radius:14px;width:100%;padding:0;overflow:hidden;max-height:90vh;display:flex;flex-direction:column;}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.modal-title{font-size:16px;font-weight:700;color:var(--text);}
+.modal-x{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:0;line-height:1;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:5px;}
+.modal-x:hover{background:var(--bg3);color:var(--text);}
+.modal-body{padding:18px 20px;overflow-y:auto;flex:1;}
+.modal-ft{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;}
+.mf-btn{padding:8px 18px;border-radius:8px;font-size:13.5px;font-weight:500;cursor:pointer;font-family:var(--sans);border:1px solid var(--border);transition:all .12s;}
+.mf-cancel{background:none;color:var(--text2);}
+.mf-cancel:hover{background:var(--bg3);}
+.mf-ok{background:var(--accent);color:#fff;border-color:transparent;}
+.mf-ok:hover{filter:brightness(1.08);}
+.mf-del{background:var(--red);color:#fff;border-color:transparent;}
+.mf-del:hover{filter:brightness(1.1);}
+
+/* Settings sections */
+.setting-section{margin-bottom:24px;}
+.setting-section:last-child{margin-bottom:0;}
+.setting-section-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;font-family:var(--mono);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;gap:12px;}
+.setting-row:not(:last-child){border-bottom:1px solid var(--bg3);}
+.setting-label{font-size:13.5px;color:var(--text);}
+.setting-desc{font-size:12px;color:var(--text3);margin-top:2px;}
+.setting-action{flex-shrink:0;}
+.s-btn{font-size:12.5px;padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all .12s;}
+.s-btn:hover{border-color:var(--border2);color:var(--text);}
+.s-btn.destructive{border-color:rgba(220,38,38,.3);color:var(--red);}
+.s-btn.destructive:hover{background:rgba(220,38,38,.05);}
+
+/* Field */
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;font-family:var(--mono);}
+.field input,.field select,.field textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:13.5px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s;}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);}
 .field textarea{resize:vertical;min-height:80px;}
-.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem;}
-.mfbtn{padding:7px 16px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--sans);border:1px solid var(--border);}
-.mfbtn.cancel{background:none;color:var(--text2);}
-.mfbtn.cancel:hover{background:var(--bg3);}
-.mfbtn.confirm{background:var(--accent);color:#fff;border-color:transparent;}
-.mfbtn.confirm:hover{filter:brightness(1.08);}
-.mfbtn.danger-confirm{background:var(--red);color:#fff;border-color:transparent;}
-.warn-box{background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.15);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1rem;}
-.info-box{background:rgba(5,150,105,.05);border:1px solid rgba(5,150,105,.15);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1rem;}
+.field-note{font-size:12px;color:var(--text3);margin-top:5px;line-height:1.5;}
 
-/* Chain panel (right drawer) */
-.chain-drawer{
-  position:fixed;right:0;top:var(--header-h);bottom:0;
-  width:420px;background:var(--bg);border-left:1px solid var(--border);
-  z-index:300;transform:translateX(100%);transition:transform .2s ease;
-  display:flex;flex-direction:column;overflow:hidden;
-}
-.chain-drawer.open{transform:translateX(0);}
-.chain-drawer-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
-.chain-drawer-title{font-size:13px;font-weight:600;color:var(--text);}
-.chain-drawer-body{flex:1;overflow-y:auto;padding:12px 16px;}
-.chain-node{
-  position:relative;padding-left:24px;padding-bottom:16px;
-}
-.chain-node::before{content:'';position:absolute;left:6px;top:16px;bottom:0;width:1px;background:var(--border);}
-.chain-node:last-child::before{display:none;}
-.chain-dot{position:absolute;left:0;top:8px;width:13px;height:13px;border-radius:50%;border:2px solid var(--green);background:#fff;box-shadow:0 0 5px rgba(5,150,105,.3);}
-.chain-dot.fork{border-color:var(--amber);}
-.chain-dot.err{border-color:var(--red);}
-.chain-step-card{background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;}
-.chain-step-head{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
-.chain-step-num{font-family:var(--mono);font-size:9px;color:var(--text3);}
-.chain-step-name{font-size:12px;font-weight:500;color:var(--text);}
-.chain-step-time{margin-left:auto;font-size:10px;color:var(--text3);}
-.chain-step-hash{font-family:var(--mono);font-size:9px;color:var(--green);margin-top:2px;}
+.notice{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px;}
+.notice.warn{background:rgba(220,38,38,.04);border-color:rgba(220,38,38,.15);}
+.notice.info{background:rgba(5,150,105,.04);border-color:rgba(5,150,105,.15);}
+
+/* Code block lang label */
+.code-lang{position:absolute;top:8px;right:10px;font-family:var(--mono);font-size:10px;color:var(--text3);}
 
 /* Toast */
-.toast{position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%);
-  background:var(--text);color:var(--bg);border-radius:8px;padding:8px 16px;
-  font-size:13px;z-index:999;display:none;white-space:nowrap;
-  box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:#111827;color:#fff;border-radius:8px;padding:9px 18px;
+  font-size:13.5px;z-index:999;display:none;white-space:nowrap;
+  box-shadow:0 4px 20px rgba(0,0,0,.25);}
 .toast.show{display:block;animation:fadeUp .2s ease;}
 @keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
-/* Quickstart code */
-.qs-code{background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:12px 14px;font-family:var(--mono);font-size:12px;line-height:1.8;color:var(--text2);overflow-x:auto;}
-.qs-code .c{color:var(--text3);}
-.qs-code .cm{color:var(--text);}
-.qs-code .ok{color:var(--green);}
-.qs-code .st{color:#0550ae;}
-
-@media(max-width:768px){
-  :root{--sidebar-w:0px;}
-  .sidebar{display:none;}
-  .chain-drawer{width:100%;}
+@media(max-width:760px){
+  :root{--sb:0px;}
+  .sb{display:none;}
+  .lineage{width:100%;}
 }
 </style>
 </head>
 <body>
 
-<!-- ── HEADER ── -->
 <header>
   <a class="logo" href="/">
-    <svg class="logo-mark" viewBox="0 0 40 40" fill="none">
+    <svg class="logo-svg" viewBox="0 0 40 40" fill="none">
       <circle cx="20" cy="20" r="17" stroke="#d0d0c8" stroke-width="0.8" stroke-dasharray="2 3"/>
       <circle cx="20" cy="20" r="12" stroke="#e0e0d8" stroke-width="0.5" opacity="0.6"/>
       <circle cx="20" cy="5"  r="3.2" fill="#0f7b4d" opacity="0.95"/>
@@ -320,199 +340,230 @@ header{
     </svg>
     <span class="logo-name">Dark<span class="logo-grad">Matter</span></span>
   </a>
-  <div class="hsep"></div>
-  <span class="hpage">Captures</span>
-  <div class="hright">
-    <a href="/docs" class="hbtn">Docs</a>
-    <a href="/compare" class="hbtn">Compare</a>
-    <button class="hbtn" onclick="openModal('settings-modal')">Settings</button>
-    <div class="user-chip">
-      <div class="user-avatar" id="user-initial">?</div>
-      <span id="user-email" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-    </div>
-    <button class="hbtn" onclick="logout()" style="color:var(--text3);">Sign out</button>
+  <div class="h-sep"></div>
+  <span class="h-label">Conversations</span>
+  <div class="h-right">
+    <a href="/docs" class="h-btn">Docs</a>
+    <a href="/compare" class="h-btn">Compare</a>
+    <button class="h-btn" id="settings-btn">Settings</button>
+    <div class="avatar" id="user-avatar" title="Account">?</div>
   </div>
 </header>
 
-<!-- ── APP LAYOUT ── -->
 <div class="app">
 
-  <!-- LEFT SIDEBAR: Thread history -->
-  <aside class="sidebar">
-    <div class="sidebar-top">
-      <div class="search-box">
-        <span class="search-icon">⌕</span>
-        <input class="search-input" id="search-input" placeholder="Search conversations..." autocomplete="off"/>
+  <!-- SIDEBAR -->
+  <aside class="sb">
+    <div class="sb-top">
+      <div class="search">
+        <span class="search-ic">⌕</span>
+        <input class="search-inp" id="search-inp" placeholder="Search all conversations…" autocomplete="off"/>
         <span class="search-kbd">/</span>
       </div>
-      <div class="sidebar-filters">
-        <button class="sf-btn active" data-filter="all" onclick="setFilter('all')">All</button>
-        <button class="sf-btn" data-filter="claude" onclick="setFilter('claude')">Claude</button>
-        <button class="sf-btn" data-filter="chatgpt" onclick="setFilter('chatgpt')">ChatGPT</button>
-        <button class="sf-btn" data-filter="sdk" onclick="setFilter('sdk')">SDK</button>
-        <button class="sf-btn" data-filter="starred" onclick="setFilter('starred')">★</button>
+      <div class="filters">
+        <button class="f-btn on" data-f="all">All</button>
+        <button class="f-btn" data-f="claude" style="color:#7C3AED;">Claude</button>
+        <button class="f-btn" data-f="chatgpt" style="color:#10a37f;">ChatGPT</button>
+        <button class="f-btn" data-f="grok" style="color:#1DA1F2;">Grok</button>
+        <button class="f-btn" data-f="sdk">SDK</button>
+        <button class="f-btn" data-f="starred">★</button>
       </div>
     </div>
-    <div class="thread-list" id="thread-list">
-      <div class="thread-group-label">Loading...</div>
-    </div>
+    <div class="tlist" id="tlist"><div class="tg-label">Loading…</div></div>
   </aside>
 
-  <!-- MAIN AREA: Selected conversation + Agents panel -->
+  <!-- MAIN -->
   <div class="main">
+
     <!-- Conversation header -->
-    <div class="main-header" id="main-header">
-      <div>
-        <div class="main-title" id="conv-title">Select a conversation</div>
-        <div class="main-meta" id="conv-meta"></div>
+    <div class="conv-head" id="conv-head">
+      <div class="conv-head-left">
+        <div class="conv-head-title" id="conv-title">Select a conversation</div>
+        <div class="conv-head-meta" id="conv-meta"></div>
       </div>
-      <div class="main-actions" id="main-actions" style="display:none;">
-        <button class="mbtn" onclick="openChainDrawer()">⑂ Chain</button>
-        <button class="mbtn" onclick="shareThread()">↗ Share</button>
-        <button class="mbtn" onclick="forkThread()">Fork</button>
+      <div class="conv-head-actions" id="conv-actions" style="display:none;">
+        <button class="cbtn" id="lineage-btn" onclick="toggleLineage()">⑂ Lineage</button>
+        <button class="cbtn" onclick="shareActive()">↗ Share</button>
+        <button class="cbtn" onclick="verifyActive()">✓ Verify</button>
+        <button class="cbtn" onclick="activeMenu()">···</button>
       </div>
     </div>
 
-    <!-- Conversation messages -->
+    <!-- Messages -->
     <div class="conv-area" id="conv-area">
-      <div class="empty-conv" id="empty-conv">
-        <div class="empty-conv-icon">🌑</div>
-        <div class="empty-conv-title">No conversation selected</div>
-        <div class="empty-conv-sub">Choose a conversation from the sidebar, or install the browser extension to start capturing automatically.</div>
+      <div class="empty" id="empty-state">
+        <div class="empty-icon">🌑</div>
+        <div class="empty-title">No conversation selected</div>
+        <div class="empty-sub">Choose a conversation from the sidebar, or install the browser extension to start capturing automatically.</div>
+        <div class="empty-actions">
+          <a href="/docs" class="ea-btn primary">Read docs →</a>
+          <button class="ea-btn" onclick="toggleAgents()">Create agent</button>
+        </div>
       </div>
     </div>
 
-    <!-- Agents panel (collapsible) -->
+    <!-- Agents panel -->
     <div class="agents-panel">
-      <div class="agents-panel-head" onclick="toggleAgentsPanel()">
-        <span class="agents-panel-title">
-          <span>Agents &amp; API Keys</span>
-          <span id="agent-count" style="font-family:var(--mono);font-size:11px;color:var(--text3);font-weight:400;"></span>
-        </span>
-        <span class="agents-panel-toggle" id="agents-toggle">▲</span>
+      <div class="agents-head" onclick="toggleAgents()">
+        <span class="agents-head-title">Agents &amp; API Keys <span class="agents-head-count" id="ag-count"></span></span>
+        <span class="agents-head-toggle" id="ag-toggle">▲</span>
       </div>
-      <div class="agents-panel-body" id="agents-panel-body">
-        <div class="create-bar">
-          <input class="create-input" id="agent-name-input" placeholder="New agent name (e.g. analysis-agent)" maxlength="60"/>
-          <button class="create-btn" id="create-btn" onclick="createAgent()">+ Create</button>
+      <div class="agents-body" id="ag-body">
+        <div class="create-row">
+          <input class="create-inp" id="ag-name-inp" placeholder="Agent name (e.g. research-agent)" maxlength="60"/>
+          <button class="create-btn-el" id="ag-create-btn" onclick="createAgent()">+ Create</button>
         </div>
-        <div class="agents-grid" id="agents-grid">
-          <div class="agents-empty">Create your first agent to get an API key</div>
-        </div>
+        <div class="agents-list" id="ag-list"><div class="agents-empty">No agents yet</div></div>
       </div>
     </div>
-  </div><!-- /main -->
 
+  </div><!-- /main -->
 </div><!-- /app -->
 
-<!-- CHAIN DRAWER -->
-<div class="chain-drawer" id="chain-drawer">
-  <div class="chain-drawer-head">
-    <span class="chain-drawer-title">Chain lineage</span>
-    <div style="display:flex;gap:6px;align-items:center;">
-      <button class="mbtn" id="chain-verify-btn" onclick="verifyCurrentChain()">Verify</button>
-      <button class="mbtn" id="chain-export-btn" onclick="exportCurrentChain()">↓ Export</button>
-      <button style="background:none;border:none;font-size:18px;color:var(--text3);cursor:pointer;" onclick="closeChainDrawer()">×</button>
+<!-- LINEAGE DRAWER -->
+<div class="lineage" id="lineage-panel">
+  <div class="lineage-head">
+    <span class="lineage-title">Chain lineage</span>
+    <div class="lineage-actions">
+      <button class="cbtn" id="ln-verify-btn" onclick="verifyLineage()">Verify</button>
+      <button class="cbtn" id="ln-export-btn" onclick="exportLineage()">↓ Export</button>
+      <button style="background:none;border:none;font-size:20px;color:var(--text3);cursor:pointer;padding:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:5px;" onclick="toggleLineage()">×</button>
     </div>
   </div>
-  <div class="chain-drawer-body" id="chain-drawer-body">
-    <div style="color:var(--text3);font-size:13px;">Select a conversation to view its chain.</div>
+  <div class="lineage-body" id="lineage-body">
+    <div style="color:var(--text3);font-size:13.5px;">Select a conversation to view its chain.</div>
   </div>
 </div>
 
-<!-- ── MODALS ── -->
-
-<!-- Settings modal -->
-<div class="modal-bg" id="settings-modal" onclick="closeModalBg('settings-modal',event)">
-  <div class="modal" style="max-width:480px;" onclick="event.stopPropagation()">
-    <div class="modal-header">
+<!-- SETTINGS MODAL -->
+<div class="modal-bg" id="settings-modal" onclick="closeBg('settings-modal',event)">
+  <div class="modal" style="max-width:500px;" onclick="event.stopPropagation()">
+    <div class="modal-hd">
       <span class="modal-title">Settings</span>
-      <button class="modal-close" onclick="closeModal('settings-modal')">×</button>
+      <button class="modal-x" onclick="closeModal('settings-modal')">×</button>
     </div>
-    <div style="display:flex;flex-direction:column;gap:16px;">
-      <div>
-        <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono);margin-bottom:8px;">Account</div>
-        <div style="font-size:13px;color:var(--text2);">Signed in as <strong id="settings-email"></strong></div>
+    <div class="modal-body">
+
+      <!-- Account -->
+      <div class="setting-section">
+        <div class="setting-section-title">Account</div>
+        <div class="setting-row">
+          <div><div class="setting-label" id="s-email">—</div><div class="setting-desc">Signed in</div></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Sign out</div><div class="setting-desc">End your current session on this browser</div></div>
+          <div class="setting-action"><button class="s-btn" onclick="logout()">Sign out</button></div>
+        </div>
       </div>
-      <div>
-        <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono);margin-bottom:8px;">Export</div>
-        <button class="mbtn" onclick="exportAll()" style="font-size:13px;">↓ Export all commits (CSV)</button>
+
+      <!-- Appearance -->
+      <div class="setting-section">
+        <div class="setting-section-title">Data</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Export all commits</div><div class="setting-desc">Download your full commit history as JSON</div></div>
+          <div class="setting-action"><button class="s-btn" onclick="exportAll()">Export JSON</button></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Refresh conversations</div><div class="setting-desc">Reload all threads from the server</div></div>
+          <div class="setting-action"><button class="s-btn" onclick="loadThreads();toast('Refreshed');">Refresh</button></div>
+        </div>
       </div>
-      <div style="border-top:1px solid var(--border);padding-top:16px;">
-        <div style="font-size:12px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono);margin-bottom:8px;">Danger zone</div>
-        <button class="mbtn" onclick="closeModal('settings-modal');openModal('delete-account-modal')" style="border-color:rgba(220,38,38,.3);color:var(--red);font-size:13px;">Delete account</button>
+
+      <!-- Links -->
+      <div class="setting-section">
+        <div class="setting-section-title">Resources</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Documentation</div><div class="setting-desc">API reference, SDK guides, and examples</div></div>
+          <div class="setting-action"><a href="/docs" class="s-btn" style="text-decoration:none;display:inline-block;">Open →</a></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Compare tools</div><div class="setting-desc">DarkMatter vs LangSmith vs MLflow</div></div>
+          <div class="setting-action"><a href="/compare" class="s-btn" style="text-decoration:none;display:inline-block;">Open →</a></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Context Passport</div><div class="setting-desc">Open standard for AI context handoffs</div></div>
+          <div class="setting-action"><a href="https://contextpassport.com" target="_blank" class="s-btn" style="text-decoration:none;display:inline-block;">Open →</a></div>
+        </div>
       </div>
+
+      <!-- Account removal -->
+      <div class="setting-section">
+        <div class="setting-section-title">Account removal</div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Delete account</div>
+            <div class="setting-desc">Permanently remove your account and optionally your data. This cannot be undone.</div>
+          </div>
+          <div class="setting-action">
+            <button class="s-btn destructive" onclick="closeModal('settings-modal');openModal('delete-modal')">Delete account</button>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
-<!-- Delete account modal -->
-<div class="modal-bg" id="delete-account-modal" onclick="closeModalBg('delete-account-modal',event)">
+<!-- DELETE ACCOUNT MODAL -->
+<div class="modal-bg" id="delete-modal" onclick="closeBg('delete-modal',event)">
   <div class="modal" style="max-width:460px;" onclick="event.stopPropagation()">
-    <div class="modal-header">
+    <div class="modal-hd">
       <span class="modal-title">Delete account</span>
-      <button class="modal-close" onclick="closeModal('delete-account-modal')">×</button>
+      <button class="modal-x" onclick="closeModal('delete-modal')">×</button>
     </div>
-    <div class="warn-box">
-      <strong>This cannot be undone.</strong> Your account, all agents, and your access to DarkMatter will be permanently deleted.
+    <div class="modal-body">
+      <div class="notice warn">This permanently removes your account and access. It cannot be reversed.</div>
+      <div class="notice info">Your commit records can be kept (anonymised) or deleted. Keeping them preserves integrity for any shared chain links you've created.</div>
+      <div class="field">
+        <label>What to do with your commit records</label>
+        <select id="del-choice">
+          <option value="keep">Keep commits — anonymised, chain integrity preserved</option>
+          <option value="delete">Delete all commits — shared chain links will break</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Type DELETE to confirm</label>
+        <input type="text" id="del-confirm" placeholder="DELETE"/>
+      </div>
     </div>
-    <div class="info-box">
-      <strong>About your commit records:</strong> DarkMatter's core purpose is immutable execution records — records that can't be tampered with. Deleting your commit history breaks that guarantee for any chains you've shared or that others may be verifying. You can choose to delete them or leave them as anonymised records. Either way, your account access is removed.
-    </div>
-    <div class="field">
-      <label>What to do with your commit records</label>
-      <select id="delete-commits-choice">
-        <option value="keep">Keep commits (anonymised — chain integrity preserved)</option>
-        <option value="delete">Delete all commits (breaks any shared chain links)</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Type DELETE to confirm</label>
-      <input type="text" id="delete-confirm-input" placeholder="DELETE"/>
-    </div>
-    <div class="modal-footer">
-      <button class="mfbtn cancel" onclick="closeModal('delete-account-modal')">Cancel</button>
-      <button class="mfbtn danger-confirm" onclick="deleteAccount()">Delete my account</button>
+    <div class="modal-ft">
+      <button class="mf-btn mf-cancel" onclick="closeModal('delete-modal')">Cancel</button>
+      <button class="mf-btn mf-del" onclick="deleteAccount()">Delete my account</button>
     </div>
   </div>
 </div>
 
-<!-- Rename modal -->
-<div class="modal-bg" id="rename-modal" onclick="closeModalBg('rename-modal',event)">
+<!-- RENAME MODAL -->
+<div class="modal-bg" id="rename-modal" onclick="closeBg('rename-modal',event)">
   <div class="modal" style="max-width:380px;" onclick="event.stopPropagation()">
-    <div class="modal-header">
+    <div class="modal-hd">
       <span class="modal-title">Rename conversation</span>
-      <button class="modal-close" onclick="closeModal('rename-modal')">×</button>
+      <button class="modal-x" onclick="closeModal('rename-modal')">×</button>
     </div>
-    <div class="field">
-      <label>New title</label>
-      <input type="text" id="rename-input" placeholder="Conversation title" maxlength="100"/>
+    <div class="modal-body">
+      <div class="field"><label>Title</label><input type="text" id="rename-inp" placeholder="Conversation title" maxlength="100"/></div>
     </div>
-    <div class="modal-footer">
-      <button class="mfbtn cancel" onclick="closeModal('rename-modal')">Cancel</button>
-      <button class="mfbtn confirm" onclick="confirmRename()">Rename</button>
+    <div class="modal-ft">
+      <button class="mf-btn mf-cancel" onclick="closeModal('rename-modal')">Cancel</button>
+      <button class="mf-btn mf-ok" onclick="confirmRename()">Rename</button>
     </div>
   </div>
 </div>
 
-<!-- Agent key modal (full key reveal) -->
-<div class="modal-bg" id="key-modal" onclick="closeModalBg('key-modal',event)">
+<!-- API KEY MODAL -->
+<div class="modal-bg" id="key-modal" onclick="closeBg('key-modal',event)">
   <div class="modal" style="max-width:460px;" onclick="event.stopPropagation()">
-    <div class="modal-header">
+    <div class="modal-hd">
       <span class="modal-title" id="key-modal-title">API Key</span>
-      <button class="modal-close" onclick="closeModal('key-modal')">×</button>
+      <button class="modal-x" onclick="closeModal('key-modal')">×</button>
     </div>
-    <div class="field">
-      <label>Agent ID</label>
-      <div style="font-family:var(--mono);font-size:12px;color:var(--text2);background:var(--bg2);padding:6px 10px;border-radius:5px;border:1px solid var(--border);" id="key-modal-id"></div>
+    <div class="modal-body">
+      <div class="field"><label>Agent ID</label><div style="font-family:var(--mono);font-size:12px;background:var(--bg2);padding:8px 10px;border-radius:7px;border:1px solid var(--border);color:var(--text2);" id="km-id"></div></div>
+      <div class="field"><label>API Key — keep this secret</label><div style="font-family:var(--mono);font-size:12px;background:var(--bg2);padding:8px 10px;border-radius:7px;border:1px solid var(--border);word-break:break-all;color:var(--text);" id="km-key"></div></div>
     </div>
-    <div class="field">
-      <label>API Key — keep this secret</label>
-      <div style="font-family:var(--mono);font-size:12px;color:var(--text);background:var(--bg2);padding:6px 10px;border-radius:5px;border:1px solid var(--border);word-break:break-all;" id="key-modal-key"></div>
-    </div>
-    <div style="display:flex;gap:6px;">
-      <button class="mfbtn confirm" onclick="copyFromModal()" style="flex:1;">Copy key</button>
-      <button class="mfbtn cancel" onclick="rotateKeyModal()">Rotate</button>
+    <div class="modal-ft">
+      <button class="mf-btn mf-cancel" onclick="rotateKey()">Rotate key</button>
+      <button class="mf-btn mf-ok" onclick="copyKeyFromModal()">Copy key</button>
     </div>
   </div>
 </div>
@@ -521,976 +572,624 @@ header{
 
 <script>
 'use strict';
-// ── Token refresh ─────────────────────────────────────────────────────────────
-// This is the fix for "commits disappear after staying logged in".
-// Supabase JWTs expire after 1 hour by default. We refresh proactively.
 
+// ── Token refresh (fixes "commits disappear after 1 hour") ───────────────────
 async function refreshSession() {
   const raw = localStorage.getItem('dm_session');
   if (!raw) return null;
-  const session = JSON.parse(raw);
-  const expiresAt = parseInt(session.expires_at || '0', 10);
-  const now = Math.floor(Date.now() / 1000);
-
-  // Refresh if token expires within 5 minutes
-  if (expiresAt - now > 300) return session;
-
-  const refreshToken = session.refresh_token;
-  if (!refreshToken) return session;
-
+  const s = JSON.parse(raw);
+  const exp = parseInt(s.expires_at || '0', 10);
+  if (exp - Math.floor(Date.now()/1000) > 300) return s;
+  if (!s.refresh_token) return s;
   try {
-    const res = await fetch('/api/auth/refresh', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken }),
+    const r = await fetch('/api/auth/refresh', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({refresh_token: s.refresh_token}),
     });
-    if (!res.ok) return session;
-    const data = await res.json();
-    if (data.access_token) {
-      const newSession = { ...session, access_token: data.access_token, expires_at: data.expires_at, refresh_token: data.refresh_token || refreshToken };
-      localStorage.setItem('dm_session', JSON.stringify(newSession));
-      return newSession;
+    if (!r.ok) return s;
+    const d = await r.json();
+    if (d.access_token) {
+      const ns = {...s, access_token:d.access_token, expires_at:d.expires_at, refresh_token:d.refresh_token||s.refresh_token};
+      localStorage.setItem('dm_session', JSON.stringify(ns));
+      return ns;
     }
-  } catch(e) { console.warn('[DM] Token refresh failed:', e.message); }
-  return session;
+  } catch(e) {}
+  return s;
 }
-
-// Refresh every 4 minutes automatically
-setInterval(refreshSession, 4 * 60 * 1000);
+setInterval(refreshSession, 4*60*1000);
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
-if (window.location.hash?.includes('access_token')) {
+if (location.hash?.includes('access_token')) {
   try {
-    const p = new URLSearchParams(window.location.hash.substring(1));
+    const p = new URLSearchParams(location.hash.substring(1));
     const at = p.get('access_token');
     if (at) {
-      const payload = JSON.parse(atob(at.split('.')[1]));
+      const pl = JSON.parse(atob(at.split('.')[1]));
       localStorage.setItem('dm_session', JSON.stringify({
-        access_token: at, refresh_token: p.get('refresh_token'),
-        expires_at: p.get('expires_at'),
-        user: { email: payload.email || '', id: payload.sub }
+        access_token:at, refresh_token:p.get('refresh_token'),
+        expires_at:p.get('expires_at'), user:{email:pl.email||'',id:pl.sub}
       }));
-      history.replaceState({}, '', '/dashboard');
+      history.replaceState({},'',' /dashboard');
     }
   } catch(e) {}
 }
 
-const rawSession = localStorage.getItem('dm_session');
-if (!rawSession) { location.href = '/login'; throw 0; }
+const rawSess = localStorage.getItem('dm_session');
+if (!rawSess) { location.href='/login'; throw 0; }
 let session;
-try { session = JSON.parse(rawSession); } catch(e) { location.href = '/login'; throw 0; }
-if (!session?.access_token) { location.href = '/login'; throw 0; }
+try { session = JSON.parse(rawSess); } catch(e) { location.href='/login'; throw 0; }
+if (!session?.access_token) { location.href='/login'; throw 0; }
 
-const email = session?.user?.email || '';
-document.getElementById('user-email').textContent = email;
-document.getElementById('settings-email').textContent = email;
-document.getElementById('user-initial').textContent = (email[0] || '?').toUpperCase();
+const emailStr = session?.user?.email || '';
+document.getElementById('user-avatar').textContent = (emailStr[0]||'?').toUpperCase();
+document.getElementById('user-avatar').title = emailStr;
+document.getElementById('s-email').textContent = emailStr;
 
-// ── Auth headers (always refreshed) ──────────────────────────────────────────
-async function authHeaders() {
+async function authH() {
   const s = await refreshSession() || session;
-  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s.access_token}` };
+  return {'Content-Type':'application/json', 'Authorization':`Bearer ${s.access_token}`};
 }
 
-// ── API key (for DM agent API) ────────────────────────────────────────────────
-let dmApiKey = session?.dm_api_key || localStorage.getItem('dm_api_key') || '';
-const apiKeyHeaders = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${dmApiKey}` });
-
-// ── Starred threads (persisted in localStorage) ───────────────────────────────
-const STARS_KEY = 'dm_starred_threads';
-function getStars() { try { return JSON.parse(localStorage.getItem(STARS_KEY)||'[]'); } catch{return [];} }
-function setStars(s) { localStorage.setItem(STARS_KEY, JSON.stringify(s)); }
-function isStarred(id) { return getStars().includes(id); }
-function toggleStar(id) {
-  const stars = getStars();
-  const idx = stars.indexOf(id);
-  if (idx >= 0) stars.splice(idx, 1); else stars.push(id);
-  setStars(stars);
-}
-
-// ── Thread rename (persisted locally until server supports it) ─────────────────
-const RENAME_KEY = 'dm_thread_renames';
-function getRenames() { try { return JSON.parse(localStorage.getItem(RENAME_KEY)||'{}'); } catch{return {};} }
-function getThreadTitle(thread) {
-  const renames = getRenames();
-  if (renames[thread.id]) return renames[thread.id];
-  if (thread.title && thread.title !== 'Untitled') return thread.title;
-  // Use agent name if it looks like a real name (not a DM internal ID)
-  const agentName = thread.agentName || '';
-  if (agentName && !agentName.startsWith('dm_') && agentName !== 'capture') {
-    return agentName;
-  }
-  // Fall back to platform + date
-  const plat = PLAT_LABELS[thread.platform] || thread.platform || 'Agent';
-  const d = thread.latest ? new Date(thread.latest).toLocaleDateString('en-US', {month:'short',day:'numeric'}) : '';
-  return d ? `${plat} · ${d}` : plat;
-}
-function saveRename(id, title) {
-  const r = getRenames(); r[id] = title; localStorage.setItem(RENAME_KEY, JSON.stringify(r));
-}
+let dmKey = session?.dm_api_key || localStorage.getItem('dm_api_key') || '';
+const keyH = () => ({'Content-Type':'application/json','Authorization':`Bearer ${dmKey}`});
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let allThreads = [];
-let selectedThread = null;
-let activeFilter = 'all';
-let searchQuery = '';
-let activeMenuId = null;
-let currentRenameId = null;
-let currentKeyModal = null;
-let agentsPanelOpen = false;
+const STARS = 'dm_stars';
+const RENAMES = 'dm_renames';
+function getStars()  { try{return JSON.parse(localStorage.getItem(STARS)||'[]');}catch{return[];} }
+function setStars(s) { localStorage.setItem(STARS,JSON.stringify(s)); }
+function starred(id) { return getStars().includes(id); }
+function toggleStar(id) { const s=getStars(),i=s.indexOf(id); i>=0?s.splice(i,1):s.push(id); setStars(s); }
+function getRenames() { try{return JSON.parse(localStorage.getItem(RENAMES)||'{}');}catch{return{};} }
+function saveRename(id,t) { const r=getRenames();r[id]=t;localStorage.setItem(RENAMES,JSON.stringify(r)); }
 
-// ── Platform colors ───────────────────────────────────────────────────────────
-const PLAT_COLORS = { claude:'#7C3AED', chatgpt:'#10a37f', grok:'#1DA1F2', gemini:'#4285f4', perplexity:'#20808d' };
-const PLAT_LABELS = { claude:'Claude', chatgpt:'ChatGPT', grok:'Grok', gemini:'Gemini', perplexity:'Perplexity' };
+const PC = {claude:'#7C3AED',chatgpt:'#10a37f',grok:'#1DA1F2',gemini:'#4285f4',perplexity:'#20808d'};
+const PL = {claude:'Claude',chatgpt:'ChatGPT',grok:'Grok',gemini:'Gemini',perplexity:'Perplexity'};
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function escHtml(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+let allThreads=[], selThread=null, activeFilter='all', searchQ='', openMenu=null, renameId=null, keyModal=null, agentsOpen=false;
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 function ago(ts) {
   if (!ts) return '';
-  const d = Math.floor((Date.now() - new Date(ts)) / 1000);
-  if (d < 60) return 'just now';
-  if (d < 3600) return Math.floor(d/60) + 'm ago';
-  if (d < 86400) return Math.floor(d/3600) + 'h ago';
-  if (d < 86400*7) return Math.floor(d/86400) + 'd ago';
+  const d = Math.floor((Date.now()-new Date(ts))/1000);
+  if (d<60) return 'just now';
+  if (d<3600) return Math.floor(d/60)+'m ago';
+  if (d<86400) return Math.floor(d/3600)+'h ago';
+  if (d<86400*7) return Math.floor(d/86400)+'d ago';
   return new Date(ts).toLocaleDateString();
 }
 function relDate(ts) {
-  if (!ts) return '';
-  const d = new Date(ts);
-  const now = new Date();
-  if (d.toDateString() === now.toDateString()) return 'Today';
-  const yesterday = new Date(now); yesterday.setDate(now.getDate()-1);
-  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
-  const days = Math.floor((now - d) / 86400000);
-  if (days < 7) return 'Previous 7 days';
-  if (days < 30) return 'Previous 30 days';
+  if (!ts) return 'Older';
+  const d=new Date(ts), now=new Date();
+  if (d.toDateString()===now.toDateString()) return 'Today';
+  const y=new Date(now); y.setDate(now.getDate()-1);
+  if (d.toDateString()===y.toDateString()) return 'Yesterday';
+  const days=Math.floor((now-d)/86400000);
+  if (days<7) return 'Previous 7 days';
+  if (days<30) return 'Previous 30 days';
   return 'Older';
 }
-function toast(msg, dur=2800) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(el._t);
-  el._t = setTimeout(() => el.classList.remove('show'), dur);
+function toast(msg,dur=2800) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),dur);
 }
-function maskKey(k) {
-  if (!k) return '';
-  return k.slice(0,9) + '••••••••••••••' + k.slice(-4);
+function maskKey(k) { if(!k)return''; return k.slice(0,9)+'••••••••••'+k.slice(-4); }
+function threadTitle(t) {
+  const rn=getRenames();
+  if (rn[t.id]) return rn[t.id];
+  if (t.title && t.title!=='Untitled') return t.title;
+  const plat = PL[t.platform]||t.platform||'Agent';
+  const d = t.latest ? new Date(t.latest).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+  return d ? `${plat} · ${d}` : plat;
 }
 
 // ── Load threads ──────────────────────────────────────────────────────────────
-// Group commits by traceId (one conversation = one traceId)
 async function loadThreads() {
   try {
-    const h = await authHeaders();
-    const res = await fetch('/dashboard/commits', { headers: h });
-    if (res.status === 401) { await refreshSession(); return loadThreads(); }
-    const commits = await res.json();
+    const h = await authH();
+    const r = await fetch('/dashboard/commits', {headers:h});
+    if (r.status===401) { await refreshSession(); return loadThreads(); }
+    const commits = await r.json();
 
-    // Group commits by traceId/convId to build threads
-    const threadMap = new Map();
-
+    const map = new Map();
     for (const c of commits) {
-      const traceId = c.trace_id || c.traceId || c.id;
-      const platform = c.payload?.platform || c.payload?.platformId || '';
-      const platformId = platform?.toLowerCase() || '';
-
-      if (!threadMap.has(traceId)) {
-        threadMap.set(traceId, {
-          id:        traceId,
-          platform:  platformId,
-          title:     c.payload?.convTitle
-                    || c.payload?.title
-                    || c.payload?.thread?.title
-                    || c.thread?.title
-                    || (c.agent_name && !c.agent_name.includes('dm_') ? c.agent_name : null)
-                    || null,
-          commits:   [],
-          latest:    c.created_at || c.timestamp,
-          isCapture: !!platform,
-          agentName: c.agent_name,
-          agentId:   c.agent_id,
-          hasFork:   false,
-          isShared:  false,
+      const tid = c.trace_id || c.traceId || c.id;
+      const plat = (c.payload?.platform||c.payload?.platformId||'').toLowerCase();
+      if (!map.has(tid)) {
+        map.set(tid, {
+          id:tid, platform:plat, isCapture:!!plat,
+          title: c.payload?.convTitle||c.payload?.title||c.payload?.thread?.title||null,
+          commits:[], latest:c.created_at||c.timestamp||'',
+          hasFork:false, agentName:c.agent_name||'',
         });
       }
-
-      const t = threadMap.get(traceId);
+      const t = map.get(tid);
       t.commits.push(c);
-      if (c.eventType === 'fork' || c.event_type === 'fork') t.hasFork = true;
-      if (c.created_at > t.latest) t.latest = c.created_at;
+      if ((c.eventType||c.event_type)==='fork') t.hasFork=true;
+      if ((c.created_at||c.timestamp||'') > t.latest) t.latest=c.created_at||c.timestamp;
     }
 
-    allThreads = [...threadMap.values()].sort((a,b) => new Date(b.latest) - new Date(a.latest));
-    renderThreadList();
+    allThreads = [...map.values()].sort((a,b)=>b.latest.localeCompare(a.latest));
+    renderList();
+
+    // Handle ?t= param for direct thread link
+    const tp = new URLSearchParams(location.search).get('t');
+    if (tp) { const f=allThreads.find(t=>t.id===tp); if(f) selectThread(f.id); }
   } catch(e) {
-    console.error('[DM] loadThreads error:', e);
-    document.getElementById('thread-list').innerHTML = '<div class="thread-group-label" style="color:var(--red);">Failed to load — check connection</div>';
+    document.getElementById('tlist').innerHTML = '<div class="tg-label" style="color:var(--red)">Failed to load — check connection</div>';
   }
 }
 
-// ── Render thread list ────────────────────────────────────────────────────────
-function renderThreadList() {
-  const q = searchQuery.toLowerCase();
-  let threads = allThreads.filter(t => {
-    if (activeFilter === 'starred') return isStarred(t.id);
-    if (activeFilter === 'sdk') return !t.isCapture;
-    if (['claude','chatgpt','grok','gemini','perplexity'].includes(activeFilter)) return t.platform === activeFilter;
+// ── Render sidebar ────────────────────────────────────────────────────────────
+function renderList() {
+  const q = searchQ.toLowerCase();
+  const threads = allThreads.filter(t => {
+    if (activeFilter==='starred') return starred(t.id);
+    if (activeFilter==='sdk') return !t.isCapture;
+    if (['claude','chatgpt','grok','gemini','perplexity'].includes(activeFilter)) return t.platform===activeFilter;
     return true;
   }).filter(t => {
     if (!q) return true;
-    // Search across: title, platform, preview text from any commit in thread
-    const titleMatch = getThreadTitle(t).toLowerCase().includes(q);
-    const platMatch  = (t.platform||'').toLowerCase().includes(q);
-    // Search commit payloads — text, summary, output, prompt
-    const textMatch  = t.commits.some(commit => {
-      const p = commit.payload || {};
-      const fields = [p.text, p.summary, p.output, p.input, p.prompt, p.convTitle, commit.agent_name];
-      return fields.some(f => f && String(f).toLowerCase().includes(q));
+    if (threadTitle(t).toLowerCase().includes(q)) return true;
+    if ((t.platform||'').includes(q)) return true;
+    return t.commits.some(c => {
+      const p=c.payload||{};
+      return [p.text,p.summary,p.prompt,p.output,p.convTitle].some(f=>f&&String(f).toLowerCase().includes(q));
     });
-    return titleMatch || platMatch || textMatch;
   });
 
   if (!threads.length) {
-    document.getElementById('thread-list').innerHTML =
-      '<div class="thread-group-label">No conversations found</div>';
+    document.getElementById('tlist').innerHTML = `<div class="tg-label">${q?'No results for "'+esc(q)+'"':'No conversations yet'}</div>`;
     return;
   }
 
-  // Group by time bucket
   const groups = {};
-  threads.forEach(t => {
-    const g = relDate(t.latest);
-    if (!groups[g]) groups[g] = [];
-    groups[g].push(t);
-  });
-
+  threads.forEach(t => { const g=relDate(t.latest); (groups[g]=groups[g]||[]).push(t); });
   const ORDER = ['Today','Yesterday','Previous 7 days','Previous 30 days','Older'];
   let html = '';
   ORDER.forEach(g => {
     if (!groups[g]) return;
-    html += `<div class="thread-group-label">${g}</div>`;
-    groups[g].forEach(t => {
-      html += renderThreadRow(t);
-    });
+    html += `<div class="tg-label">${g}</div>`;
+    groups[g].forEach(t => { html += renderRow(t); });
   });
-
-  document.getElementById('thread-list').innerHTML = html;
+  document.getElementById('tlist').innerHTML = html;
 }
 
-function renderThreadRow(t) {
-  const title    = escHtml(getThreadTitle(t));
-  const starred  = isStarred(t.id);
-  const platColor = PLAT_COLORS[t.platform] || '#9ca3af';
-  const platLabel = PLAT_LABELS[t.platform] || (t.isCapture ? t.platform : 'SDK');
-  const isActive  = selectedThread?.id === t.id;
+function renderRow(t) {
+  const title = esc(threadTitle(t));
+  const isOn = selThread?.id === t.id;
+  const pc = PC[t.platform]||'#9ca3af';
+  const pl = (PL[t.platform]||t.platform||'SDK')[0]||'?';
+  const star = starred(t.id);
 
-  // Preview: first meaningful user message text
-  const sorted = [...t.commits].sort((a,b) =>
-    new Date(a.created_at||a.timestamp) - new Date(b.created_at||b.timestamp)
-  );
-  const firstUser = sorted.find(cm => {
-    const role = cm.payload?.role || cm.actors?.from?.role || '';
-    return role === 'user' || !role;
+  // Preview from first user message
+  const first = [...t.commits].sort((a,b)=>(a.created_at||'').localeCompare(b.created_at||'')).find(c=>{
+    const role=c.payload?.role||c.actors?.from?.role||'';
+    return role==='user'||!role;
   });
-  const preview = firstUser
-    ? (firstUser.payload?.text || firstUser.payload?.prompt || firstUser.payload?.summary || '').trim().slice(0, 65)
-    : '';
+  const preview = first ? (first.payload?.text||first.payload?.prompt||'').trim().slice(0,62) : '';
 
-  return `<div class="thread-row ${isActive?'active':''}" id="tr-${escHtml(t.id)}" onclick="selectThread('${escHtml(t.id)}')">
-    <div class="thread-plat" style="background:${platColor}18;color:${platColor};font-weight:700;" title="${escHtml(platLabel)}">
-      ${platLabel[0] || '↯'}
-    </div>
-    <div class="thread-body">
-      <div class="thread-title">${title}</div>
-      ${preview ? `<div class="thread-preview">${escHtml(preview)}</div>` : ''}
-      <div class="thread-meta">
-        <span class="thread-time">${ago(t.latest)}</span>
-        <div class="thread-badges">
-          ${starred ? '<span class="thread-badge tb-star">★</span>' : ''}
-          ${t.hasFork ? '<span class="thread-badge tb-fork">fork</span>' : ''}
+  return `<div class="tr${isOn?' active':''}" id="tr-${esc(t.id)}" onclick="selectThread('${esc(t.id)}')">
+    <div class="tr-plat" style="background:${pc}16;color:${pc};font-weight:700;">${pl}</div>
+    <div class="tr-body">
+      <div class="tr-title">${title}</div>
+      ${preview?`<div class="tr-preview">${esc(preview)}</div>`:''}
+      <div class="tr-foot">
+        <span class="tr-time">${ago(t.latest)}</span>
+        <div class="tr-tags">
+          ${star?'<span class="tr-tag tt-star">★</span>':''}
+          ${t.hasFork?'<span class="tr-tag tt-fork">fork</span>':''}
         </div>
       </div>
     </div>
-    <button class="thread-menu-btn" onclick="event.stopPropagation();openThreadMenu('${escHtml(t.id)}',this)">⋯</button>
+    <button class="tr-dots" onclick="event.stopPropagation();openThreadMenu('${esc(t.id)}',this)" title="Options">⋯</button>
   </div>`;
 }
-// ── Select thread → show conversation ─────────────────────────────────────────
+
+// ── Select thread ─────────────────────────────────────────────────────────────
 function selectThread(id) {
-  selectedThread = allThreads.find(t => t.id === id) || null;
-  if (!selectedThread) return;
+  selThread = allThreads.find(t=>t.id===id)||null;
+  if (!selThread) return;
+  document.querySelectorAll('.tr').forEach(r=>r.classList.remove('active'));
+  document.getElementById('tr-'+id)?.classList.add('active');
 
-  // Update sidebar active state
-  document.querySelectorAll('.thread-row').forEach(r => r.classList.remove('active'));
-  const row = document.getElementById('tr-' + id);
-  if (row) row.classList.add('active');
-
-  // Update header
-  document.getElementById('conv-title').textContent = getThreadTitle(selectedThread);
-  const platLabel = PLAT_LABELS[selectedThread.platform] || (selectedThread.isCapture ? selectedThread.platform : 'SDK agent');
-  const turnCount = selectedThread.commits.length;
+  const plat = PL[selThread.platform]||selThread.platform||'Agent';
+  const pc   = PC[selThread.platform]||'var(--text3)';
+  document.getElementById('conv-title').textContent = threadTitle(selThread);
   document.getElementById('conv-meta').innerHTML = `
-    <span style="color:${PLAT_COLORS[selectedThread.platform]||'var(--text3)'};">${escHtml(platLabel)}</span>
-    <span>·</span>
-    <span>${turnCount} turn${turnCount!==1?'s':''}</span>
-    <span>·</span>
-    <span>${ago(selectedThread.latest)}</span>
+    <span class="ch-badge" style="border-color:${pc}44;color:${pc};">${esc(plat)}</span>
+    <span class="ch-badge">${selThread.commits.length} turn${selThread.commits.length!==1?'s':''}</span>
+    <span class="ch-badge">${ago(selThread.latest)}</span>
+    ${selThread.hasFork?'<span class="ch-badge" style="color:var(--amber);">⑂ forked</span>':''}
   `;
-  document.getElementById('main-actions').style.display = 'flex';
+  document.getElementById('conv-actions').style.display='flex';
+  renderConversation(selThread);
 
-  // Render conversation
-  renderConversation(selectedThread);
-
-  // Close chain drawer if open
-  document.getElementById('chain-drawer').classList.remove('open');
+  // Close lineage if open
+  const lp = document.getElementById('lineage-panel');
+  if (lp.classList.contains('open')) {
+    lp.classList.remove('open');
+    loadLineage(selThread);
+    lp.classList.add('open');
+  }
 }
 
-// ── Render conversation as chat ────────────────────────────────────────────────
+// ── Render conversation ────────────────────────────────────────────────────────
 function renderConversation(thread) {
   const area = document.getElementById('conv-area');
-  const empty = document.getElementById('empty-conv');
-  if (empty) empty.style.display = 'none';
-
-  // Sort commits by timestamp
-  const commits = [...thread.commits].sort((a,b) =>
-    new Date(a.created_at||a.timestamp) - new Date(b.created_at||b.timestamp)
-  );
+  const commits = [...thread.commits].sort((a,b)=>(a.created_at||a.timestamp||'').localeCompare(b.created_at||b.timestamp||''));
 
   if (!commits.length) {
-    area.innerHTML = '<div class="empty-conv"><div class="empty-conv-title">No messages in this thread</div></div>';
+    area.innerHTML='<div class="empty"><div class="empty-title">No messages in this thread</div></div>';
     return;
   }
 
-  let html = '';
-  commits.forEach((c, i) => {
-    const p = c.payload || {};
-    const role = p.role || c.actors?.from?.role || (i % 2 === 0 ? 'user' : 'assistant');
-    const text = p.text || p.summary || p.output || p.input || p.prompt || JSON.stringify(p).slice(0,200);
-    const model = p.model || c.actors?.to?.model || c.agent_info?.model || '';
-    const isUser = role === 'user';
-    const timestamp = c.created_at || c.timestamp;
-    const ctxId = c.id || '';
-    const isVerified = c.verified || c.integrity?.verification_status === 'valid';
+  const pc = PC[thread.platform]||'#9ca3af';
+  const pl = PL[thread.platform]||'Agent';
 
-    if (isUser) {
-      html += `<div class="msg-group" style="align-items:flex-end;">
-        <div class="msg-role" style="justify-content:flex-end;">
-          You
-          <div class="msg-role-icon" style="background:#dbeafe;color:#1d4ed8;">U</div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;">
-          <div class="msg-bubble user">${escHtml(text)}</div>
-        </div>
-        <div class="msg-footer" style="justify-content:flex-end;">
-          <span class="msg-time">${ago(timestamp)}</span>
-          ${isVerified ? '<span class="msg-dm-badge">✓</span>' : ''}
-          ${ctxId ? `<button class="msg-chain-btn" onclick="openChainDrawerForCtx('${escHtml(ctxId)}')">⑂</button>` : ''}
+  let html = '<div class="msg-wrap">';
+  commits.forEach((c,i) => {
+    const p = c.payload||{};
+    const role = p.role||c.actors?.from?.role||(i%2===0?'user':'assistant');
+    const text = p.text||p.summary||p.output||p.input||p.prompt||'';
+    const model = p.model||c.actors?.to?.model||'';
+    const ts = c.created_at||c.timestamp||'';
+    const ctxId = c.id||'';
+    const verified = c.verified||c.integrity?.verification_status==='valid';
+    const metaId = 'meta-'+i;
+
+    if (role==='user') {
+      html += `<div class="msg-group">
+        <div class="msg-user-outer">
+          <div class="msg-user-label">You</div>
+          <div class="msg-user-bubble">${esc(text)}</div>
+          <div class="msg-user-foot">
+            <span class="msg-time">${ago(ts)}</span>
+            ${verified?'<span class="msg-verified">✓ recorded</span>':''}
+            ${ctxId?`<button class="msg-chain-id" onclick="openLineageCtx('${esc(ctxId)}')" title="View in chain">⑂ ${esc(ctxId.slice(-8))}</button>`:''}
+            <button onclick="document.getElementById('${metaId}').classList.toggle('open')" style="font-size:10px;color:var(--text4);background:none;border:none;cursor:pointer;padding:0;" title="Metadata">meta</button>
+          </div>
+          <div class="msg-meta-strip" id="${metaId}">${ctxId?`ctx: ${esc(ctxId)}`:''}${model?` · model: ${esc(model)}`:''}${ts?` · ${new Date(ts).toLocaleString()}`:''}${verified?' · ✓ verified':''}</div>
         </div>
       </div>`;
     } else {
-      const platColor = PLAT_COLORS[thread.platform] || '#9ca3af';
-      const platLabel = PLAT_LABELS[thread.platform] || 'Agent';
       html += `<div class="msg-group">
-        <div class="msg-role">
-          <div class="msg-role-icon" style="background:${platColor}18;color:${platColor};">${platLabel[0]||'A'}</div>
-          ${escHtml(platLabel)}${model ? ` <span style="font-size:10px;color:var(--text3);font-weight:400;">${escHtml(model)}</span>` : ''}
-        </div>
-        <div class="msg-bubble assistant">${formatAssistantMessage(text)}</div>
-        <div class="msg-footer">
-          <span class="msg-time">${ago(timestamp)}</span>
-          ${isVerified ? '<span class="msg-dm-badge">✓ verified</span>' : ''}
-          ${ctxId ? `<button class="msg-chain-btn" onclick="openChainDrawerForCtx('${escHtml(ctxId)}')">⑂ ${escHtml(ctxId.slice(-8))}</button>` : ''}
+        <div class="msg-ai-outer">
+          <div class="msg-ai-label">
+            <div class="msg-ai-plat" style="background:${pc}18;color:${pc};">${pl[0]}</div>
+            ${esc(pl)}${model?` <span style="font-size:10px;color:var(--text3);font-weight:400;">${esc(model)}</span>`:''}
+          </div>
+          <div class="msg-ai-body">${formatMsg(text)}</div>
+          <div class="msg-ai-foot">
+            <span class="msg-time">${ago(ts)}</span>
+            ${verified?'<span class="msg-verified">✓ verified</span>':''}
+            ${ctxId?`<button class="msg-chain-id" onclick="openLineageCtx('${esc(ctxId)}')" title="View in chain">⑂ ${esc(ctxId.slice(-8))}</button>`:''}
+            <button onclick="document.getElementById('${metaId}').classList.toggle('open')" style="font-size:10px;color:var(--text4);background:none;border:none;cursor:pointer;padding:0;" title="Metadata">meta</button>
+          </div>
+          <div class="msg-meta-strip" id="${metaId}">${ctxId?`ctx: ${esc(ctxId)}`:''}${model?` · model: ${esc(model)}`:''}${ts?` · ${new Date(ts).toLocaleString()}`:''}${verified?' · ✓ verified':''}</div>
         </div>
       </div>`;
     }
   });
-
+  html += '</div>';
   area.innerHTML = html;
   area.scrollTop = area.scrollHeight;
 }
 
-// Render assistant message with full markdown support
-function formatAssistantMessage(text) {
+// ── Markdown renderer ─────────────────────────────────────────────────────────
+function formatMsg(text) {
   if (!text) return '';
-  let t = text;
-
-  // ── Extract code blocks FIRST (before escaping anything) ────────────────
-  const codeBlocks = [];
-  t = t.replace(/```([a-zA-Z0-9]*)\n?([\s\S]*?)```/g, (_, lang, code) => {
-    const idx = codeBlocks.length;
-    codeBlocks.push({ lang: lang || '', code });
-    return `\x00CODE${idx}\x00`;
+  const blocks=[];
+  let t = text.replace(/```([a-zA-Z0-9]*)\n?([\s\S]*?)```/g, (_,lang,code)=>{
+    blocks.push({lang,code});
+    return `\x00BLK${blocks.length-1}\x00`;
   });
-
-  // ── Escape HTML in remaining text ────────────────────────────────────────
   t = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-  // ── Inline formatting ────────────────────────────────────────────────────
-  // Inline code (backtick) — before bold/italic
-  t = t.replace(/`([^`\n]+)`/g, '<code>$1</code>');
-  // Bold **text** or __text__
-  t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  t = t.replace(/__(.+?)__/g, '<strong>$1</strong>');
-  // Italic *text* or _text_
-  t = t.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
-
-  // ── Headers ──────────────────────────────────────────────────────────────
-  t = t.replace(/^### (.+)$/gm, '<h4 style="font-size:14px;font-weight:600;margin:12px 0 4px;">$1</h4>');
-  t = t.replace(/^## (.+)$/gm,  '<h3 style="font-size:15px;font-weight:600;margin:14px 0 6px;">$1</h3>');
-  t = t.replace(/^# (.+)$/gm,   '<h2 style="font-size:16px;font-weight:700;margin:16px 0 8px;">$1</h2>');
-
-  // ── Lists ────────────────────────────────────────────────────────────────
-  // Unordered: lines starting with - or *
-  t = t.replace(/^[-*] (.+)$/gm, '<li style="margin-left:20px;margin-bottom:3px;">$1</li>');
-  // Ordered: lines starting with 1. 2. etc
-  t = t.replace(/^\d+\. (.+)$/gm, '<li style="margin-left:20px;margin-bottom:3px;list-style-type:decimal;">$1</li>');
-  // Wrap consecutive <li> in <ul>
-  t = t.replace(/(<li[^>]*>[\s\S]*?<\/li>(\n|$))+/g, m => `<ul style="margin:8px 0;padding:0;">${m}</ul>`);
-
-  // ── Paragraphs ───────────────────────────────────────────────────────────
-  // Double newline = new paragraph
-  const paragraphs = t.split(/\n\n+/);
-  t = paragraphs.map(para => {
-    para = para.trim();
+  t = t.replace(/`([^`\n]+)`/g,'<code>$1</code>');
+  t = t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  t = t.replace(/\*([^*\n]+)\*/g,'<em>$1</em>');
+  t = t.replace(/^### (.+)$/gm,'<h4>$1</h4>');
+  t = t.replace(/^## (.+)$/gm,'<h3>$1</h3>');
+  t = t.replace(/^# (.+)$/gm,'<h2>$1</h2>');
+  t = t.replace(/^[-*] (.+)$/gm,'<li>$1</li>');
+  t = t.replace(/^\d+\. (.+)$/gm,'<li style="list-style-type:decimal;margin-left:18px;">$1</li>');
+  t = t.split(/\n\n+/).map(para=>{
+    para=para.trim();
     if (!para) return '';
-    // Don't wrap already-block elements
-    if (para.startsWith('<h') || para.startsWith('<ul') || para.startsWith('<li') || para.startsWith('\x00CODE')) {
-      return para.replace(/\n/g, '<br>');
-    }
-    return '<p style="margin:0 0 10px;">' + para.replace(/\n/g, '<br>') + '</p>';
+    if (/^<(h[2-4]|ul|ol|li|\x00BLK)/.test(para)) return para.replace(/\n/g,'<br>');
+    return '<p>'+para.replace(/\n/g,'<br>')+'</p>';
   }).join('');
-
-  // ── Restore code blocks ──────────────────────────────────────────────────
-  t = t.replace(/\x00CODE(\d+)\x00/g, (_, idx) => {
-    const { lang, code } = codeBlocks[parseInt(idx)];
-    const escaped = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    return `<pre style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:12px 16px;overflow-x:auto;margin:10px 0;position:relative;">${lang ? `<span style="position:absolute;top:6px;right:10px;font-family:var(--mono);font-size:10px;color:var(--text3);">${escHtml(lang)}</span>` : ''}<code style="font-family:var(--mono);font-size:12.5px;line-height:1.7;white-space:pre;">${escaped}</code></pre>`;
+  t = t.replace(/\x00BLK(\d+)\x00/g,(_,i)=>{
+    const {lang,code}=blocks[+i];
+    const ec=code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<pre>${lang?`<span class="code-lang">${esc(lang)}</span>`:''}<code>${ec}</code></pre>`;
   });
-
   return t;
 }
 
-// ── Thread menu ────────────────────────────────────────────────────────────────
+// ── Thread 3-dot menu ─────────────────────────────────────────────────────────
 function openThreadMenu(id, btn) {
-  // Close any open menu
-  document.getElementById('tm-popup')?.remove();
-  if (activeMenuId === id) { activeMenuId = null; return; }
-  activeMenuId = id;
+  document.getElementById('dm-dd')?.remove();
+  if (openMenu===id) { openMenu=null; return; }
+  openMenu=id;
+  const t=allThreads.find(x=>x.id===id); if(!t) return;
+  const star=starred(id);
+  const rect=btn.getBoundingClientRect();
 
-  const thread = allThreads.find(t => t.id === id);
-  if (!thread) return;
-
-  const rect = btn.getBoundingClientRect();
-  const starred = isStarred(id);
-
-  const menu = document.createElement('div');
-  menu.id = 'tm-popup';
-  menu.className = 'thread-menu';
-  menu.style.top  = (rect.bottom + 4) + 'px';
-  menu.style.left = Math.max(4, rect.right - 180) + 'px';
-
-  menu.innerHTML = `
-    <button class="tm-item" onclick="starThread('${escHtml(id)}')">
-      <span class="tm-icon">${starred?'★':'☆'}</span>${starred?'Unstar':'Star'}
-    </button>
-    <button class="tm-item" onclick="renameThread('${escHtml(id)}')">
-      <span class="tm-icon">✏️</span>Rename
-    </button>
-    <div class="tm-sep"></div>
-    <button class="tm-item" onclick="shareThread('${escHtml(id)}')">
-      <span class="tm-icon">↗</span>Share
-    </button>
-    <button class="tm-item" onclick="forkThread('${escHtml(id)}')">
-      <span class="tm-icon">⑂</span>Fork
-    </button>
-    <button class="tm-item" onclick="copyThreadLink('${escHtml(id)}')">
-      <span class="tm-icon">🔗</span>Copy link
-    </button>
-    <div class="tm-sep"></div>
-    <button class="tm-item" onclick="viewThreadMeta('${escHtml(id)}')">
-      <span class="tm-icon">ℹ</span>View metadata
-    </button>
-    <button class="tm-item" onclick="exportThread('${escHtml(id)}')">
-      <span class="tm-icon">↓</span>Export
-    </button>
-    <div class="tm-sep"></div>
-    <button class="tm-item danger" onclick="deleteThread('${escHtml(id)}')">
-      <span class="tm-icon">🗑</span>Delete
-    </button>
+  const m=document.createElement('div');
+  m.id='dm-dd'; m.className='dropdown';
+  m.style.top=(rect.bottom+4)+'px';
+  m.style.left=Math.max(4,rect.right-180)+'px';
+  m.innerHTML=`
+    <button class="dd-item" onclick="doStar('${esc(id)}')"><span class="dd-ic">${star?'★':'☆'}</span>${star?'Unstar':'Star'}</button>
+    <button class="dd-item" onclick="doRename('${esc(id)}')"><span class="dd-ic">✏</span>Rename</button>
+    <div class="dd-sep"></div>
+    <button class="dd-item" onclick="doShare('${esc(id)}')"><span class="dd-ic">↗</span>Share</button>
+    <button class="dd-item" onclick="doFork('${esc(id)}')"><span class="dd-ic">⑂</span>Fork</button>
+    <button class="dd-item" onclick="doVerify('${esc(id)}')"><span class="dd-ic">✓</span>Verify chain</button>
+    <button class="dd-item" onclick="doExport('${esc(id)}')"><span class="dd-ic">↓</span>Export JSON</button>
+    <button class="dd-item" onclick="doCopyLink('${esc(id)}')"><span class="dd-ic">🔗</span>Copy link</button>
+    <div class="dd-sep"></div>
+    <button class="dd-item red" onclick="doDelete('${esc(id)}')"><span class="dd-ic">🗑</span>Delete</button>
   `;
-
-  document.body.appendChild(menu);
-
-  // Close on outside click
-  const close = (e) => {
-    if (!menu.contains(e.target) && e.target !== btn) {
-      menu.remove(); activeMenuId = null;
-      document.removeEventListener('click', close);
-    }
-  };
-  setTimeout(() => document.addEventListener('click', close), 0);
+  document.body.appendChild(m);
+  const close=e=>{ if(!m.contains(e.target)&&e.target!==btn){m.remove();openMenu=null;document.removeEventListener('click',close);} };
+  setTimeout(()=>document.addEventListener('click',close),0);
 }
 
-function starThread(id) {
-  toggleStar(id);
-  document.getElementById('tm-popup')?.remove();
-  activeMenuId = null;
-  renderThreadList();
-  toast(isStarred(id) ? '☆ Unstarred' : '★ Starred');
-}
+function doStar(id)   { toggleStar(id); document.getElementById('dm-dd')?.remove(); openMenu=null; renderList(); toast(starred(id)?'★ Starred':'Unstarred'); }
+function doRename(id) { document.getElementById('dm-dd')?.remove(); openMenu=null; renameId=id; const t=allThreads.find(x=>x.id===id); document.getElementById('rename-inp').value=threadTitle(t)||''; openModal('rename-modal'); setTimeout(()=>document.getElementById('rename-inp').select(),50); }
+function confirmRename() { const v=document.getElementById('rename-inp').value.trim(); if(!v||!renameId) return; saveRename(renameId,v); closeModal('rename-modal'); renderList(); if(selThread?.id===renameId) document.getElementById('conv-title').textContent=v; toast('✓ Renamed'); }
+document.getElementById('rename-inp').addEventListener('keydown',e=>{if(e.key==='Enter')confirmRename();if(e.key==='Escape')closeModal('rename-modal');});
 
-function renameThread(id) {
-  document.getElementById('tm-popup')?.remove();
-  activeMenuId = null;
-  const thread = allThreads.find(t => t.id === id);
-  if (!thread) return;
-  currentRenameId = id;
-  document.getElementById('rename-input').value = getThreadTitle(thread);
-  openModal('rename-modal');
-  setTimeout(() => document.getElementById('rename-input').select(), 50);
-}
-
-function confirmRename() {
-  const title = document.getElementById('rename-input').value.trim();
-  if (!title || !currentRenameId) return;
-  saveRename(currentRenameId, title);
-  closeModal('rename-modal');
-  renderThreadList();
-  if (selectedThread?.id === currentRenameId) {
-    document.getElementById('conv-title').textContent = title;
-  }
-  toast('✓ Renamed');
-}
-
-document.getElementById('rename-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') confirmRename();
-  if (e.key === 'Escape') closeModal('rename-modal');
-});
-
-async function shareThread(id) {
-  id = id || selectedThread?.id;
-  if (!id) return;
-  const thread = allThreads.find(t => t.id === id);
-  document.getElementById('tm-popup')?.remove();
-  activeMenuId = null;
-  if (!thread?.commits?.length) { toast('No commits to share'); return; }
-  // Sort by timestamp to find root (oldest) commit
-  const sorted = [...thread.commits].sort((a,b) =>
-    new Date(a.created_at||a.timestamp) - new Date(b.created_at||b.timestamp)
-  );
-  const rootCtx = sorted[0]?.id;
-  const tipCtx  = sorted[sorted.length - 1]?.id;
-  const shareCtx = tipCtx || rootCtx; // share from tip — chain viewer walks back to root
-  if (!shareCtx) return;
-  if (!dmApiKey) { toast('Open Agents panel and copy an API key first'); return; }
+async function doShare(id) {
+  document.getElementById('dm-dd')?.remove(); openMenu=null;
+  const t=allThreads.find(x=>x.id===id); if(!t) return;
+  const sorted=[...t.commits].sort((a,b)=>(a.created_at||'').localeCompare(b.created_at||''));
+  const tip=sorted[sorted.length-1]?.id; if(!tip) return;
+  if(!dmKey) { toast('Open Agents panel and copy an API key first'); return; }
   try {
-    const res = await fetch('/api/share/' + shareCtx, {
-      method: 'POST', headers: apiKeyHeaders(),
-      body: JSON.stringify({ label: getThreadTitle(thread) }),
-    });
-    const data = await res.json();
-    if (data.shareUrl) {
-      await navigator.clipboard.writeText(data.shareUrl);
-      toast('✓ Share link copied — opens full conversation chain');
-    } else {
-      toast('Share failed: ' + (data.error || 'unknown error'));
-    }
-  } catch(e) { toast('Share failed: ' + e.message); }
+    const r=await fetch(`/api/share/${tip}`,{method:'POST',headers:keyH(),body:JSON.stringify({label:threadTitle(t)})});
+    const d=await r.json();
+    if (d.shareUrl) { await navigator.clipboard.writeText(d.shareUrl); toast('✓ Share link copied'); }
+    else toast('Share failed: '+(d.error||''));
+  } catch(e) { toast('Share failed: '+e.message); }
 }
 
-async function forkThread(id) {
-  id = id || selectedThread?.id;
-  if (!id) return;
-  const thread = allThreads.find(t => t.id === id);
-  document.getElementById('tm-popup')?.remove();
-  activeMenuId = null;
-  if (!thread?.commits?.length) { toast('No commits to fork'); return; }
-  const tipCtx = thread.commits[thread.commits.length - 1]?.id;
-  if (!tipCtx || !dmApiKey) { toast('Need API key — copy it from an agent card'); return; }
+async function doFork(id) {
+  document.getElementById('dm-dd')?.remove(); openMenu=null;
+  const t=allThreads.find(x=>x.id===id); if(!t) return;
+  const sorted=[...t.commits].sort((a,b)=>(a.created_at||'').localeCompare(b.created_at||''));
+  const tip=sorted[sorted.length-1]?.id; if(!tip||!dmKey) { toast('Need API key'); return; }
   try {
-    const res = await fetch(`/api/fork/${tipCtx}`, {
-      method: 'POST', headers: apiKeyHeaders(),
-      body: JSON.stringify({}),
-    });
-    const data = await res.json();
-    if (data.id) {
-      toast(`✓ Fork created → ${data.id.slice(-8)}`);
-      await loadThreads();
-    }
-  } catch(e) { toast('Fork failed: ' + e.message); }
+    const r=await fetch(`/api/fork/${tip}`,{method:'POST',headers:keyH(),body:JSON.stringify({})});
+    const d=await r.json();
+    if (d.id) { toast(`✓ Fork created → ${d.id.slice(-8)}`); await loadThreads(); }
+  } catch(e) { toast('Fork failed: '+e.message); }
 }
 
-function copyThreadLink(id) {
-  document.getElementById('tm-popup')?.remove();
-  activeMenuId = null;
-  navigator.clipboard.writeText(location.origin + '/dashboard/thread/' + encodeURIComponent(id));
-  toast('✓ Link copied');
-}
-
-function viewThreadMeta(id) {
-  document.getElementById('tm-popup')?.remove();
-  activeMenuId = null;
-  const t = allThreads.find(x => x.id === id);
-  if (!t) return;
-  toast(`${t.commits.length} commits · ${t.platform||'sdk'} · ${t.id.slice(-12)}`);
-}
-
-async function exportThread(id) {
-  document.getElementById('tm-popup')?.remove();
-  activeMenuId = null;
-  const thread = allThreads.find(t => t.id === id);
-  if (!thread) return;
-  const data = JSON.stringify(thread.commits, null, 2);
-  const blob = new Blob([data], {type:'application/json'});
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `darkmatter-thread-${id.slice(-8)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('✓ Exported');
-}
-
-async function deleteThread(id) {
-  document.getElementById('tm-popup')?.remove();
-  activeMenuId = null;
-  toast('Thread deletion not yet implemented — delete individual agents to remove their data.');
-}
-
-// ── Chain drawer ──────────────────────────────────────────────────────────────
-function openChainDrawer() {
-  if (!selectedThread) return;
-  const tipCtx = selectedThread.commits[selectedThread.commits.length - 1]?.id;
-  if (tipCtx) openChainDrawerForCtx(tipCtx);
-}
-
-async function openChainDrawerForCtx(ctxId) {
-  document.getElementById('chain-drawer').classList.add('open');
-  const body = document.getElementById('chain-drawer-body');
-  body.innerHTML = '<div style="color:var(--text3);font-size:13px;">Loading chain...</div>';
-
+async function doVerify(id) {
+  document.getElementById('dm-dd')?.remove(); openMenu=null;
+  const t=allThreads.find(x=>x.id===id); if(!t) return;
+  const tip=t.commits[t.commits.length-1]?.id; if(!tip) return;
   try {
-    const res  = await fetch(`/api/replay/${ctxId}?mode=summary`, {
-      headers: dmApiKey ? apiKeyHeaders() : await authHeaders()
-    });
-    if (!res.ok) throw new Error('Not found');
-    const data = await res.json();
-    renderChainDrawer(data);
-  } catch(e) {
-    body.innerHTML = `<div style="color:var(--red);font-size:13px;">${escHtml(e.message)}</div>`;
-  }
-}
-
-function renderChainDrawer(data) {
-  const intact = data.chainIntact;
-  let html = `<div style="margin-bottom:12px;">
-    <span style="font-family:var(--mono);font-size:11px;color:${intact?'var(--green)':'var(--red)'};">
-      ${intact?'✓ Chain intact':'✗ Chain broken'}
-    </span>
-    <span style="font-size:11px;color:var(--text3);margin-left:8px;">${data.totalSteps} steps</span>
-  </div>`;
-
-  (data.replay || []).forEach((step, i) => {
-    const isFork = step.eventType === 'fork';
-    const isErr  = step.integrity?.chainValid === false;
-    const agentName = step.createdBy?.agent_name || `Step ${step.step}`;
-    const h = step.integrity?.payload_hash?.slice(7,13) || '';
-    html += `<div class="chain-node">
-      <div class="chain-dot ${isFork?'fork':isErr?'err':''}"></div>
-      <div class="chain-step-card">
-        <div class="chain-step-head">
-          <span class="chain-step-num">Step ${step.step}</span>
-          <span class="chain-step-name">${escHtml(agentName)}</span>
-          <span class="chain-step-time">${ago(step.timestamp)}</span>
-        </div>
-        ${h ? `<div class="chain-step-hash">${h}···</div>` : ''}
-      </div>
-    </div>`;
-  });
-
-  document.getElementById('chain-drawer-body').innerHTML = html;
-  document.getElementById('chain-verify-btn').dataset.ctx = data.replay?.[data.replay.length-1]?.id || '';
-  document.getElementById('chain-export-btn').dataset.ctx = data.replay?.[0]?.id || '';
-}
-
-function closeChainDrawer() {
-  document.getElementById('chain-drawer').classList.remove('open');
-}
-
-async function verifyCurrentChain() {
-  const ctxId = document.getElementById('chain-verify-btn').dataset.ctx;
-  if (!ctxId) return;
-  try {
-    const res  = await fetch(`/api/verify/${ctxId}`, { headers: dmApiKey ? apiKeyHeaders() : await authHeaders() });
-    const data = await res.json();
-    toast(data.chain_intact ? `✓ Verified — ${data.length} steps intact` : `✗ Broken at step ${data.broken_at}`);
+    const r=await fetch(`/api/verify/${tip}`,{headers:dmKey?keyH():await authH()});
+    const d=await r.json();
+    toast(d.chain_intact?`✓ Chain intact — ${d.length} steps`:`✗ Chain broken at step ${d.broken_at}`);
   } catch(e) { toast('Verify failed'); }
 }
 
-async function exportCurrentChain() {
-  const ctxId = document.getElementById('chain-export-btn').dataset.ctx;
-  if (!ctxId || !dmApiKey) { toast('Need API key to export'); return; }
+async function doExport(id) {
+  document.getElementById('dm-dd')?.remove(); openMenu=null;
+  const t=allThreads.find(x=>x.id===id); if(!t) return;
+  const data=JSON.stringify(t.commits,null,2);
+  const url=URL.createObjectURL(new Blob([data],{type:'application/json'}));
+  const a=document.createElement('a'); a.href=url; a.download=`darkmatter-${id.slice(-8)}.json`; a.click();
+  URL.revokeObjectURL(url); toast('✓ Exported');
+}
+
+function doCopyLink(id) { document.getElementById('dm-dd')?.remove(); openMenu=null; navigator.clipboard.writeText(location.origin+'/dashboard?t='+encodeURIComponent(id)); toast('✓ Link copied'); }
+function doDelete(id)   { document.getElementById('dm-dd')?.remove(); openMenu=null; toast('Thread deletion: delete the agent from the Agents panel to remove its data.'); }
+
+// ── Active thread actions (header buttons) ────────────────────────────────────
+function shareActive()  { if(selThread) doShare(selThread.id); }
+function verifyActive() { if(selThread) doVerify(selThread.id); }
+function activeMenu()   { if(selThread) { const btn=document.getElementById('conv-actions').lastElementChild; openThreadMenu(selThread.id,btn); } }
+
+// ── Lineage panel ─────────────────────────────────────────────────────────────
+function toggleLineage() {
+  const p=document.getElementById('lineage-panel');
+  if (p.classList.toggle('open') && selThread) loadLineage(selThread);
+}
+function openLineageCtx(ctxId) {
+  const p=document.getElementById('lineage-panel'); p.classList.add('open');
+  loadLineageCtx(ctxId);
+}
+
+async function loadLineage(thread) {
+  const tip=thread.commits[thread.commits.length-1]?.id; if(!tip) return;
+  await loadLineageCtx(tip);
+}
+
+async function loadLineageCtx(ctxId) {
+  document.getElementById('lineage-body').innerHTML='<div style="color:var(--text3);font-size:13.5px;">Loading…</div>';
+  document.getElementById('ln-verify-btn').dataset.ctx=ctxId;
+  document.getElementById('ln-export-btn').dataset.ctx=ctxId;
   try {
-    const res = await fetch(`/api/export/${ctxId}`, { headers: apiKeyHeaders() });
-    const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `darkmatter_proof_${ctxId.slice(-8)}.json`; a.click();
-    URL.revokeObjectURL(url);
-  } catch(e) { toast('Export failed: ' + e.message); }
-}
-
-// ── Filter / search ───────────────────────────────────────────────────────────
-function setFilter(f) {
-  activeFilter = f;
-  document.querySelectorAll('.sf-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.filter === f);
-  });
-  renderThreadList();
-}
-
-document.getElementById('search-input').addEventListener('input', e => {
-  searchQuery = e.target.value;
-  renderThreadList();
-});
-
-// Keyboard shortcut: / focuses search
-document.addEventListener('keydown', e => {
-  if (e.key === '/' && document.activeElement !== document.getElementById('search-input')
-      && document.activeElement !== document.getElementById('agent-name-input')
-      && document.activeElement !== document.getElementById('rename-input')) {
-    e.preventDefault();
-    document.getElementById('search-input').focus();
+    const r=await fetch(`/api/replay/${ctxId}?mode=summary`,{headers:dmKey?keyH():await authH()});
+    if(!r.ok) throw new Error('Not found');
+    const d=await r.json();
+    const intact=d.chainIntact;
+    let html=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+      <span style="font-family:var(--mono);font-size:11px;color:${intact?'var(--green)':'var(--red)'};">${intact?'✓ Chain intact':'✗ Chain broken'}</span>
+      <span style="font-size:11px;color:var(--text3);">${d.totalSteps} steps</span>
+    </div>`;
+    (d.replay||[]).forEach((step,i)=>{
+      const isFork=step.eventType==='fork';
+      const isErr=step.integrity?.chainValid===false;
+      const role=step.payload?.role||step.agents?.from?.role||'';
+      const name=step.createdBy?.agent_name||`Step ${step.step}`;
+      const h=step.integrity?.payload_hash?.slice(7,13)||'';
+      html+=`<div class="ln-node">
+        <div class="ln-dot ${isFork?'fork':isErr?'err':''}"></div>
+        <div class="ln-card">
+          <div class="ln-card-head">
+            <span class="ln-step">Step ${step.step}</span>
+            <span class="ln-name">${esc(name)}</span>
+            <span class="ln-time">${ago(step.timestamp)}</span>
+          </div>
+          ${role?`<div class="ln-role">${esc(role)}</div>`:''}
+          ${h?`<div class="ln-hash">${h}···</div>`:''}
+          <div class="ln-actions">
+            <button class="ln-btn" onclick="forkLn('${esc(step.id||'')}')">⑂ Fork</button>
+            <button class="ln-btn" onclick="replayLn('${esc(step.id||'')}')">▶ Replay from here</button>
+          </div>
+        </div>
+      </div>`;
+    });
+    document.getElementById('lineage-body').innerHTML=html;
+  } catch(e) {
+    document.getElementById('lineage-body').innerHTML=`<div style="color:var(--red);font-size:13px;">${esc(e.message)}</div>`;
   }
-  if (e.key === 'Escape') {
-    document.getElementById('search-input').blur();
-    closeChainDrawer();
-    document.getElementById('tm-popup')?.remove();
+}
+
+async function verifyLineage() {
+  const ctx=document.getElementById('ln-verify-btn').dataset.ctx; if(!ctx) return;
+  const r=await fetch(`/api/verify/${ctx}`,{headers:dmKey?keyH():await authH()});
+  const d=await r.json();
+  toast(d.chain_intact?`✓ Verified — ${d.length} steps intact`:`✗ Broken at step ${d.broken_at}`);
+}
+async function exportLineage() {
+  const ctx=document.getElementById('ln-export-btn').dataset.ctx; if(!ctx) return;
+  if(!dmKey) { toast('Copy an API key first'); return; }
+  try {
+    const r=await fetch(`/api/export/${ctx}`,{headers:keyH()});
+    const d=await r.json();
+    const url=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}));
+    const a=document.createElement('a'); a.href=url; a.download=`proof_${ctx.slice(-8)}.json`; a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) { toast('Export failed: '+e.message); }
+}
+async function forkLn(ctxId)   { if(!ctxId||!dmKey){toast('Need API key');return;} const r=await fetch(`/api/fork/${ctxId}`,{method:'POST',headers:keyH(),body:'{}'}); const d=await r.json(); if(d.id){toast(`✓ Fork → ${d.id.slice(-8)}`);await loadThreads();} }
+async function replayLn(ctxId) { if(!ctxId) return; await loadLineageCtx(ctxId); }
+
+// ── Filters & search ──────────────────────────────────────────────────────────
+document.querySelectorAll('.f-btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    activeFilter=b.dataset.f;
+    document.querySelectorAll('.f-btn').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    renderList();
+  });
+});
+document.getElementById('search-inp').addEventListener('input',e=>{ searchQ=e.target.value; renderList(); });
+document.addEventListener('keydown',e=>{
+  if (e.key==='/') {
+    const inp=document.getElementById('search-inp');
+    if(document.activeElement!==inp){e.preventDefault();inp.focus();}
+  }
+  if (e.key==='Escape') {
+    document.getElementById('dm-dd')?.remove(); openMenu=null;
+    document.getElementById('lineage-panel').classList.remove('open');
+    document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open'));
+    document.body.style.overflow='';
   }
 });
 
 // ── Agents panel ──────────────────────────────────────────────────────────────
-function toggleAgentsPanel() {
-  agentsPanelOpen = !agentsPanelOpen;
-  document.getElementById('agents-panel-body').classList.toggle('open', agentsPanelOpen);
-  document.getElementById('agents-toggle').textContent = agentsPanelOpen ? '▼' : '▲';
+function toggleAgents() {
+  agentsOpen=!agentsOpen;
+  document.getElementById('ag-body').classList.toggle('open',agentsOpen);
+  document.getElementById('ag-toggle').textContent=agentsOpen?'▼':'▲';
 }
 
 async function createAgent() {
-  const input = document.getElementById('agent-name-input');
-  const btn   = document.getElementById('create-btn');
-  const name  = input.value.trim();
-  if (!name) { toast('Enter an agent name'); return; }
-  btn.disabled = true; btn.textContent = 'Creating...';
+  const inp=document.getElementById('ag-name-inp');
+  const btn=document.getElementById('ag-create-btn');
+  const name=inp.value.trim(); if(!name){toast('Enter an agent name');return;}
+  btn.disabled=true; btn.textContent='Creating…';
   try {
-    const h = await authHeaders();
-    const res = await fetch('/dashboard/agents', { method:'POST', headers:h, body:JSON.stringify({agentName:name}) });
-    const data = await res.json();
-    if (data.error) { toast('Error: ' + data.error); return; }
-    input.value = '';
-    if (data.apiKey) {
-      dmApiKey = data.apiKey;
-      localStorage.setItem('dm_api_key', data.apiKey);
-      session.dm_api_key = data.apiKey;
-      localStorage.setItem('dm_session', JSON.stringify(session));
-    }
-    toast('✓ Agent created — API key ready');
+    const h=await authH();
+    const r=await fetch('/dashboard/agents',{method:'POST',headers:h,body:JSON.stringify({agentName:name})});
+    const d=await r.json();
+    if(d.error){toast('Error: '+d.error);return;}
+    inp.value='';
+    if(d.apiKey){dmKey=d.apiKey;localStorage.setItem('dm_api_key',d.apiKey);session.dm_api_key=d.apiKey;localStorage.setItem('dm_session',JSON.stringify(session));}
+    toast('✓ Agent created');
     await loadAgents();
-  } finally {
-    btn.disabled = false; btn.textContent = '+ Create';
-  }
+  } finally { btn.disabled=false; btn.textContent='+ Create'; }
 }
+document.getElementById('ag-name-inp').addEventListener('keydown',e=>{if(e.key==='Enter')createAgent();});
 
 async function loadAgents() {
   try {
-    const h = await authHeaders();
-    const res = await fetch('/dashboard/agents', { headers: h });
-    if (res.status === 401) { await refreshSession(); return loadAgents(); }
-    const data = await res.json();
-
-    document.getElementById('agent-count').textContent = data.length ? `(${data.length})` : '';
-
-    if (!dmApiKey) {
-      const stored = localStorage.getItem('dm_api_key');
-      if (stored) dmApiKey = stored;
-      else if (data[0]?.apiKey && !data[0].apiKey.includes('···')) {
-        dmApiKey = data[0].apiKey;
-        localStorage.setItem('dm_api_key', data[0].apiKey);
-      }
-    }
-
-    const grid = document.getElementById('agents-grid');
-    if (!data.length) {
-      grid.innerHTML = '<div class="agents-empty">No agents yet — create one to get an API key</div>';
-      return;
-    }
-
-    grid.innerHTML = data.map(a => `
-      <div class="agent-card" id="acard-${a.agentId}">
-        <div class="agent-dot"></div>
-        <div class="agent-info">
-          <div class="agent-name">${escHtml(a.agentName)}</div>
-          <div class="agent-id-row">
-            <span class="agent-id">${escHtml(a.agentId)}</span>
-            <button class="abtn" onclick="navigator.clipboard.writeText('${escHtml(a.agentId)}');toast('Agent ID copied')">⎘</button>
-          </div>
-          <div class="agent-key-row">
-            <div class="api-key-val" id="akv-${a.agentId}">${maskKey(a.apiKey)}</div>
-            <button class="abtn" onclick="revealAgentKey('${escHtml(a.agentId)}','${escHtml(a.apiKey)}','${escHtml(a.agentName)}')">View</button>
-            <button class="abtn" onclick="copyAgentKey('${escHtml(a.agentId)}','${escHtml(a.apiKey)}')">Copy</button>
-            <button class="abtn danger" onclick="deleteAgent('${escHtml(a.agentId)}','${escHtml(a.agentName)}')">Delete</button>
+    const h=await authH();
+    const r=await fetch('/dashboard/agents',{headers:h});
+    if(r.status===401){await refreshSession();return loadAgents();}
+    const data=await r.json();
+    document.getElementById('ag-count').textContent=data.length?`(${data.length})`:'';
+    if(!dmKey){const s=localStorage.getItem('dm_api_key');if(s)dmKey=s;else if(data[0]?.apiKey&&!data[0].apiKey.includes('·')){dmKey=data[0].apiKey;localStorage.setItem('dm_api_key',data[0].apiKey);}}
+    const list=document.getElementById('ag-list');
+    if(!data.length){list.innerHTML='<div class="agents-empty">No agents yet — create one above to get an API key</div>';return;}
+    list.innerHTML=data.map(a=>`
+      <div class="ag-card" id="ac-${esc(a.agentId)}">
+        <div class="ag-dot"></div>
+        <div class="ag-info">
+          <div class="ag-name">${esc(a.agentName)}</div>
+          <div class="ag-id">${esc(a.agentId)} <button class="ag-btn" onclick="navigator.clipboard.writeText('${esc(a.agentId)}');toast('Agent ID copied')" style="margin-left:4px;">⎘</button></div>
+          <div class="ag-key">
+            <div class="ag-key-val">${maskKey(a.apiKey)}</div>
+            <button class="ag-btn" onclick="showKey('${esc(a.agentId)}','${esc(a.apiKey)}','${esc(a.agentName)}')">View</button>
+            <button class="ag-btn" onclick="copyKey('${esc(a.agentId)}','${esc(a.apiKey)}')">Copy</button>
+            <button class="ag-btn red" onclick="deleteAgent('${esc(a.agentId)}','${esc(a.agentName)}')">Delete</button>
           </div>
         </div>
-      </div>
-    `).join('');
-  } catch(e) { console.error('[DM] loadAgents error:', e); }
+      </div>`).join('');
+  } catch(e) { console.error(e); }
 }
 
-function revealAgentKey(id, key, name) {
-  currentKeyModal = { id, key, name };
-  document.getElementById('key-modal-title').textContent = name + ' — API Key';
-  document.getElementById('key-modal-id').textContent = id;
-  document.getElementById('key-modal-key').textContent = key;
-  openModal('key-modal');
-}
+function showKey(id,key,name) { keyModal={id,key,name}; document.getElementById('key-modal-title').textContent=name+' — Key'; document.getElementById('km-id').textContent=id; document.getElementById('km-key').textContent=key; openModal('key-modal'); }
+function copyKeyFromModal() { if(!keyModal)return; navigator.clipboard.writeText(keyModal.key); dmKey=keyModal.key; localStorage.setItem('dm_api_key',dmKey); toast('✓ API key copied'); }
+function copyKey(id,key) { navigator.clipboard.writeText(key); dmKey=key; localStorage.setItem('dm_api_key',key); toast('✓ Key copied'); }
+async function rotateKey() { if(!keyModal)return; if(!confirm('Rotate this key? Current key stops working immediately.'))return; const h=await authH(); const r=await fetch(`/dashboard/agents/${keyModal.id}/rotate`,{method:'POST',headers:h}); const d=await r.json(); if(d.error){toast('Error: '+d.error);return;} closeModal('key-modal'); toast('✓ Key rotated'); await loadAgents(); }
+async function deleteAgent(id,name) { if(!confirm(`Delete agent "${name}"?`))return; const h=await authH(); await fetch(`/dashboard/agents/${id}`,{method:'DELETE',headers:h}); toast('Agent deleted'); await loadAgents(); await loadThreads(); }
 
-function copyFromModal() {
-  if (!currentKeyModal) return;
-  const key = currentKeyModal.key;
-  navigator.clipboard.writeText(key);
-  dmApiKey = key;
-  localStorage.setItem('dm_api_key', key);
-  session.dm_api_key = key;
-  localStorage.setItem('dm_session', JSON.stringify(session));
-  toast('✓ API key copied');
-}
+// ── Settings / Account ────────────────────────────────────────────────────────
+document.getElementById('settings-btn').addEventListener('click',()=>openModal('settings-modal'));
+document.getElementById('user-avatar').addEventListener('click',()=>openModal('settings-modal'));
 
-async function rotateKeyModal() {
-  if (!currentKeyModal) return;
-  if (!confirm('Rotate this key? The current key stops working immediately.')) return;
-  try {
-    const h = await authHeaders();
-    const res = await fetch(`/dashboard/agents/${currentKeyModal.id}/rotate`, { method:'POST', headers:h });
-    const data = await res.json();
-    if (data.error) { toast('Error: ' + data.error); return; }
-    closeModal('key-modal');
-    toast('✓ Key rotated — copy the new key');
-    await loadAgents();
-  } catch(e) { toast('Rotate failed'); }
-}
-
-function copyAgentKey(id, key) {
-  navigator.clipboard.writeText(key);
-  dmApiKey = key;
-  localStorage.setItem('dm_api_key', key);
-  session.dm_api_key = key;
-  localStorage.setItem('dm_session', JSON.stringify(session));
-  toast('✓ API key copied');
-}
-
-async function deleteAgent(id, name) {
-  if (!confirm(`Delete agent "${name}"? This cannot be undone.`)) return;
-  try {
-    const h = await authHeaders();
-    await fetch(`/dashboard/agents/${id}`, { method:'DELETE', headers:h });
-    toast('Agent deleted');
-    await loadAgents();
-    await loadThreads();
-  } catch(e) { toast('Delete failed'); }
-}
-
-// ── Account deletion ──────────────────────────────────────────────────────────
-async function deleteAccount() {
-  const input = document.getElementById('delete-confirm-input').value.trim();
-  if (input !== 'DELETE') { toast('Type DELETE to confirm'); return; }
-  const deleteCommits = document.getElementById('delete-commits-choice').value === 'delete';
-
-  try {
-    const h = await authHeaders();
-    const res = await fetch('/dashboard/account', {
-      method: 'DELETE', headers: h,
-      body: JSON.stringify({ deleteCommits }),
-    });
-    if (!res.ok) { const d = await res.json(); toast('Error: ' + (d.error||'Failed')); return; }
-    localStorage.clear();
-    toast('Account deleted. Goodbye.');
-    setTimeout(() => location.href = '/', 2000);
-  } catch(e) { toast('Delete failed: ' + e.message); }
-}
-
-// ── Export all commits ────────────────────────────────────────────────────────
 async function exportAll() {
-  try {
-    const h = await authHeaders();
-    const res = await fetch('/dashboard/commits', { headers:h });
-    const data = await res.json();
-    if (!data.length) { toast('No commits to export'); return; }
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], {type:'application/json'});
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = `darkmatter-export-${new Date().toISOString().slice(0,10)}.json`; a.click();
-    URL.revokeObjectURL(url);
-    toast(`✓ Exported ${data.length} commits`);
-  } catch(e) { toast('Export failed'); }
+  const h=await authH(); const r=await fetch('/dashboard/commits',{headers:h}); const data=await r.json();
+  if(!data.length){toast('No commits to export');return;}
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  const a=document.createElement('a');a.href=url;a.download=`darkmatter-export-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);
+  toast(`✓ Exported ${data.length} commits`);
 }
+
+async function deleteAccount() {
+  const inp=document.getElementById('del-confirm').value.trim();
+  if(inp!=='DELETE'){toast('Type DELETE to confirm');return;}
+  const del=document.getElementById('del-choice').value==='delete';
+  const h=await authH();
+  const r=await fetch('/dashboard/account',{method:'DELETE',headers:h,body:JSON.stringify({deleteCommits:del})});
+  if(!r.ok){const d=await r.json();toast('Error: '+(d.error||'Failed'));return;}
+  localStorage.clear(); toast('Account deleted. Goodbye.'); setTimeout(()=>location.href='/',2000);
+}
+
+function logout() { localStorage.removeItem('dm_session'); localStorage.removeItem('dm_api_key'); location.href='/login'; }
 
 // ── Modals ────────────────────────────────────────────────────────────────────
-function openModal(id) {
-  document.getElementById(id).classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-  document.body.style.overflow = '';
-}
-function closeModalBg(id, e) {
-  if (e.target === document.getElementById(id)) closeModal(id);
-}
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    document.querySelectorAll('.modal-bg.open').forEach(m => m.classList.remove('open'));
-    document.body.style.overflow = '';
-  }
-});
-
-// ── Auth ──────────────────────────────────────────────────────────────────────
-function logout() {
-  localStorage.removeItem('dm_session');
-  localStorage.removeItem('dm_api_key');
-  location.href = '/login';
-}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeBg(id,e) { if(e.target===document.getElementById(id)) closeModal(id); }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-document.getElementById('agent-name-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') createAgent();
-});
-
-// Auto-open agents panel if no commits yet
 async function init() {
   await Promise.all([loadThreads(), loadAgents()]);
-
-  // Auto-select thread from URL param ?t= or /dashboard/thread/:id redirect
-  const urlParams = new URLSearchParams(location.search);
-  const targetThread = urlParams.get('t');
-  if (targetThread && allThreads.length) {
-    const found = allThreads.find(t => t.id === targetThread);
-    if (found) {
-      selectThread(found.id);
-    }
-  }
-
-  // Auto-open agents panel if no commits yet
-  if (!allThreads.length) {
-    agentsPanelOpen = true;
-    document.getElementById('agents-panel-body').classList.add('open');
-    document.getElementById('agents-toggle').textContent = '▼';
-  }
+  if (!allThreads.length) { agentsOpen=true; document.getElementById('ag-body').classList.add('open'); document.getElementById('ag-toggle').textContent='▼'; }
 }
-
 init();
 </script>
 </body>
