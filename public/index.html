@@ -7,7 +7,60 @@
 <meta name="description" content="Commit, replay, fork and verify every AI agent run. Cryptographic execution records stored outside your system."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<style>
+<style>/* ── NAV + FOOTER (canonical) ── */
+.dm-nav{
+  position:sticky;top:0;z-index:300;
+  height:60px;background:#fff;border-bottom:1px solid #e5e7eb;
+  display:flex;align-items:center;padding:0 40px;
+}
+.dm-nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0;z-index:1;}
+.dm-nav-name{
+  font-family:'IBM Plex Mono','Courier New',monospace;
+  font-size:17px;font-weight:700;color:#111827;letter-spacing:-0.03em;
+}
+.dm-nav-links{
+  position:absolute;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:4px;list-style:none;
+}
+.dm-nav-links a{
+  font-size:13.5px;color:#6b7280;padding:5px 10px;border-radius:6px;
+  text-decoration:none;transition:color .12s,background .12s;white-space:nowrap;
+}
+.dm-nav-links a:hover{color:#111827;background:#f3f4f6;}
+.dm-nav-links a.active{color:#111827;font-weight:500;}
+.dm-nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;z-index:1;}
+.dm-nav-icon{
+  display:flex;align-items:center;justify-content:center;
+  width:34px;height:34px;border-radius:7px;color:#6b7280;
+  text-decoration:none;transition:color .12s,background .12s;
+}
+.dm-nav-icon:hover{color:#111827;background:#f3f4f6;}
+.dm-nav-icon svg{width:18px;height:18px;stroke-width:1.6;}
+.dm-nav-cta{
+  font-family:'IBM Plex Mono','Courier New',monospace;
+  font-size:12.5px;font-weight:700;background:#111827;color:#fff;
+  padding:8px 18px;border-radius:7px;text-decoration:none;transition:opacity .15s;
+}
+.dm-nav-cta:hover{opacity:.85;}
+@media(max-width:768px){
+  .dm-nav{padding:0 16px;}
+  .dm-nav-links{display:none;}
+}
+.dm-footer{
+  border-top:1px solid #e5e7eb;padding:28px 40px;
+  display:flex;align-items:center;flex-wrap:wrap;gap:16px;
+}
+.dm-footer-brand{display:flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0;}
+.dm-footer-name{
+  font-family:'IBM Plex Mono','Courier New',monospace;
+  font-size:14px;font-weight:700;color:#111827;letter-spacing:-0.02em;
+}
+.dm-footer-links{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-left:auto;}
+.dm-footer-links a{font-size:12.5px;color:#9ca3af;text-decoration:none;padding:3px 8px;transition:color .12s;}
+.dm-footer-links a:hover{color:#374151;}
+.dm-footer-copy{font-size:12px;color:#d1d5db;padding:3px 8px;}
+@media(max-width:768px){.dm-footer{padding:20px 16px;}.dm-footer-links{margin-left:0;}}
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
   /* Dark section palette */
@@ -181,7 +234,6 @@ a{text-decoration:none;color:inherit;}
 .cta-sub{font-family:var(--mono);font-size:15px;color:var(--dark-text2);max-width:480px;margin:0 auto 40px;line-height:1.7;}
 .cta-note{margin-top:20px;font-family:var(--mono);font-size:11px;color:var(--dark-text3);}
 
-/* Footer */
 footer{background:var(--dark2);border-top:1px solid var(--dark-border);padding:40px;}
 .foot{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
 .foot-links{display:flex;gap:24px;flex-wrap:wrap;}
@@ -195,61 +247,13 @@ footer{background:var(--dark2);border-top:1px solid var(--dark-border);padding:4
   .light-section,.how-cards-section,.cta{padding-left:20px;padding-right:20px;}
 }
 
-/* ── SHARED NAV (darkmatterhub.ai standard) ── */
 @media(max-width:640px){}
 
-/* ── SHARED FOOTER ── */
 @media(max-width:640px){}
 
 
-/* ── CANONICAL NAV ── */
-.dm-nav{
-  position:sticky;top:0;z-index:300;
-  height:60px;background:#fff;border-bottom:1px solid #e5e7eb;
-  display:flex;align-items:center;padding:0 40px;gap:28px;
-}
-.dm-nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0;}
-.dm-nav-name{
-  font-family:'IBM Plex Mono','Courier New',monospace;
-  font-size:17px;font-weight:700;color:#111827;letter-spacing:-0.03em;
-}
-.dm-nav-links{display:flex;align-items:center;gap:4px;list-style:none;margin-left:4px;}
-.dm-nav-links a{
-  font-size:13.5px;color:#6b7280;padding:5px 9px;border-radius:6px;
-  text-decoration:none;transition:color .12s,background .12s;
-}
-.dm-nav-links a:hover{color:#111827;background:#f3f4f6;}
-.dm-nav-links a.active{color:#111827;font-weight:500;}
-.dm-nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
-.dm-nav-icon{
-  display:flex;align-items:center;justify-content:center;
-  width:34px;height:34px;border-radius:7px;color:#6b7280;
-  text-decoration:none;transition:color .12s,background .12s;
-}
-.dm-nav-icon:hover{color:#111827;background:#f3f4f6;}
-.dm-nav-icon svg{width:18px;height:18px;stroke-width:1.6;}
-.dm-nav-cta{
-  font-family:'IBM Plex Mono','Courier New',monospace;
-  font-size:12.5px;font-weight:700;background:#111827;color:#fff;
-  padding:8px 18px;border-radius:7px;text-decoration:none;transition:opacity .15s;
-}
-.dm-nav-cta:hover{opacity:.85;}
-@media(max-width:768px){.dm-nav{padding:0 16px;gap:12px;}.dm-nav-links{display:none;}}
-/* ── CANONICAL FOOTER ── */
-.dm-footer{
-  border-top:1px solid #e5e7eb;padding:28px 40px;
-  display:flex;align-items:center;flex-wrap:wrap;gap:16px;
-}
-.dm-footer-brand{display:flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0;}
-.dm-footer-name{
-  font-family:'IBM Plex Mono','Courier New',monospace;
-  font-size:14px;font-weight:700;color:#111827;letter-spacing:-0.02em;
-}
-.dm-footer-links{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-left:auto;}
-.dm-footer-links a{font-size:12.5px;color:#9ca3af;text-decoration:none;padding:3px 8px;transition:color .12s;}
-.dm-footer-links a:hover{color:#374151;}
-.dm-footer-copy{font-size:12px;color:#d1d5db;padding:3px 8px;}
-@media(max-width:768px){.dm-footer{padding:20px 16px;}.dm-footer-links{margin-left:0;}}
+@media(max-width:768px){}
+@media(max-width:768px){}
 
 </style>
 </head>
