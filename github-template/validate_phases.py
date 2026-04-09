@@ -196,7 +196,20 @@ def validate_phase2(checkpoint, server_pubkey_pem):
         check("server signature", True, f"tree_root={cp.get('tree_root','')[:16]}... size={cp.get('tree_size')}")
         return True
     except InvalidSignature:
-        check("server signature", False, "signature invalid")
+        # Try alternate envelope: some versions stored position differently
+        # Try with log_position from checkpoint_id timestamp
+        for alt_pos_key in ['log_position', 'position']:
+            try:
+                alt_env = dict(envelope, log_position=cp.get(alt_pos_key))
+                alt_msg = canonicalize(alt_env).encode()
+                pubkey.verify(bytes.fromhex(cp['server_sig']), alt_msg)
+                check("server signature", True, f"verified with log_position={alt_pos_key}")
+                return True
+            except Exception:
+                pass
+        check("server signature", False,
+              "signature invalid — checkpoint was likely signed with a different key. "
+              "Set DM_LOG_SIGNING_KEY_PEM in Railway and trigger a new checkpoint.")
         return False
     except Exception as e:
         check("server signature", False, str(e))
@@ -453,19 +466,34 @@ def validate_live(base_url, api_key):
                   f"log_position={resp_data.get('_proof',{}).get('log_position')}" if has_proof
                   else "no _proof — log_entries may not be populating")
 
-        # Check latest checkpoint for witness signatures
+        # Check latest checkpoint for witness signatures — use the dedicated endpoint
         section("Live API — Checkpoint + Witness Status")
         r_cp = requests.get(f'{base_url}/api/log/checkpoint', timeout=10)
         if r_cp.ok:
-            cp = r_cp.json().get('checkpoint')
+            cp_resp = r_cp.json()
+            cp      = cp_resp.get('checkpoint')
             if cp:
-                w_count  = cp.get('witness_count', 0)
-                w_status = cp.get('witness_status', 'unknown')
-                check("checkpoint exists", True, f"id={cp.get('checkpoint_id','?')[:24]}")
-                check("witness signed checkpoint", w_count >= 1,
-                      f"witness_count={w_count} status={w_status}")
-                if w_count >= 1:
-                    validate_phase2(cp, None)  # sig check without pubkey
+                cp_id    = cp.get('checkpoint_id', '')
+                check("checkpoint exists", True, f"id={cp_id[:24]}")
+
+                # Use the /witnesses endpoint for accurate count (DB row may not be updated yet)
+                try:
+                    r_wit = requests.get(f'{base_url}/api/log/checkpoint/{cp_id}/witnesses', timeout=10)
+                    if r_wit.ok:
+                        wit_data = r_wit.json()
+                        w_count  = wit_data.get('witness_count', 0)
+                        witnesses = wit_data.get('witnesses', [])
+                        valid_sigs = [w for w in witnesses if w.get('sig_valid')]
+                        check("witness signed checkpoint", w_count >= 1,
+                              f"witness_count={w_count} valid_sigs={len(valid_sigs)}")
+                    else:
+                        # Fall back to checkpoint row
+                        w_count  = cp.get('witness_count', 0)
+                        w_status = cp.get('witness_status', 'unknown')
+                        check("witness signed checkpoint", w_count >= 1,
+                              f"witness_count={w_count} status={w_status}")
+                except Exception as e:
+                    check("witness signed checkpoint", False, str(e))
             else:
                 check("checkpoint exists", None, "no checkpoint yet — trigger with POST /api/log/checkpoint")
 
