@@ -178,6 +178,16 @@ def validate_phase2(checkpoint, server_pubkey_pem):
 
     # Rebuild envelope
     cp = checkpoint
+    # Normalize timestamp: Supabase returns +00:00 but server signed with Z
+    def _norm_ts(ts):
+        if not ts: return ts
+        import re
+        ts = str(ts)
+        ts = re.sub(r'\.\d+', '', ts)          # strip milliseconds
+        ts = ts.replace('+00:00', 'Z')            # normalize timezone
+        ts = re.sub(r'Z?$', 'Z', ts.rstrip('Z')) # ensure Z suffix
+        return ts
+
     envelope = {
         'schema_version':     cp.get('schema_version', '3'),
         'checkpoint_id':      cp.get('checkpoint_id'),
@@ -185,7 +195,7 @@ def validate_phase2(checkpoint, server_pubkey_pem):
         'tree_size':          cp.get('tree_size'),
         'log_root':           cp.get('log_root'),
         'log_position':       cp.get('position') or cp.get('log_position'),
-        'timestamp':          cp.get('timestamp'),
+        'timestamp':          _norm_ts(cp.get('timestamp')),
         'previous_cp_id':     cp.get('previous_cp_id'),
         'previous_tree_root': cp.get('previous_tree_root'),
     }
@@ -287,6 +297,16 @@ def validate_phase4a(checkpoint):
 
     # Rebuild envelope for verification
     cp = checkpoint
+    # Normalize timestamp: Supabase returns +00:00 but server signed with Z
+    def _norm_ts(ts):
+        if not ts: return ts
+        import re
+        ts = str(ts)
+        ts = re.sub(r'\.\d+', '', ts)          # strip milliseconds
+        ts = ts.replace('+00:00', 'Z')            # normalize timezone
+        ts = re.sub(r'Z?$', 'Z', ts.rstrip('Z')) # ensure Z suffix
+        return ts
+
     envelope = {
         'schema_version':     cp.get('schema_version', '3'),
         'checkpoint_id':      cp.get('checkpoint_id'),
@@ -294,7 +314,7 @@ def validate_phase4a(checkpoint):
         'tree_size':          cp.get('tree_size'),
         'log_root':           cp.get('log_root'),
         'log_position':       cp.get('position') or cp.get('log_position'),
-        'timestamp':          cp.get('timestamp'),
+        'timestamp':          _norm_ts(cp.get('timestamp')),
         'previous_cp_id':     cp.get('previous_cp_id'),
         'previous_tree_root': cp.get('previous_tree_root'),
     }
