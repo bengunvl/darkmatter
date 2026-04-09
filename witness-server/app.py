@@ -156,10 +156,9 @@ class WitnessState:
             return 400, {'error': f'Missing required checkpoint fields: {missing}'}
 
         # ── CRITICAL: Pin DarkMatter public key ──────────────────────────────
-        # Reject if incoming pubkey doesn't match our pinned key.
-        # Prevents: attacker submits fake checkpoint + their own pubkey.
-        if incoming_pem and incoming_pem != self.pinned_dm_pubkey_pem:
-            log.warning(f"Pubkey mismatch! Rejecting checkpoint {checkpoint['checkpoint_id']}")
+        if self.pinned_dm_pubkey_pem and incoming_pem and incoming_pem != self.pinned_dm_pubkey_pem:
+            log.warning(f"Pubkey mismatch! incoming={incoming_pem[:40]}...")
+            log.warning(f"Pubkey mismatch! expected={self.pinned_dm_pubkey_pem[:40]}...")
             return 403, {'error': 'DarkMatter public key does not match pinned key — request rejected'}
 
         # ── Replay protection ─────────────────────────────────────────────────
@@ -179,12 +178,17 @@ class WitnessState:
         envelope = build_checkpoint_envelope(checkpoint)
         msg      = canonicalize(envelope).encode('utf-8')
 
+        # Debug: log the exact envelope being verified
+        log.info(f"Verifying envelope: {json.dumps(envelope, default=str)}")
+        log.info(f"Canonical msg (first 120): {msg[:120]}")
+
         try:
             dm_sig = bytes.fromhex(checkpoint['server_sig'])
             self.pinned_dm_pubkey.verify(dm_sig, msg)
             log.info(f"DM sig verified: {cp_id}")
         except InvalidSignature:
             log.warning(f"DM sig INVALID: {cp_id}")
+            log.warning(f"server_sig: {checkpoint['server_sig'][:32]}...")
             return 400, {'error': 'DarkMatter server signature is invalid — refusing to co-sign'}
         except Exception as e:
             return 400, {'error': f'Signature verification error: {e}'}
