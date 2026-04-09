@@ -283,11 +283,13 @@ def main():
     port = int(os.environ.get('PORT', 8080))
 
     # Load private key from env (Railway secret)
-    key_env = os.environ.get('WITNESS_PRIVATE_KEY', '').strip().replace('\\n', '\n')
+    # Railway may store PEM with literal \n — normalize to real newlines
+    key_env = os.environ.get('WITNESS_PRIVATE_KEY', '').strip()
     if not key_env:
         log.error("WITNESS_PRIVATE_KEY env var not set")
         sys.exit(1)
-    private_key_pem = key_env.encode()
+    # Railway stores multiline env vars with literal \n — convert to real newlines
+    private_key_pem = key_env.replace('\\n', '\n').encode()
 
     # Load pinned DarkMatter pubkey from env (CRITICAL security property)
     dm_pubkey_env = os.environ.get('DARKMATTER_PUBKEY', '').strip().replace('\\n', '\n')
