@@ -35,16 +35,26 @@ function _initKey() {
   const rawPem = process.env.DM_LOG_SIGNING_KEY_PEM;
   if (rawPem) {
     try {
-      // Railway stores env vars with literal \n — normalize to real newlines
-      const normalizedPem = rawPem.replace(/\\n/g, '\n').replace(/\n/g, '\n').trim();
-      _serverKey = crypto.createPrivateKey(normalizedPem);
-      console.log('[append-log] Signing key loaded from DM_LOG_SIGNING_KEY_PEM');
+      let keyMaterial;
+      // Support three Railway formats:
+      // 1. Base64-encoded PEM (most reliable — no newline issues)
+      // 2. PEM with literal \n escape sequences
+      // 3. Real multiline PEM
+      if (!rawPem.includes('-----BEGIN')) {
+        // Assume base64-encoded
+        keyMaterial = Buffer.from(rawPem.trim(), 'base64').toString('utf8');
+        console.log('[append-log] Signing key: loaded from base64-encoded env var');
+      } else {
+        // PEM format — normalize literal \n to real newlines
+        keyMaterial = rawPem.replace(/\\n/g, '\n').trim();
+        console.log('[append-log] Signing key: loaded from PEM env var');
+      }
+      _serverKey = crypto.createPrivateKey(keyMaterial);
     } catch (err) {
       console.error('[append-log] Failed to load DM_LOG_SIGNING_KEY_PEM:', err.message);
-      console.error('[append-log] Check that the PEM value in Railway has proper newlines');
       const { privateKey } = crypto.generateKeyPairSync('ed25519');
       _serverKey = privateKey;
-      console.warn('[append-log] WARNING: Falling back to ephemeral key — checkpoints will not verify across restarts');
+      console.warn('[append-log] WARNING: Falling back to ephemeral key');
     }
   } else {
     const { privateKey } = crypto.generateKeyPairSync('ed25519');
