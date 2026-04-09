@@ -187,12 +187,12 @@ a{color:inherit;text-decoration:none;}
   <div class="content">
 
     <div style="font-family:var(--mono);font-size:11px;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px;">Integrity model</div>
-    <h1>How DarkMatter verification works</h1>
-    <p class="lead">We don't build a system that needs to be trusted. We build a system that can be verified without trust. This page documents exactly what is signed, what is hashed, what is logged, and what is checkpointed — and how any third party can verify all of it without contacting DarkMatter.</p>
+    <h1>Verification without trust</h1>
+    <p class="lead">DarkMatter is an execution record you can verify without trusting DarkMatter. Your agent hashes each step client-side, signs the commit envelope with its own Ed25519 key, and submits it to an independent append-only log. Every commit gets a Merkle inclusion proof. Signed checkpoints are published to GitHub every 10 minutes. This page documents exactly what is signed, what is hashed, what is logged, and what is checkpointed — so you can verify it yourself, or build your own verifier from the published spec.</p>
 
     <!-- CORE PRINCIPLE -->
     <h2 id="principle">Core principle</h2>
-    <p>The fundamental question DarkMatter answers is: <strong>when something goes wrong with an AI agent, can you prove what it actually did?</strong> Not what the logs say it did. Not what the operator claims it did. Prove it — in a way that doesn't require trusting DarkMatter, the model provider, or the operator.</p>
+    <p>The fundamental question DarkMatter answers is: <strong>when something goes wrong with an AI agent, can you prove what it actually did?</strong> Not what the logs say. Not what the operator claims. Prove it — cryptographically, to anyone, offline, without depending on DarkMatter to be honest.</p>
 
     <div class="callout green">
       <div class="callout-title">Design target</div>
