@@ -101,10 +101,23 @@ a{color:inherit;text-decoration:none;}
 .dm-footer-links a{font-size:12.5px;color:#9ca3af;padding:3px 8px;transition:color .12s;}
 .dm-footer-links a:hover{color:#374151;}
 .dm-footer-copy{font-size:12px;color:#d1d5db;padding:3px 8px;}
+
+  /* ── Footer ────────────────────────────────── */
+  .dm-footer{border-top:1px solid #e5e7eb;padding:40px;display:grid;grid-template-columns:auto 1fr;gap:48px;align-items:start;}
+  .dm-footer-brand{display:flex;align-items:center;gap:8px;text-decoration:none;}
+  .dm-footer-name{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:#111827;letter-spacing:-.02em;}
+  .dm-footer-groups{display:flex;gap:48px;flex-wrap:wrap;}
+  .dm-footer-group{display:flex;flex-direction:column;gap:8px;min-width:100px;}
+  .dm-footer-group-label{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#9ca3af;margin-bottom:4px;}
+  .dm-footer-group a{font-size:13px;color:#6b7280;text-decoration:none;transition:color .12s;}
+  .dm-footer-group a:hover{color:#111827;}
+  .dm-footer-bottom{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding-top:20px;border-top:1px solid #f3f4f6;font-size:12px;color:#9ca3af;}
+  .dm-footer-bottom a{color:#9ca3af;text-decoration:none;}
+  .dm-footer-bottom a:hover{color:#374151;}
+  @media(max-width:768px){.dm-footer{grid-template-columns:1fr;gap:32px;}.dm-footer-groups{gap:32px;}}
 </style>
 </head>
 <body>
-
 <nav class="dm-nav">
   <a class="dm-nav-logo" href="/">
     <svg style="width:28px;height:28px;flex-shrink:0;" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -115,8 +128,8 @@ a{color:inherit;text-decoration:none;}
       <circle cx="33" cy="28" r="2.6" fill="#2563EB" opacity="0.95"/>
       <circle cx="7"  cy="28" r="2.2" fill="#22D3EE" opacity="0.9"/>
       <line x1="20" y1="8"  x2="31" y2="26" stroke="url(#dlg)" stroke-width="0.6" opacity="0.5"/>
-      <line x1="20" y1="8"  x2="9"  y2="26" stroke="#7C3AED"   stroke-width="0.6" opacity="0.4"/>
-      <line x1="30" y1="27" x2="10" y2="27" stroke="#22D3EE"   stroke-width="0.6" opacity="0.4"/>
+      <line x1="20" y1="8"  x2="9"  y2="26" stroke="#7C3AED" stroke-width="0.6" opacity="0.4"/>
+      <line x1="30" y1="27" x2="10" y2="27" stroke="#22D3EE" stroke-width="0.6" opacity="0.4"/>
       <circle cx="20" cy="20" r="2.5" fill="url(#dlg)" opacity="0.6"/>
     </svg>
     <span class="dm-nav-name">Dark<span style="background:linear-gradient(90deg,#7C3AED,#2563EB,#0891b2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Matter</span></span>
@@ -126,13 +139,15 @@ a{color:inherit;text-decoration:none;}
     <li><a href="/docs">Docs</a></li>
     <li><a href="/pricing">Pricing</a></li>
     <li><a href="/compare">Compare</a></li>
-    <li><a href="/enterprise">Enterprise</a></li>
+    <li><a href="/integrity">Integrity</a></li>
   </ul>
   <div class="dm-nav-right">
-    <a href="/login" class="dm-nav-icon" title="Sign in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg></a>
+    <a href="/login" class="dm-nav-icon" title="Sign in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:18px;height:18px;stroke-width:1.6;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg></a>
     <a href="/signup" class="dm-nav-cta">Start free</a>
   </div>
 </nav>
+
+
 
 <div class="page">
   <!-- Sidebar -->
@@ -328,7 +343,7 @@ a{color:inherit;text-decoration:none;}
 
     <div class="callout warn">
       <div class="callout-title">Current state</div>
-      Phase 4A has one active witness node operated by the DarkMatter team on separate infrastructure. We are actively seeking independent organisations to operate witness nodes. <a href="mailto:hello@darkmatterhub.ai">Contact us</a> to run a witness node.
+      Phase 4A has one active witness node operated by the DarkMatter team on separate infrastructure. We are actively seeking independent organisations to operate witness nodes. <a href="/cdn-cgi/l/email-protection#563e333a3a39163237243d3b37222233243e233478373f">Contact us</a> to run a witness node.
     </div>
 
     <div class="claim-box">
@@ -518,9 +533,4 @@ cd sdk/typescript && npm test
     <a href="/integrity">Integrity</a><a href="/blog">Blog</a><a href="/enterprise">Enterprise</a>
     <a href="/security">Security</a><a href="/compare">Compare</a>
     <a href="https://github.com/darkmatter-hub/checkpoints" target="_blank">Checkpoints</a>
-    <span class="dm-footer-copy">© 2026 DarkMatter</span>
-  </div>
-</footer>
-
-</body>
-</html>
+    <span class="dm-footer-copy">© 2026 DarkMatte
