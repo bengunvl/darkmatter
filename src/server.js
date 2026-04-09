@@ -4425,7 +4425,7 @@ app.get('/api/log/entry/:commitId', async (req, res) => {
 
 // ── POST /api/log/checkpoint ───────────────────────────────────────────────
 // Manually trigger a checkpoint publish (admin/superuser only).
-app.post('/api/log/checkpoint', requireAuth, async (req, res) => {
+app.post('/api/log/checkpoint', requireApiKey, async (req, res) => {
   if (req.agent?.agent_id !== process.env.SUPERUSER_AGENT_ID && req.agent?.agent_name !== 'darkmatter-admin') {
     return res.status(403).json({ error: 'Superuser only' });
   }
