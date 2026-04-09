@@ -191,7 +191,9 @@ def validate_phase2(checkpoint, server_pubkey_pem):
     }
     try:
         msg    = canonicalize(envelope).encode()
-        print(f"         [debug] envelope canonical: {msg[:120]}")
+        print(f"         [debug] raw cp fields: pos={cp.get('position')} log_pos={cp.get('log_position')} ts={cp.get('timestamp')} size={cp.get('tree_size')} type={type(cp.get('tree_size')).__name__}")
+        print(f"         [debug] envelope: {json.dumps(envelope, default=str)[:200]}")
+        print(f"         [debug] canonical: {msg[:150]}")
         print(f"         [debug] server_sig: {cp.get('server_sig','')[:32]}...")
         print(f"         [debug] pubkey fingerprint: {hashlib.sha256(server_pubkey_pem.encode()).hexdigest()[:16]}")
         sig    = bytes.fromhex(cp['server_sig'])

@@ -127,6 +127,13 @@ async function publishCheckpoint(supabaseService) {
     const checkpoint = { ...envelope, server_sig: serverSig };
 
     // Store in DB
+    const { canonicalize: _canon } = require('./integrity');
+    const _pubKeyFingerprint = require('crypto')
+      .createHash('sha256')
+      .update(getServerPublicKeyPem())
+      .digest('hex').slice(0, 16);
+    console.log(`[checkpoint] Signing with key fingerprint: ${_pubKeyFingerprint}`);
+
     await supabaseService.from('checkpoints').insert({
       checkpoint_id:       checkpoint.checkpoint_id,
       position:            checkpoint.log_position,
