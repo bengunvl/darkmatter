@@ -288,11 +288,34 @@ def main():
     if not key_env:
         log.error("WITNESS_PRIVATE_KEY env var not set")
         sys.exit(1)
-    # Railway stores multiline env vars with literal \n — convert to real newlines
-    private_key_pem = key_env.replace('\\n', '\n').encode()
+    # Support three formats:
+    # 1. Base64-encoded PEM (recommended for Railway — no newline issues)
+    # 2. PEM with literal \n (Railway sometimes does this)
+    # 3. Real multiline PEM
+    import base64 as _b64
+    if '-----BEGIN' not in key_env:
+        # Assume base64-encoded
+        try:
+            private_key_pem = _b64.b64decode(key_env)
+            log.info("Private key loaded from base64-encoded env var")
+        except Exception as e:
+            log.error(f"Failed to decode base64 key: {e}")
+            sys.exit(1)
+    else:
+        # PEM format — normalize newlines
+        key_env = key_env.replace('\\n', '\n')
+        private_key_pem = key_env.encode()
+        log.info("Private key loaded from PEM env var")
 
     # Load pinned DarkMatter pubkey from env (CRITICAL security property)
-    dm_pubkey_env = os.environ.get('DARKMATTER_PUBKEY', '').strip().replace('\\n', '\n')
+    dm_pubkey_raw = os.environ.get('DARKMATTER_PUBKEY', '').strip()
+    if dm_pubkey_raw and '-----BEGIN' not in dm_pubkey_raw:
+        try:
+            dm_pubkey_env = _b64.b64decode(dm_pubkey_raw).decode()
+        except Exception:
+            dm_pubkey_env = dm_pubkey_raw.replace('\\n', '\n')
+    else:
+        dm_pubkey_env = dm_pubkey_raw.replace('\\n', '\n') if dm_pubkey_raw else ''
     if not dm_pubkey_env:
         log.warning("DARKMATTER_PUBKEY not set — pubkey pinning disabled (NOT for production)")
         # Fall back to accepting any pubkey if not configured (dev mode only)
