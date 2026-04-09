@@ -1,42 +1,82 @@
 /**
- * DarkMatter Merkle Tree (Phase 3)
- * =================================
- * Certificate Transparency-style Merkle tree over the append-only log.
- * Enables inclusion proofs: prove a specific commit is in the log
- * without downloading the entire log.
+ * DarkMatter Merkle Tree — Phase 3
+ * ==================================
+ * RFC 6962 Merkle hash tree over the append-only log.
  *
- * After this, the offline verifier needs NO network calls to DarkMatter.
- * It verifies: local_payload → payload_hash → chain → log_root → checkpoint.
+ * MERKLE LEAF SPEC v1 (frozen)
+ * ────────────────────────────
+ * Each leaf represents one log entry. The leaf input is the canonical
+ * serialization of a "log entry envelope" — a small object binding the
+ * commit to its exact position in the log:
  *
- * Algorithm: RFC 6962 (Certificate Transparency Merkle Hash Trees)
- * https://datatracker.ietf.org/doc/html/rfc6962#section-2
+ *   leaf_envelope = {
+ *     commit_id:      "ctx_...",
+ *     integrity_hash: "<64-char hex>",   // no sha256: prefix
+ *     log_position:   <integer>,
+ *     accepted_at:    "<ISO-8601 UTC seconds>"
+ *   }
  *
- * Key properties (all inherited from RFC 6962):
- *   1. Append-only: old tree roots are provably prefixes of new roots
- *   2. Inclusion proof: O(log n) hashes to prove any leaf is in the tree
- *   3. Consistency proof: O(log n) hashes to prove tree_root_A is a
- *      prefix of tree_root_B (no entries were deleted between snapshots)
+ *   leaf_hash = SHA256( 0x00 || UTF8( canonical(leaf_envelope) ) )
+ *
+ * Why a structured envelope and not just integrity_hash:
+ *   - binds the commit to its exact position (position forgery detectable)
+ *   - avoids duplicate-leaf ambiguity if two commits ever share a hash
+ *   - consistent with CT-style transparency logs
+ *
+ * Internal node hash (RFC 6962 §2.1):
+ *   node_hash = SHA256( 0x01 || left_hash || right_hash )
+ *
+ * Domain separation (0x00 / 0x01) prevents second-preimage attacks.
  */
 
 'use strict';
 
 const crypto = require('crypto');
+const { canonicalize } = require('./integrity');
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RFC 6962 HASH FUNCTIONS
-// Domain separation: 0x00 prefix for leaf hashes, 0x01 for internal nodes.
-// This prevents second-preimage attacks where an attacker substitutes
-// an internal node for a leaf.
+// LEAF SPEC
 // ─────────────────────────────────────────────────────────────────────────────
 
-function leafHash(data) {
-  // MTH({d}) = SHA-256(0x00 || d)
-  const buf = Buffer.concat([Buffer.from([0x00]), Buffer.from(data, 'utf8')]);
+/**
+ * Build the canonical leaf envelope for a log entry.
+ * All fields required. accepted_at must be seconds precision (no ms).
+ */
+function buildLeafEnvelope(commitId, integrityHash, logPosition, acceptedAt) {
+  const ts = (acceptedAt || new Date().toISOString()).replace(/\.\d+Z?$/, '').replace(/Z?$/, 'Z');
+  return {
+    commit_id:      commitId,
+    integrity_hash: integrityHash.replace('sha256:', ''), // bare hex
+    log_position:   logPosition,
+    accepted_at:    ts,
+  };
+}
+
+/**
+ * Compute the RFC 6962 leaf hash for a log entry.
+ * leaf_hash = SHA256( 0x00 || UTF8(canonical(envelope)) )
+ */
+function leafHash(commitId, integrityHash, logPosition, acceptedAt) {
+  const envelope  = buildLeafEnvelope(commitId, integrityHash, logPosition, acceptedAt);
+  const canonical = canonicalize(envelope);
+  const buf       = Buffer.concat([Buffer.from([0x00]), Buffer.from(canonical, 'utf8')]);
   return crypto.createHash('sha256').update(buf).digest('hex');
 }
 
+/**
+ * Compute leaf hash directly from a pre-built envelope string.
+ * Used during proof verification.
+ */
+function leafHashFromCanonical(canonicalEnvelopeString) {
+  const buf = Buffer.concat([Buffer.from([0x00]), Buffer.from(canonicalEnvelopeString, 'utf8')]);
+  return crypto.createHash('sha256').update(buf).digest('hex');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NODE HASH
+// ─────────────────────────────────────────────────────────────────────────────
+
 function nodeHash(left, right) {
-  // MTH(D_n) = SHA-256(0x01 || MTH(D_left) || MTH(D_right))
   const buf = Buffer.concat([
     Buffer.from([0x01]),
     Buffer.from(left,  'hex'),
@@ -46,113 +86,93 @@ function nodeHash(left, right) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TREE CONSTRUCTION
+// TREE OPERATIONS
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Compute the Merkle tree root for an array of leaf data strings.
- * Each leaf is typically an integrity_hash from the append-only log.
+ * Compute Merkle root from an array of leaf hashes (hex strings).
  */
-function computeRoot(leaves) {
-  if (leaves.length === 0) return crypto.createHash('sha256').update('empty').digest('hex');
-  if (leaves.length === 1) return leafHash(leaves[0]);
+function computeRoot(leafHashes) {
+  if (!leafHashes || leafHashes.length === 0) {
+    return crypto.createHash('sha256').update(Buffer.from([0x00])).digest('hex'); // empty tree
+  }
+  if (leafHashes.length === 1) return leafHashes[0];
 
-  let nodes = leaves.map(leafHash);
-
+  let nodes = [...leafHashes];
   while (nodes.length > 1) {
     const next = [];
     for (let i = 0; i < nodes.length; i += 2) {
       if (i + 1 < nodes.length) {
         next.push(nodeHash(nodes[i], nodes[i + 1]));
       } else {
-        // Odd leaf: promote without pairing (RFC 6962 §2.1)
-        next.push(nodes[i]);
+        next.push(nodes[i]); // odd node promoted unchanged (RFC 6962 §2.1)
       }
     }
     nodes = next;
   }
-
   return nodes[0];
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// INCLUSION PROOF GENERATION
-// Returns the sibling hashes needed to recompute the root from a leaf.
-// ─────────────────────────────────────────────────────────────────────────────
-
 /**
- * Generate an inclusion proof for the leaf at `leafIndex` in an array of `n` leaves.
+ * Generate an inclusion proof for the leaf at leafIndex.
  *
- * Returns: { leaf_index, tree_size, proof: [{ hash, direction }] }
- *   direction: 'left' | 'right' — which side this sibling sits on
+ * Returns:
+ *   { leaf_index, tree_size, proof: [{ hash, direction }] }
+ *
+ * direction: 'left' | 'right' — which side the sibling sits on.
+ * To verify: start with leaf_hash, for each step hash with sibling
+ * on the indicated side. Result must equal tree_root.
  */
-function generateInclusionProof(leaves, leafIndex) {
-  if (leafIndex < 0 || leafIndex >= leaves.length) {
-    throw new Error(`leafIndex ${leafIndex} out of range [0, ${leaves.length})`);
+function generateInclusionProof(leafHashes, leafIndex) {
+  if (leafIndex < 0 || leafIndex >= leafHashes.length) {
+    throw new Error(`leafIndex ${leafIndex} out of range [0, ${leafHashes.length})`);
   }
 
   const proof = [];
-  let nodes   = leaves.map(leafHash);
+  let nodes   = [...leafHashes];
   let idx     = leafIndex;
 
   while (nodes.length > 1) {
     const next = [];
-
     for (let i = 0; i < nodes.length; i += 2) {
-      const left  = nodes[i];
-      const right = i + 1 < nodes.length ? nodes[i + 1] : null;
+      const left   = nodes[i];
+      const right  = i + 1 < nodes.length ? nodes[i + 1] : null;
+      const parent = right ? nodeHash(left, right) : left;
 
-      // If our current node is at i or i+1, record the sibling
+      // Is our current position at i or i+1?
       if (i === idx || i + 1 === idx) {
-        const ourSide      = (idx === i) ? 'left' : 'right';
-        const siblingHash  = ourSide === 'left' ? right : left;
-
+        const ourSide     = (idx === i) ? 'left' : 'right';
+        const siblingHash = ourSide === 'left' ? right : left;
         if (siblingHash) {
+          // sibling sits opposite to us
           proof.push({ hash: siblingHash, direction: ourSide === 'left' ? 'right' : 'left' });
         }
-        // Our position in the next level
-        idx = Math.floor(i / 2);
+        idx = Math.floor(i / 2); // our position in next level
       }
-
-      next.push(right ? nodeHash(left, right) : left);
+      next.push(parent);
     }
-
     nodes = next;
   }
 
-  return {
-    leaf_index: leafIndex,
-    tree_size:  leaves.length,
-    proof,
-  };
+  return { leaf_index: leafIndex, tree_size: leafHashes.length, proof };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// INCLUSION PROOF VERIFICATION
-// Given a leaf value and a proof, recompute the root and compare.
-// This is the ONLY thing the offline verifier needs to call.
-// ─────────────────────────────────────────────────────────────────────────────
-
 /**
- * Verify that `leafData` is included in a tree with root `expectedRoot`.
+ * Verify an inclusion proof.
  *
- * @param {string}   leafData      - The raw leaf data (integrity_hash string)
- * @param {object}   proof         - { leaf_index, tree_size, proof: [{hash, direction}] }
- * @param {string}   expectedRoot  - The tree root to verify against
+ * @param {string} lHash        - The leaf hash (hex)
+ * @param {object} proof        - { leaf_index, tree_size, proof: [{hash, direction}] }
+ * @param {string} expectedRoot - The tree root to verify against (hex)
  * @returns {boolean}
  */
-function verifyInclusionProof(leafData, proof, expectedRoot) {
+function verifyInclusionProof(lHash, proof, expectedRoot) {
   try {
-    let current = leafHash(leafData);
-
+    let current = lHash;
     for (const step of proof.proof) {
-      if (step.direction === 'right') {
-        current = nodeHash(current, step.hash);
-      } else {
-        current = nodeHash(step.hash, current);
-      }
+      current = step.direction === 'right'
+        ? nodeHash(current,    step.hash)
+        : nodeHash(step.hash,  current);
     }
-
     return current === expectedRoot;
   } catch {
     return false;
@@ -160,27 +180,31 @@ function verifyInclusionProof(leafData, proof, expectedRoot) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CONSISTENCY PROOF
-// Prove that tree_root_A (size m) is a prefix of tree_root_B (size n).
-// Demonstrates no entries were deleted or rewritten between snapshots.
+// CONSISTENCY PROOF (RFC 6962 §2.1.2)
+// Proves tree_root_B is an append-only extension of tree_root_A.
+// Phase 3.5 — lightweight version: just link previous checkpoint.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Verify that oldRoot (over first `oldSize` leaves) is consistent with
- * newRoot (over all `newSize` leaves), given a consistency proof.
+ * Verify that oldRoot (size oldSize) is a prefix of newRoot (size newSize).
+ * Simplified: recompute oldRoot from first oldSize leaves and compare.
  *
- * In Phase 3 this is used by public checkpoint verification:
- *   "I have checkpoint from 3 months ago. Prove the log was only appended to."
+ * @param {string[]} allLeafHashes - All leaf hashes in the full tree
+ * @param {number}   oldSize       - Number of leaves in the old tree
+ * @param {string}   oldRoot       - Expected root of the old tree
+ * @param {string}   newRoot       - Expected root of the new tree
  */
-function verifyConsistency(oldRoot, oldSize, newRoot, newSize, proof) {
-  // Simplified: in Phase 2 we verify by recomputing from log entries directly.
-  // Full RFC 6962 consistency proofs are implemented in Phase 3.
-  // For now: return true if we can recompute both roots from the same leaf set.
-  return true; // placeholder — see Phase 3 implementation
+function verifyConsistency(allLeafHashes, oldSize, oldRoot, newRoot) {
+  if (oldSize > allLeafHashes.length) return false;
+  const recomputedOld = computeRoot(allLeafHashes.slice(0, oldSize));
+  const recomputedNew = computeRoot(allLeafHashes);
+  return recomputedOld === oldRoot && recomputedNew === newRoot;
 }
 
 module.exports = {
+  buildLeafEnvelope,
   leafHash,
+  leafHashFromCanonical,
   nodeHash,
   computeRoot,
   generateInclusionProof,

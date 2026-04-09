@@ -1,0 +1,167 @@
+{
+  "_spec": "DarkMatter Merkle Test Vectors v1",
+  "_leaf_spec": "leaf_hash = SHA256(0x00 || UTF8(canonical({accepted_at, commit_id, integrity_hash, log_position})))",
+  "_node_spec": "node_hash = SHA256(0x01 || left_bytes || right_bytes)",
+  "_note": "Keys in leaf_envelope sorted: accepted_at, commit_id, integrity_hash, log_position",
+  "leaf_vectors": [
+    {
+      "id": "L-001",
+      "desc": "First leaf",
+      "commit_id": "ctx_aaa",
+      "integrity_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "log_position": 0,
+      "accepted_at": "2026-04-09T10:00:00Z",
+      "expected_leaf_hash": "dc36e5b074e5a6f2a9c137d99c44e3ce1a38c8db22805081796cdde69ca79fb5"
+    },
+    {
+      "id": "L-002",
+      "desc": "Second leaf",
+      "commit_id": "ctx_bbb",
+      "integrity_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "log_position": 1,
+      "accepted_at": "2026-04-09T10:00:01Z",
+      "expected_leaf_hash": "4d0485563cbf2a9ce70aff9cbda73f835ff816ce8280c88eece638868815073a"
+    }
+  ],
+  "root_vectors": [
+    {
+      "id": "R-001",
+      "desc": "Single-leaf tree",
+      "tree_size": 1,
+      "leaf_hashes": [
+        "dc36e5b074e5a6f2a9c137d99c44e3ce1a38c8db22805081796cdde69ca79fb5"
+      ],
+      "expected_root": "dc36e5b074e5a6f2a9c137d99c44e3ce1a38c8db22805081796cdde69ca79fb5"
+    },
+    {
+      "id": "R-002",
+      "desc": "Two-leaf tree",
+      "tree_size": 2,
+      "leaf_hashes": [
+        "dc36e5b074e5a6f2a9c137d99c44e3ce1a38c8db22805081796cdde69ca79fb5",
+        "4d0485563cbf2a9ce70aff9cbda73f835ff816ce8280c88eece638868815073a"
+      ],
+      "expected_root": "08c0a70c416fc9f4b65a0d4c01dbf180f275e0a4dc408dfd97b61ac017a52a97"
+    },
+    {
+      "id": "R-003",
+      "desc": "Three-leaf (odd \u2014 last promoted)",
+      "tree_size": 3,
+      "leaf_hashes": [
+        "dc36e5b074e5a6f2a9c137d99c44e3ce1a38c8db22805081796cdde69ca79fb5",
+        "4d0485563cbf2a9ce70aff9cbda73f835ff816ce8280c88eece638868815073a",
+        "d28f5833659e8d32709dacce337a89a76a1aa86f323348407e88d1ee8edf618a"
+      ],
+      "expected_root": "ae2da8752f3cb145e819265eae41b5ee40f961fb8d8b02b46f8550dac80785b2"
+    },
+    {
+      "id": "R-004",
+      "desc": "Five-leaf tree",
+      "tree_size": 5,
+      "leaf_hashes": [
+        "dc36e5b074e5a6f2a9c137d99c44e3ce1a38c8db22805081796cdde69ca79fb5",
+        "4d0485563cbf2a9ce70aff9cbda73f835ff816ce8280c88eece638868815073a",
+        "d28f5833659e8d32709dacce337a89a76a1aa86f323348407e88d1ee8edf618a",
+        "0c0353d20021fd7662fe2b9a1d155c237f58d4caed4ad80ad62ccf8b2dbb1805",
+        "c75321e16a991dddded0b0a545b4ee63b44fed9830881db861100bfb058a1823"
+      ],
+      "expected_root": "328a5be30651183fdae0e38d0e8f3821fe39f066e680d221df417278e9b3ae11"
+    }
+  ],
+  "proof_vectors": [
+    {
+      "id": "P-001",
+      "desc": "Valid: pos=2 in size=5",
+      "leaf_hash": "d28f5833659e8d32709dacce337a89a76a1aa86f323348407e88d1ee8edf618a",
+      "leaf_index": 2,
+      "tree_size": 5,
+      "tree_root": "328a5be30651183fdae0e38d0e8f3821fe39f066e680d221df417278e9b3ae11",
+      "proof": [
+        {
+          "hash": "0c0353d20021fd7662fe2b9a1d155c237f58d4caed4ad80ad62ccf8b2dbb1805",
+          "direction": "right"
+        },
+        {
+          "hash": "08c0a70c416fc9f4b65a0d4c01dbf180f275e0a4dc408dfd97b61ac017a52a97",
+          "direction": "left"
+        },
+        {
+          "hash": "c75321e16a991dddded0b0a545b4ee63b44fed9830881db861100bfb058a1823",
+          "direction": "right"
+        }
+      ],
+      "expected_valid": true
+    },
+    {
+      "id": "P-002",
+      "desc": "Invalid sibling hash",
+      "leaf_hash": "d28f5833659e8d32709dacce337a89a76a1aa86f323348407e88d1ee8edf618a",
+      "leaf_index": 2,
+      "tree_size": 5,
+      "tree_root": "328a5be30651183fdae0e38d0e8f3821fe39f066e680d221df417278e9b3ae11",
+      "proof": [
+        {
+          "hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "direction": "right"
+        },
+        {
+          "hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "direction": "left"
+        },
+        {
+          "hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "direction": "right"
+        }
+      ],
+      "expected_valid": false
+    },
+    {
+      "id": "P-003",
+      "desc": "Wrong tree root",
+      "leaf_hash": "d28f5833659e8d32709dacce337a89a76a1aa86f323348407e88d1ee8edf618a",
+      "leaf_index": 2,
+      "tree_size": 5,
+      "tree_root": "0000000000000000000000000000000000000000000000000000000000000000",
+      "proof": [
+        {
+          "hash": "0c0353d20021fd7662fe2b9a1d155c237f58d4caed4ad80ad62ccf8b2dbb1805",
+          "direction": "right"
+        },
+        {
+          "hash": "08c0a70c416fc9f4b65a0d4c01dbf180f275e0a4dc408dfd97b61ac017a52a97",
+          "direction": "left"
+        },
+        {
+          "hash": "c75321e16a991dddded0b0a545b4ee63b44fed9830881db861100bfb058a1823",
+          "direction": "right"
+        }
+      ],
+      "expected_valid": false
+    },
+    {
+      "id": "P-004",
+      "desc": "Single-leaf tree (empty proof)",
+      "leaf_hash": "dc36e5b074e5a6f2a9c137d99c44e3ce1a38c8db22805081796cdde69ca79fb5",
+      "leaf_index": 0,
+      "tree_size": 1,
+      "tree_root": "dc36e5b074e5a6f2a9c137d99c44e3ce1a38c8db22805081796cdde69ca79fb5",
+      "proof": [],
+      "expected_valid": true
+    },
+    {
+      "id": "P-005",
+      "desc": "Valid: pos=0 in size=2",
+      "leaf_hash": "dc36e5b074e5a6f2a9c137d99c44e3ce1a38c8db22805081796cdde69ca79fb5",
+      "leaf_index": 0,
+      "tree_size": 2,
+      "tree_root": "08c0a70c416fc9f4b65a0d4c01dbf180f275e0a4dc408dfd97b61ac017a52a97",
+      "proof": [
+        {
+          "hash": "4d0485563cbf2a9ce70aff9cbda73f835ff816ce8280c88eece638868815073a",
+          "direction": "right"
+        }
+      ],
+      "expected_valid": true
+    }
+  ]
+}

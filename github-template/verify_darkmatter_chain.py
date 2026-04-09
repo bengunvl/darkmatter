@@ -44,9 +44,9 @@ def canonicalize(value) -> str:
             if s.endswith('.'): s += '0'
         return s
     if isinstance(value, str):      return json.dumps(value, ensure_ascii=False)
-    if isinstance(value, list):     return '[' + ','.join(canonicalize(v) for v in value) + ']'
+    if isinstance(value, list):     return '[' + ','.join(canonicalize(item) for item in value) + ']'
     if isinstance(value, dict):
-        pairs = [json.dumps(k, ensure_ascii=False) + ':' + canonicalize(v)
+        pairs = [json.dumps(k, ensure_ascii=False) + ':' + canonicalize(value[k])
                  for k in sorted(value.keys())]
         return '{' + ','.join(pairs) + '}'
     raise TypeError(f'unsupported type: {type(value).__name__}')
@@ -92,6 +92,77 @@ def verify_checkpoint_sig(cp: dict, pubkey_pem: str) -> bool:
     except Exception: return False
 
 # ─── Test vectors ─────────────────────────────────────────────────────────────
+
+def build_leaf_envelope(commit_id: str, integrity_hash: str,
+                         log_position: int, accepted_at: str) -> dict:
+    """Canonical leaf envelope — keys sorted: accepted_at, commit_id, integrity_hash, log_position"""
+    ts = re.sub(r'\.\d+Z?$', '', accepted_at or '').rstrip('Z') + 'Z'
+    return {
+        'accepted_at':    ts,
+        'commit_id':      commit_id,
+        'integrity_hash': (integrity_hash or '')[7:] if (integrity_hash or '').startswith('sha256:') else (integrity_hash or ''),
+        'log_position':   log_position,
+    }
+
+def leaf_hash_from_commit(commit_id: str, integrity_hash: str,
+                           log_position: int, accepted_at: str) -> str:
+    """RFC 6962 leaf hash: SHA256(0x00 || UTF8(canonical(leaf_envelope)))"""
+    env = build_leaf_envelope(commit_id, integrity_hash, log_position, accepted_at)
+    canonical = canonicalize(env)
+    buf = b'\x00' + canonical.encode('utf-8')
+    return hashlib.sha256(buf).hexdigest()
+
+def node_hash_fn(left: str, right: str) -> str:
+    """RFC 6962 internal node hash"""
+    buf = b'\x01' + bytes.fromhex(left) + bytes.fromhex(right)
+    return hashlib.sha256(buf).hexdigest()
+
+def verify_inclusion_proof(leaf_h: str, proof: dict, expected_root: str) -> bool:
+    """Verify a Merkle inclusion proof. proof = {proof: [{hash, direction}]}"""
+    try:
+        current = leaf_h
+        for step in proof.get('proof', []):
+            if step['direction'] == 'right':
+                current = node_hash_fn(current, step['hash'])
+            else:
+                current = node_hash_fn(step['hash'], current)
+        return current == expected_root
+    except Exception:
+        return False
+
+def compute_root_from_leaves(leaves: list) -> str:
+    if not leaves: return hashlib.sha256(b'\x00').hexdigest()
+    if len(leaves) == 1: return leaves[0]
+    nodes = list(leaves)
+    while len(nodes) > 1:
+        nxt = []
+        for i in range(0, len(nodes), 2):
+            nxt.append(node_hash_fn(nodes[i], nodes[i+1]) if i+1 < len(nodes) else nodes[i])
+        nodes = nxt
+    return nodes[0]
+
+def run_merkle_vectors(vectors_path: str) -> bool:
+    """Run Merkle test vectors. Returns True if all pass."""
+    vecs = json.loads(Path(vectors_path).read_text())
+    ok = True
+    for vec in vecs.get('leaf_vectors', []):
+        got = leaf_hash_from_commit(vec['commit_id'], vec['integrity_hash'],
+                                     vec['log_position'], vec['accepted_at'])
+        passed = got == vec['expected_leaf_hash']
+        if not passed: ok = False
+        print(f'  {"PASS" if passed else "FAIL"} {vec["id"]}: {vec["desc"]}')
+        if not passed: print(f'    exp={vec["expected_leaf_hash"][:24]}...\n    got={got[:24]}...')
+    for vec in vecs.get('root_vectors', []):
+        got = compute_root_from_leaves(vec['leaf_hashes'])
+        passed = got == vec['expected_root']
+        if not passed: ok = False
+        print(f'  {"PASS" if passed else "FAIL"} {vec["id"]}: {vec["desc"]}')
+    for vec in vecs.get('proof_vectors', []):
+        got = verify_inclusion_proof(vec['leaf_hash'], {'proof': vec['proof']}, vec['tree_root'])
+        passed = got == vec['expected_valid']
+        if not passed: ok = False
+        print(f'  {"PASS" if passed else "FAIL"} {vec["id"]}: {vec["desc"]}')
+    return ok
 
 def run_test_vectors(vectors_path: str) -> bool:
     v = json.loads(Path(vectors_path).read_text())
@@ -228,13 +299,24 @@ def main():
     ap.add_argument('--checkpoint',  help='Checkpoint JSON for Phase 2 log verification')
     ap.add_argument('--pubkey',      help='Server public key PEM for checkpoint sig verification')
     ap.add_argument('--agent-keys',  help='JSON file mapping {agent_id: pubkey_pem} for signature verification')
-    ap.add_argument('--test-vectors',help='Run canonical serialization test vectors and exit')
+    ap.add_argument('--test-vectors',       help='Run canonicalization test vectors and exit')
+    ap.add_argument('--test-vectors-merkle',help='Run Merkle test vectors and exit')
+    ap.add_argument('--skip-proof',  action='store_true', help='Skip Merkle inclusion check')
     ap.add_argument('--json',        action='store_true')
     args = ap.parse_args()
 
     # Test vectors mode
     if args.test_vectors:
         ok = run_test_vectors(args.test_vectors)
+        sys.exit(0 if ok else 1)
+    if getattr(args, 'test_vectors_merkle', None):
+        ok = run_merkle_vectors(args.test_vectors_merkle)
+        sys.exit(0 if ok else 1)
+    if hasattr(args, 'test_vectors_merkle') and args.test_vectors_merkle:
+        ok = run_merkle_vectors(args.test_vectors_merkle)
+        sys.exit(0 if ok else 1)
+    if args.test_vectors_merkle:
+        ok = run_merkle_vectors(args.test_vectors_merkle)
         sys.exit(0 if ok else 1)
 
     if not CRYPTO:
@@ -290,11 +372,59 @@ def main():
     else:
         print(f'Phase 2b— Log checkpoint:     {c(None)}  (pass --checkpoint path/to/checkpoint.json)')
 
+    # ── Phase 3: Merkle inclusion proofs ────────────────────────
+    phase3_ok = None
+    if not (hasattr(args, 'skip_proof') and args.skip_proof):
+        proofs_found = proofs_valid = proofs_failed = 0
+        tree_root_from_cp = None
+        if cp_result:
+            raw = cp_result.get('tree_root') or ''
+            tree_root_from_cp = raw[7:] if raw.startswith('sha256:') else (raw or None)
+
+        for i, commit in enumerate(commits):
+            pr = commit.get('_proof') or commit.get('proof_receipt')
+            if not pr: continue
+            proofs_found += 1
+            cid        = commit.get('id', f'[{i}]')
+            lh_stored  = pr.get('leaf_hash')
+            incl_proof = pr.get('inclusion_proof') or {}
+            raw_tr     = pr.get('tree_root', '')
+            tree_root  = (raw_tr[7:] if raw_tr.startswith('sha256:') else raw_tr) or tree_root_from_cp
+            ih         = commit.get('integrity_hash', '')
+            ih_bare    = ih[7:] if ih.startswith('sha256:') else ih
+            log_pos    = pr.get('log_position')
+            accepted   = commit.get('timestamp', '')
+
+            # Recompute leaf hash to confirm it matches stored value
+            if lh_stored and ih_bare and log_pos is not None:
+                recomp = leaf_hash_from_commit(cid, ih_bare, log_pos, accepted)
+                lh_ok  = recomp == lh_stored
+            else:
+                lh_ok = True  # can't verify without data
+
+            # Verify inclusion proof against tree root
+            proof_ok = verify_inclusion_proof(lh_stored or '', incl_proof, tree_root or '') if (lh_stored and tree_root) else False
+            ok_both  = lh_ok and proof_ok
+            if ok_both: proofs_valid += 1
+            else:       proofs_failed += 1
+
+            if args.verbose:
+                mark = '✓' if ok_both else ('✗ leaf_mismatch' if not lh_ok else '✗ proof_invalid')
+                print(f'  [{i:4d}] {cid[:28]:<28} {mark}')
+
+        if proofs_found > 0:
+            phase3_ok = (proofs_failed == 0)
+            print(f'Phase 3 — Merkle inclusion:   {c(phase3_ok)}  ({proofs_valid}/{proofs_found} proofs valid)')
+        else:
+            print(f'Phase 3 — Merkle inclusion:   {c(None)}  (no _proof receipts in export)')
+    else:
+        print(f'Phase 3 — Merkle inclusion:   {c(None)}  (skipped via --skip-proof)')
+
     # ── Summary ───────────────────────────────────────────────────────────────
-    required_ok = struct['ok']  # structure is always required
+    required_ok = struct['ok']
     sig_ok      = sigs['ok'] if pubkeys else None
     chk_ok      = cp_result['ok'] if cp_result else None
-    all_ok      = required_ok and (sig_ok is None or sig_ok) and (chk_ok is None or chk_ok)
+    all_ok      = required_ok and (sig_ok is None or sig_ok) and (chk_ok is None or chk_ok) and (phase3_ok is None or phase3_ok)
 
     print()
     print('────────────────────────────────────────────')
@@ -316,7 +446,8 @@ def main():
         print(json.dumps({
             'verified':   all_ok,
             'structure':  {'ok': struct['ok'], 'broken_at': struct['broken_at'], 'length': struct['length']},
-            'signatures': {'ok': sig_ok,  'verified': sigs['verified'], 'failures': sigs['failures']},
+            'signatures': {'ok': sig_ok, 'verified': sigs['verified'], 'failures': sigs['failures']},
+            'merkle':     {'ok': phase3_ok, 'valid': proofs_valid if proofs_found else 0, 'total': proofs_found if 'proofs_found' in dir() else 0},
             'checkpoint': {'ok': chk_ok},
         }, indent=2))
 

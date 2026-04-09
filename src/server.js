@@ -9,8 +9,13 @@ const {
   canonicalize, hashPayload, hashChain,
   verifySignature, validateClientHashes, verifyChain,
 } = require('./integrity');
-const { appendToLog, getServerPublicKeyPem, verifyLogConsistency } = require('./append-log');
-const { generateInclusionProof, verifyInclusionProof, computeRoot } = require('./merkle');
+const { appendToLog, getServerPublicKeyPem, verifyLogConsistency,
+  generateProofForCommit, CHECKPOINT_SCHEMA_VERSION,
+} = require('./append-log');
+const {
+  leafHash, buildLeafEnvelope, computeRoot,
+  generateInclusionProof, verifyInclusionProof,
+} = require('./merkle');
 const { publishCheckpoint, startCheckpointScheduler } = require('./checkpoint');
 
 const app = express();
@@ -940,13 +945,44 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
       timestamp,
     }, { [req.agent.agent_id]: req.agent.agent_name, [toAgentId]: recipientAgent?.agent_name || toAgentId });
 
-    // Attach log receipt for client-side verification
+    // ── Phase 3: append to log + Merkle tree ──────────
+    let logEntry = null;
+    try {
+      logEntry = await appendToLog(supabaseService, commitId, integrityHash);
+      await supabaseService.from('commits').update({
+        log_position:         logEntry.position,
+        leaf_hash:            logEntry.leaf_hash,
+        tree_root_at_append:  logEntry.tree_root,
+        tree_size_at_append:  logEntry.tree_size,
+        proof_status:         'included',
+      }).eq('id', commitId);
+    } catch (logErr) {
+      console.error('[commit] Log append failed:', logErr.message);
+      try {
+        await supabaseService.from('commits')
+          .update({ proof_status: 'proof_unavailable' })
+          .eq('id', commitId);
+      } catch {}
+    }
+
+    // Attach Phase 3 proof receipt — full inclusion proof
     if (logEntry) {
+      receipt._proof = {
+        log_position:    logEntry.position,
+        leaf_hash:       logEntry.leaf_hash,
+        tree_root:       logEntry.tree_root,
+        tree_size:       logEntry.tree_size,
+        inclusion_proof: logEntry.inclusion_proof,
+        proof_status:    'included',
+        pubkey_url:      'https://darkmatterhub.ai/api/log/pubkey',
+        checkpoint_url:  'https://darkmatterhub.ai/api/log/checkpoint',
+        verify_url:      `https://darkmatterhub.ai/api/log/proof/${commitId}`,
+      };
+      // Keep _log for Phase 2 backwards compatibility
       receipt._log = {
         position:   logEntry.position,
         log_root:   'sha256:' + logEntry.log_root,
-        server_sig: logEntry.server_sig,
-        timestamp:  logEntry.timestamp,
+        timestamp:  logEntry.accepted_at,
         pubkey_url: 'https://darkmatterhub.ai/api/log/pubkey',
       };
     }
@@ -3898,6 +3934,31 @@ runRetentionCleanup();
 setInterval(runRetentionCleanup, 24 * 60 * 60 * 1000);
 
 
+
+// ── GET /api/log/proof/:commitId ──────────────────────────────────────────
+// Returns inclusion proof for a specific commit.
+// No authentication required — verification material is public.
+app.get('/api/log/proof/:commitId', async (req, res) => {
+  try {
+    const proof = await generateProofForCommit(supabaseService, req.params.commitId);
+    if (!proof) {
+      return res.status(404).json({
+        error:  'Commit not found in log',
+        commit_id: req.params.commitId,
+        note:   'The commit may not yet be appended to the log, or may not exist',
+      });
+    }
+    res.json({
+      ...proof,
+      pubkey_url:     'https://darkmatterhub.ai/api/log/pubkey',
+      checkpoint_url: 'https://darkmatterhub.ai/api/log/checkpoint',
+      spec_url:       'https://darkmatterhub.ai/docs#integrity-spec',
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/log/pubkey ────────────────────────────────────────────────────
 // Returns DarkMatter's server signing public key.
 // Anyone can use this to verify checkpoint signatures independently.
@@ -3910,17 +3971,22 @@ app.get('/api/log/pubkey', (req, res) => {
 });
 
 // ── GET /api/log/checkpoint ────────────────────────────────────────────────
-// Returns the latest signed checkpoint.
+// Returns the latest signed checkpoint (Phase 3: includes tree_root + checkpoint chain).
 app.get('/api/log/checkpoint', async (req, res) => {
   try {
     const { data } = await supabaseService
       .from('checkpoints')
-      .select('*')
+      .select('checkpoint_id, position, tree_root, tree_size, log_root, server_sig, timestamp, previous_cp_id, previous_tree_root, published, published_url')
       .order('position', { ascending: false })
       .limit(1)
       .single();
     if (!data) return res.json({ checkpoint: null, message: 'No checkpoints yet' });
-    res.json({ checkpoint: data, pubkey_url: 'https://darkmatterhub.ai/api/log/pubkey' });
+    res.json({
+      checkpoint:    data,
+      pubkey_url:    'https://darkmatterhub.ai/api/log/pubkey',
+      github_url:    'https://github.com/darkmatter-hub/checkpoints',
+      spec_version:  CHECKPOINT_SCHEMA_VERSION,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

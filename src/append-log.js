@@ -1,184 +1,242 @@
 /**
- * DarkMatter Append-Only Log (Phase 2)
- * =====================================
- * Maintains a signed, sequential log of all commit integrity_hashes.
- * Every entry is immutable. The log root is signed by DarkMatter's
- * server key and published to a public checkpoint surface.
+ * DarkMatter Append-Only Log — Phase 3
+ * ======================================
+ * Every commit appended here gets:
+ *   - a log_position (sequential, immutable)
+ *   - a leaf_hash (RFC 6962, over canonical leaf envelope)
+ *   - a tree_root (Merkle root of all leaves 0..position)
+ *   - a log_root (running SHA-256 hash chain — Phase 2 compatibility)
+ *   - an inclusion_proof (derivable on demand)
+ *   - a server_sig over the checkpoint envelope
  *
- * Phase 2: DarkMatter-signed checkpoints (no external witnesses yet)
- * Phase 3: Merkle tree inclusion proofs added on top of this
- *
- * Why this matters:
- *   With only a database, DarkMatter could silently delete or rewrite
- *   a commit. With an append-only log, any such rewrite changes the
- *   log root — detectable by anyone who holds the previous checkpoint.
- *
- * Table: log_entries
- *   position        BIGSERIAL PRIMARY KEY
- *   commit_id       TEXT NOT NULL
- *   integrity_hash  TEXT NOT NULL
- *   timestamp       TIMESTAMPTZ NOT NULL
- *   log_root        TEXT NOT NULL  -- sha256 of all entries 0..position
- *   server_sig      TEXT NOT NULL  -- Ed25519 sig over log_root + position
- *   created_at      TIMESTAMPTZ DEFAULT now()
+ * Failure semantics:
+ *   - appendToLog throws → caller sets proof_status = 'proof_unavailable'
+ *   - tree build fails   → commit still stored, proof_status = 'pending'
+ *   - checkpoint fails   → proof_status = 'included' (not yet 'checkpointed')
  */
 
 'use strict';
 
-const crypto  = require('crypto');
-const { canonicalize } = require('./integrity');
+const crypto = require('crypto');
+const { canonicalize }                         = require('./integrity');
+const { leafHash, computeRoot,
+        generateInclusionProof,
+        buildLeafEnvelope }                    = require('./merkle');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SERVER SIGNING KEY
-// Generated once at startup. Public key published at /api/log/pubkey
-// In production: load from env, not generated fresh each restart.
 // ─────────────────────────────────────────────────────────────────────────────
 
 let _serverKey    = null;
 let _serverPubPem = null;
 
-function getServerKey() {
-  if (!_serverKey) {
-    if (process.env.DM_LOG_SIGNING_KEY_PEM) {
-      _serverKey = crypto.createPrivateKey(process.env.DM_LOG_SIGNING_KEY_PEM);
-    } else {
-      // Dev: generate ephemeral key (not suitable for production)
-      const { privateKey } = crypto.generateKeyPairSync('ed25519');
-      _serverKey = privateKey;
-      console.warn('[append-log] WARNING: Using ephemeral signing key. Set DM_LOG_SIGNING_KEY_PEM in production.');
-    }
-    _serverPubPem = crypto.createPublicKey(_serverKey)
-      .export({ type: 'spki', format: 'pem' });
+function _initKey() {
+  if (_serverKey) return;
+  if (process.env.DM_LOG_SIGNING_KEY_PEM) {
+    _serverKey = crypto.createPrivateKey(process.env.DM_LOG_SIGNING_KEY_PEM);
+  } else {
+    const { privateKey } = crypto.generateKeyPairSync('ed25519');
+    _serverKey = privateKey;
+    console.warn('[append-log] WARNING: Using ephemeral signing key. Set DM_LOG_SIGNING_KEY_PEM.');
   }
-  return { privateKey: _serverKey, publicKeyPem: _serverPubPem };
+  _serverPubPem = crypto.createPublicKey(_serverKey).export({ type: 'spki', format: 'pem' });
 }
 
-function getServerPublicKeyPem() {
-  return getServerKey().publicKeyPem;
-}
+function getServerPublicKeyPem() { _initKey(); return _serverPubPem; }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LOG ROOT COMPUTATION
-// log_root at position N = SHA-256 of canonical(all entries 0..N)
-// This is a simple running hash — Phase 3 upgrades to a Merkle tree.
+// LOG ROOT (Phase 2 — running hash chain, kept for backwards compat)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Compute the log root given the previous root and a new entry.
- * log_root_N = SHA-256( log_root_{N-1} + ":" + integrity_hash_N )
- * For the first entry: log_root_0 = SHA-256( "genesis:" + integrity_hash_0 )
- */
 function computeLogRoot(prevLogRoot, integrityHash) {
   const prev  = prevLogRoot || 'genesis';
-  const input = prev + ':' + integrityHash;
-  return crypto.createHash('sha256').update(input, 'utf8').digest('hex');
+  return crypto.createHash('sha256').update(prev + ':' + integrityHash, 'utf8').digest('hex');
 }
 
-/**
- * Sign a log checkpoint: sign( canonical({ log_root, position, timestamp }) )
- * Returns hex-encoded Ed25519 signature.
- */
-function signCheckpoint(logRoot, position, timestamp) {
-  const { privateKey } = getServerKey();
-  const message = canonicalize({ log_root: logRoot, position, timestamp });
-  const msgBuf  = Buffer.from(message, 'utf8');
-  return crypto.sign(null, msgBuf, privateKey).toString('hex');
+// ─────────────────────────────────────────────────────────────────────────────
+// CHECKPOINT SIGNING
+// Checkpoint envelope (what gets signed):
+// {
+//   schema_version:      "3",
+//   checkpoint_id:       "cp_<timestamp>_<hex>",
+//   tree_root:           "<hex>",
+//   tree_size:           <int>,
+//   log_root:            "<hex>",
+//   log_position:        <int>,
+//   timestamp:           "<ISO seconds>",
+//   previous_cp_id:      "<cp_...> | null",
+//   previous_tree_root:  "<hex> | null"
+// }
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CHECKPOINT_SCHEMA_VERSION = '3';
+
+function buildCheckpointEnvelope(treeRoot, treeSize, logRoot, logPosition, timestamp, prevCpId, prevTreeRoot) {
+  const ts = timestamp.replace(/\.\d+Z?$/, '').replace(/Z?$/, 'Z');
+  return {
+    schema_version:      CHECKPOINT_SCHEMA_VERSION,
+    checkpoint_id:       `cp_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
+    tree_root:           treeRoot,
+    tree_size:           treeSize,
+    log_root:            logRoot,
+    log_position:        logPosition,
+    timestamp:           ts,
+    previous_cp_id:      prevCpId   || null,
+    previous_tree_root:  prevTreeRoot || null,
+  };
 }
 
-/**
- * Verify a checkpoint signature (used by the offline verifier).
- */
-function verifyCheckpointSig(logRoot, position, timestamp, signatureHex, publicKeyPem) {
+function signCheckpointEnvelope(envelope) {
+  _initKey();
+  const msg = Buffer.from(canonicalize(envelope), 'utf8');
+  return crypto.sign(null, msg, _serverKey).toString('hex');
+}
+
+function verifyCheckpointSig(envelope, signatureHex, publicKeyPem) {
   try {
-    const message = canonicalize({ log_root: logRoot, position, timestamp });
-    const msgBuf  = Buffer.from(message, 'utf8');
-    const sigBuf  = Buffer.from(signatureHex, 'hex');
-    const pubKey  = crypto.createPublicKey(publicKeyPem);
-    return crypto.verify(null, msgBuf, pubKey, sigBuf);
-  } catch {
-    return false;
-  }
+    const msg    = Buffer.from(canonicalize(envelope), 'utf8');
+    const sig    = Buffer.from(signatureHex, 'hex');
+    const pubKey = crypto.createPublicKey(publicKeyPem);
+    return crypto.verify(null, msg, pubKey, sig);
+  } catch { return false; }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LOG APPEND
-// Called inside the commit transaction, after the commit row is written.
-// Fails closed: if the log append fails, the commit is rejected.
+// MAIN APPEND — called inside commit transaction
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Append a commit to the log.
+ * Append a commit to the log. Computes leaf_hash, tree_root, and log_root.
  *
- * @param {object} supabaseService - Admin Supabase client
- * @param {string} commitId        - The ctx_... ID
- * @param {string} integrityHash   - The commit's integrity_hash (no prefix)
- * @returns {object} { position, log_root, server_sig, timestamp }
+ * @returns {object} {
+ *   position, leaf_hash, tree_root, tree_size, log_root, accepted_at,
+ *   inclusion_proof: { leaf_index, tree_size, proof: [{hash, direction}] }
+ * }
  */
 async function appendToLog(supabaseService, commitId, integrityHash) {
-  // Fetch the latest log entry to get current root and position
-  const { data: latest } = await supabaseService
+  const accepted_at = new Date().toISOString().replace(/\.\d+Z?$/, 'Z');
+
+  // Fetch all existing log entries (sorted) for tree construction
+  const { data: existing, error: fetchErr } = await supabaseService
     .from('log_entries')
-    .select('position, log_root')
-    .order('position', { ascending: false })
-    .limit(1)
-    .single();
+    .select('position, leaf_hash, log_root')
+    .order('position', { ascending: true });
 
-  const prevPosition = latest?.position ?? -1;
-  const prevLogRoot  = latest?.log_root  ?? null;
+  if (fetchErr) throw new Error(`Log fetch failed: ${fetchErr.message}`);
 
-  const newPosition  = prevPosition + 1;
-  const newLogRoot   = computeLogRoot(prevLogRoot, integrityHash);
-  const timestamp    = new Date().toISOString();
-  const serverSig    = signCheckpoint(newLogRoot, newPosition, timestamp);
+  const prevEntries  = existing || [];
+  const newPosition  = prevEntries.length;
+  const prevLogRoot  = prevEntries.length > 0
+    ? prevEntries[prevEntries.length - 1].log_root
+    : null;
 
-  const { error } = await supabaseService
+  // Compute this entry's leaf hash
+  const lHash = leafHash(commitId, integrityHash, newPosition, accepted_at);
+
+  // Build full leaf set for Merkle root computation
+  const allLeafHashes = [
+    ...prevEntries.map(e => e.leaf_hash),
+    lHash,
+  ];
+  const treeRoot  = computeRoot(allLeafHashes);
+  const treeSize  = allLeafHashes.length;
+  const logRoot   = computeLogRoot(prevLogRoot, integrityHash);
+
+  // Generate inclusion proof for this commit
+  const inclusionProof = generateInclusionProof(allLeafHashes, newPosition);
+
+  // Insert log entry
+  const { error: insertErr } = await supabaseService
     .from('log_entries')
     .insert({
       position:       newPosition,
       commit_id:      commitId,
       integrity_hash: integrityHash,
-      log_root:       newLogRoot,
-      server_sig:     serverSig,
-      timestamp,
+      leaf_hash:      lHash,
+      tree_root:      treeRoot,
+      tree_size:      treeSize,
+      log_root:       logRoot,
+      server_sig:     '',   // placeholder — checkpoint signs the tree, not each entry
+      timestamp:      accepted_at,
     });
 
-  if (error) throw new Error(`Log append failed: ${error.message}`);
+  if (insertErr) throw new Error(`Log insert failed: ${insertErr.message}`);
 
-  return { position: newPosition, log_root: newLogRoot, server_sig: serverSig, timestamp };
+  return {
+    position:       newPosition,
+    leaf_hash:      lHash,
+    tree_root:      treeRoot,
+    tree_size:      treeSize,
+    log_root:       logRoot,
+    accepted_at,
+    inclusion_proof: inclusionProof,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LOG CONSISTENCY CHECK
-// Verify that the log has not been tampered with between two positions.
-// Anyone with a checkpoint can verify the entire log from that point forward.
+// PROOF GENERATION (on demand, from stored leaf hashes)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Verify the log is consistent from startPosition to endPosition.
- * Recomputes every log_root and checks server signatures.
- *
- * @param {Array}  entries     - Log entries in ascending position order
- * @param {string} pubKeyPem   - Server's public key PEM
- * @returns {{ consistent, broken_at, entries_checked }}
+ * Generate an inclusion proof for any commit by ID.
+ * Fetches all leaf hashes up to and including this commit's position.
  */
+async function generateProofForCommit(supabaseService, commitId) {
+  // Find this commit's log entry
+  const { data: entry } = await supabaseService
+    .from('log_entries')
+    .select('position, leaf_hash, tree_root, tree_size, integrity_hash, timestamp')
+    .eq('commit_id', commitId)
+    .single();
+
+  if (!entry) return null;
+
+  // Fetch all entries up to tree_size at time of append
+  const { data: allEntries } = await supabaseService
+    .from('log_entries')
+    .select('leaf_hash')
+    .lte('position', entry.tree_size - 1)
+    .order('position', { ascending: true });
+
+  const allLeafHashes = (allEntries || []).map(e => e.leaf_hash);
+
+  // Recompute to verify consistency
+  const recomputedRoot = computeRoot(allLeafHashes);
+  const consistent     = recomputedRoot === entry.tree_root;
+
+  const proof = generateInclusionProof(allLeafHashes, entry.position);
+
+  // Build leaf envelope for verifier
+  const leafEnvelope = buildLeafEnvelope(
+    commitId, entry.integrity_hash, entry.position, entry.timestamp
+  );
+
+  return {
+    commit_id:      commitId,
+    log_position:   entry.position,
+    tree_size:      entry.tree_size,
+    tree_root:      entry.tree_root,
+    leaf_hash:      entry.leaf_hash,
+    leaf_envelope:  leafEnvelope,
+    consistent,
+    inclusion_proof: proof,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOG CONSISTENCY VERIFICATION
+// ─────────────────────────────────────────────────────────────────────────────
+
 function verifyLogConsistency(entries, pubKeyPem) {
   let prevRoot  = null;
   let brokenAt  = null;
 
   for (const entry of entries) {
-    const expectedRoot = computeLogRoot(prevRoot, entry.integrity_hash);
-
-    const rootOk = expectedRoot === entry.log_root;
-    const sigOk  = verifyCheckpointSig(
-      entry.log_root, entry.position, entry.timestamp,
-      entry.server_sig, pubKeyPem
-    );
-
-    if (!rootOk || !sigOk) {
-      brokenAt = entry.position;
-      break;
+    // Rebuild log root
+    const expectedLogRoot = computeLogRoot(prevRoot, entry.integrity_hash);
+    if (expectedLogRoot !== entry.log_root) {
+      brokenAt = entry.position; break;
     }
-
     prevRoot = entry.log_root;
   }
 
@@ -192,8 +250,11 @@ function verifyLogConsistency(entries, pubKeyPem) {
 module.exports = {
   getServerPublicKeyPem,
   computeLogRoot,
-  signCheckpoint,
+  buildCheckpointEnvelope,
+  signCheckpointEnvelope,
   verifyCheckpointSig,
   appendToLog,
+  generateProofForCommit,
   verifyLogConsistency,
+  CHECKPOINT_SCHEMA_VERSION,
 };
