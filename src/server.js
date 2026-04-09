@@ -3552,6 +3552,7 @@ app.get('/dashboard/thread/:traceId', requireAuth, (req, res) => {
 app.get('/compare',      (req, res) => res.sendFile(path.join(__dirname, '../public/compare.html')));
 app.get('/compliance',   (req, res) => res.sendFile(path.join(__dirname, '../public/compliance.html')));
 app.get('/threat-model', (req, res) => res.sendFile(path.join(__dirname, '../public/threat-model.html')));
+app.get('/integrity',    (req, res) => res.sendFile(path.join(__dirname, '../public/integrity.html')));
 
 // ═══════════════════════════════════════════════════
 // SUPERUSER ANALYTICS DASHBOARD

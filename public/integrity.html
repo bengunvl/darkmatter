@@ -188,7 +188,7 @@ a{color:inherit;text-decoration:none;}
 
     <div style="font-family:var(--mono);font-size:11px;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px;">Integrity model</div>
     <h1>Verification without trust</h1>
-    <p class="lead">DarkMatter is an execution record you can verify without trusting DarkMatter. Your agent hashes each step client-side, signs the commit envelope with its own Ed25519 key, and submits it to an independent append-only log. Every commit gets a Merkle inclusion proof. Signed checkpoints are published to GitHub every 10 minutes. This page documents exactly what is signed, what is hashed, what is logged, and what is checkpointed — so you can verify it yourself, or build your own verifier from the published spec.</p>
+    <p class="lead">DarkMatter is an execution record you can verify without trusting DarkMatter. Your agent hashes each step client-side, signs the commit envelope with its own Ed25519 key, and submits it to an append-only log with Merkle inclusion proofs and signed checkpoints. Verification works offline — use the provided verifier or build your own from the published spec.</p>
 
     <!-- CORE PRINCIPLE -->
     <h2 id="principle">Core principle</h2>

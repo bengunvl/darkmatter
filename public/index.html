@@ -311,8 +311,8 @@ footer{background:var(--dark2);border-top:1px solid var(--dark-border);padding:4
     AI systems cannot<br><span class="accent">audit themselves.</span>
   </h1>
   <p class="hero-sub">
-    Your agent hashes each step client-side, signs it with its own key, and commits it to an independent log.<br>
-    Anyone can verify the record — offline, without contacting DarkMatter.
+    Your agent hashes each step client-side, signs it with its own key, and commits it to an independent append-only log.<br>
+    Anyone can verify the record offline, without contacting DarkMatter.
   </p>
   <div class="hero-actions">
     <a href="/demo" class="btn-p">Run demo →</a>
@@ -483,7 +483,7 @@ footer{background:var(--dark2);border-top:1px solid var(--dark-border);padding:4
       <div class="how-card">
         <div class="how-card-num">01</div>
         <div class="how-card-title">Commit every step</div>
-        <div class="how-card-body">Call dm.commit() after each agent action. The SDK sends the payload to DarkMatter, hashes it, and links it to the previous step. Stored outside your system.</div>
+        <div class="how-card-body">Call dm.commit() after each agent action. The SDK hashes the payload client-side, signs the commit envelope with the agent's Ed25519 key, and appends it to an independent log with a Merkle inclusion proof receipt.</div>
       </div>
       <div class="how-card">
         <div class="how-card-num">02</div>
