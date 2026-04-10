@@ -3517,6 +3517,70 @@ body{
 
 
 
+
+// ═══════════════════════════════════════════════════════════════════════
+// PUBLIC RECORD VIEW — no auth required
+// GET /r/:traceId  →  JSON record for external sharing
+// GET /r/:traceId/html  →  self-contained HTML page (no login needed)
+// ═══════════════════════════════════════════════════════════════════════
+app.get('/r/:traceId', async (req, res) => {
+  try {
+    const { traceId } = req.params;
+    if (!traceId || traceId.length > 120) return res.status(400).json({ error: 'Invalid ID' });
+
+    const { data: commits, error } = await supabaseService
+      .from('commits')
+      .select('id, trace_id, from_agent, agent_id, agent_info, payload, timestamp, client_timestamp, event_type, integrity_hash, payload_hash, parent_hash, verified')
+      .or(`trace_id.eq."${traceId}",trace_id.eq.${traceId}`)
+      .order('timestamp', { ascending: true });
+
+    if (error || !commits?.length) {
+      return res.status(404).json({ error: 'Record not found or has been removed.' });
+    }
+
+    // Verify chain integrity server-side
+    let chainIntact = true;
+    for (let i = 1; i < commits.length; i++) {
+      if (commits[i].parent_hash && commits[i].parent_hash !== commits[i-1].integrity_hash) {
+        chainIntact = false; break;
+      }
+    }
+
+    // Strip any private fields from payload
+    const safe = commits.map(c => ({
+      id:               c.id,
+      trace_id:         c.trace_id,
+      timestamp:        c.client_timestamp || c.timestamp,
+      recorded_at:      c.timestamp,
+      event_type:       c.event_type,
+      integrity_hash:   c.integrity_hash,
+      parent_hash:      c.parent_hash,
+      verified:         c.verified,
+      payload: {
+        role:       c.payload?.role,
+        text:       c.payload?.text,
+        output:     c.payload?.output,
+        summary:    c.payload?.summary,
+        prompt:     c.payload?.prompt,
+        convTitle:  c.payload?.convTitle,
+        platform:   c.payload?.platform,
+        _source:    c.payload?._source,
+      },
+    }));
+
+    res.json({
+      trace_id:     traceId,
+      chain_intact: chainIntact,
+      step_count:   commits.length,
+      commits:      safe,
+      verified_at:  new Date().toISOString(),
+      verify_url:   `${process.env.APP_URL || 'https://darkmatterhub.ai'}/r/${traceId}`,
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ═══════════════════════════════════════════════════
 // POLICIES API
 // GET  /api/policies        — list policies for authenticated agent

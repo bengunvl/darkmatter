@@ -67,7 +67,7 @@ header{position:fixed;inset:0 0 auto 0;z-index:200;height:var(--hh);
 .sf.on{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.25);color:var(--blue2);font-weight:500;}
 .sf:hover:not(.on){color:var(--text2);}
 .sb-list{flex:1;overflow-y:auto;padding:4px 4px 20px;}
-.sb-grp{font-size:10px;color:var(--text4);font-weight:600;padding:10px 8px 4px;letter-spacing:.06em;text-transform:uppercase;}
+.sb-grp{font-size:10px;color:var(--ink3);font-weight:600;padding:12px 8px 4px;letter-spacing:.06em;text-transform:uppercase;font-family:var(--mono);border-top:1px solid var(--border);}
 
 /* THREAD ROW */
 .tr{border-radius:8px;cursor:pointer;margin-bottom:1px;border:1px solid transparent;transition:background .1s,border-color .1s;overflow:hidden;}
@@ -108,7 +108,7 @@ header{position:fixed;inset:0 0 auto 0;z-index:200;height:var(--hh);
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* MAIN */
-.main{display:flex;flex-direction:column;overflow:hidden;background:var(--dark2);}
+.main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg2);}
 .conn-banner{display:none;align-items:center;gap:10px;padding:7px 20px;
   background:var(--abg);border-bottom:1px solid var(--abd);font-size:12px;color:var(--amber);flex-shrink:0;}
 .conn-banner.show{display:flex;}
@@ -143,19 +143,20 @@ header{position:fixed;inset:0 0 auto 0;z-index:200;height:var(--hh);
 .tab:hover{color:var(--text2);}
 .tab.on{color:var(--blue2);border-bottom-color:var(--blue);font-weight:500;}
 .tp{display:none;flex:1;overflow:hidden;}
-.tp.on{display:flex;flex-direction:column;}
+.tp.on{display:flex;flex-direction:column;min-height:0;}
+#view-records{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;}
 
 /* CONVERSATION */
-.conv-scroll{flex:1;overflow-y:auto;padding:24px 24px 16px;}
+.conv-scroll{flex:1;overflow-y:auto;padding:20px 24px 20px;background:#f8f9fc;min-height:0;}
 .mw{max-width:720px;margin:0 auto;width:100%;}
-.mg{margin-bottom:18px;clear:both;}
+.mg{margin-bottom:12px;clear:both;}
 .mu{display:flex;flex-direction:column;align-items:flex-end;}
-.bu{background:var(--blue-dk);color:#dbeafe;border-radius:14px 14px 3px 14px;padding:10px 14px;max-width:580px;font-size:14px;line-height:1.65;word-break:break-word;}
+.bu{background:var(--ink);color:rgba(232,237,245,.92);border-radius:3px 3px 1px 3px;padding:8px 13px;max-width:560px;font-size:13.5px;line-height:1.6;word-break:break-word;border:1px solid rgba(0,0,0,.18);}
 .ma{display:flex;flex-direction:column;align-items:flex-start;}
-.ba{background:var(--dark3);border:1px solid var(--border);border-radius:3px 14px 14px 14px;padding:11px 15px;max-width:640px;font-size:14px;line-height:1.72;color:var(--text);word-break:break-word;}
+.ba{background:#fff;border:1px solid var(--border);border-radius:1px 3px 3px 3px;padding:10px 14px;max-width:620px;font-size:13.5px;line-height:1.68;color:var(--ink);word-break:break-word;}
 .ba p{margin-bottom:.7em;} .ba p:last-child{margin-bottom:0;}
 .ba h2{font-size:15px;font-weight:600;margin:14px 0 5px;color:var(--text);}
-.ba h3{font-size:14px;font-weight:600;margin:12px 0 4px;color:var(--text);}
+.ba h3{font-size:14px;font-weight:600;margin:12px 0 4px;color:var(--ink);}
 .ba h4{font-size:13px;font-weight:600;margin:10px 0 3px;color:var(--text);}
 .ba strong{font-weight:600;}
 .ba em{font-style:italic;}
@@ -170,6 +171,11 @@ header{position:fixed;inset:0 0 auto 0;z-index:200;height:var(--hh);
 .code-copy{position:absolute;top:5px;right:10px;font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--text3);cursor:pointer;font-family:var(--sans);display:none;}
 pre:hover .code-copy{display:block;}
 pre:hover .code-lang{display:none;}
+
+/* Record entry role labels — log-entry feel not chat-bubble */
+.msg-role-label{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink4);margin-bottom:3px;}
+.msg-role-label.user{text-align:right;}
+.msg-role-label.agent{text-align:left;}
 .mfoot{display:flex;align-items:center;gap:8px;margin-top:5px;}
 .mfoot.r{justify-content:flex-end;}
 .mtime{font-size:10.5px;color:var(--text4);}
@@ -205,7 +211,7 @@ pre:hover .code-lang{display:none;}
 .cn-time{font-size:10px;color:var(--text4);margin-left:auto;}
 
 /* PROOF TAB */
-.proof-scroll{flex:1;overflow-y:auto;padding:20px;}
+.proof-scroll{flex:1;overflow-y:auto;padding:20px;background:var(--bg2);min-height:0;}
 .aud-banner{border-radius:10px;padding:16px 18px;margin-bottom:16px;border:1px solid;}
 .ab-title{font-size:14px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px;}
 .ab-body{font-size:13px;color:var(--text2);line-height:1.65;}
@@ -600,8 +606,11 @@ pre:hover .code-lang{display:none;}
 
       <!-- ── ADVANCED PANEL ── -->
       <div class="tpanel" id="tp-advanced">
+        <div style="background:var(--bg3);border-bottom:1px solid var(--border);padding:10px 20px;font-size:12px;color:var(--ink3);line-height:1.5;flex-shrink:0;">
+          For API and infrastructure-level integrations. These settings do not affect the browser extension.
+        </div>
         <!-- Proxy setup -->
-        <div class="sc">
+        <div class="sc" style="margin-top:14px;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
             <div class="sc-t" style="margin-bottom:0;">API proxy</div>
             <span class="adv-tag">ADVANCED</span>
@@ -827,11 +836,20 @@ function ago(ts){
 function fmtDate(iso){if(!iso)return'';return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
 function fmtDateTime(iso){
   if(!iso)return'';
-  return new Date(iso).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'UTC',hour12:false})+' UTC';
+  const d=new Date(iso);
+  const local=d.toLocaleString(undefined,{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
+  const utc=d.toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'UTC',hour12:false});
+  // If local and UTC produce the same string, just show it once with UTC label
+  const utcStr=utc+' UTC';
+  if(local===utc)return utcStr;
+  return local+' ('+utcStr+')';
 }
 function fmtTime(iso){
   if(!iso)return'';
-  return new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false})+' UTC';
+  const d=new Date(iso);
+  const local=d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  const utc=d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false})+' UTC';
+  return local+' ('+utc+')';
 }
 function relGroup(ts){
   if(!ts)return'Older';
@@ -1157,12 +1175,18 @@ function renderConversation(thread){
     const detBtn='<button class="mdet-btn" onclick="document.getElementById(\''+tsId+'\').classList.toggle(\'open\')">&#8943;</button>';
 
     const g=document.createElement('div');g.className='mg';
+    const srcLabel=(c.payload&&c.payload.platform)?esc(c.payload.platform):'';
     if(isUser){
-      g.innerHTML='<div class="mu"><div class="bu">'+esc(text)+'</div>'
+      g.innerHTML='<div class="mu">'
+        +'<div class="msg-role-label user">You'+(srcLabel?' &middot; '+srcLabel:'')+'</div>'
+        +'<div class="bu">'+esc(text)+'</div>'
         +'<div class="mfoot r"><span class="mtime">'+fmtDateTime(clientTs)+'</span>'+detBtn+'</div>'
         +tsDetail+'</div>';
     }else{
-      g.innerHTML='<div class="ma"><div class="ba">'+renderMarkdown(text)+'</div>'
+      const agentLabel=esc((c.payload&&c.payload.platform)||'AI');
+      g.innerHTML='<div class="ma">'
+        +'<div class="msg-role-label agent">'+agentLabel+'</div>'
+        +'<div class="ba">'+renderMarkdown(text)+'</div>'
         +'<div class="mfoot"><span class="mtime">'+fmtDateTime(clientTs)+'</span>'+detBtn+'</div>'
         +tsDetail+'</div>';
     }
@@ -1362,7 +1386,7 @@ function openShareModal(){
   document.getElementById('share-title').textContent=threadTitle(selThread);
   document.getElementById('share-meta').innerHTML=selThread.commits.length+' steps &middot; '+fmtDateTime(selThread.latest)+' &middot; '
     +(status==='ok'?'<span style="color:var(--green)">Record intact</span>':'<span style="color:var(--amber)">Not yet verified</span>');
-  document.getElementById('share-link').value=location.origin+'/dashboard?t='+encodeURIComponent(selThread.id);
+  document.getElementById('share-link').value=location.origin+'/r/'+encodeURIComponent(selThread.id);
   openModal('share-modal');
 }
 function copyShareLink(){
@@ -1659,6 +1683,21 @@ async function init(){
   }catch(e){}
 }
 init();
+
+// Auto-refresh: poll for new commits every 30 seconds
+// Only fetches if the tab is visible to avoid unnecessary requests
+let _pollTimer = null;
+function startPoll(){
+  if(_pollTimer) return;
+  _pollTimer = setInterval(function(){
+    if(document.visibilityState === 'hidden') return;
+    fetchRecords().catch(function(){});
+  }, 30000);
+}
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'visible') fetchRecords().catch(function(){});
+});
+startPoll();
 </script>
 </body>
 </html>
