@@ -354,7 +354,20 @@ app.get('/blog', (req, res) => {
 
 // ── GET /blog/:slug ── individual blog posts
 app.get('/blog/:slug', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/blog.html'));
+  // Check if a specific post HTML file exists, otherwise fall back to blog index
+  const slug     = req.params.slug;
+  const postFile = path.join(__dirname, '../public', `blog-${slug}.html`);
+  const fs       = require('fs');
+  if (fs.existsSync(postFile)) {
+    res.sendFile(postFile);
+  } else {
+    res.sendFile(path.join(__dirname, '../public/blog.html'));
+  }
+});
+
+// ── Direct named blog post routes ────────────────────────────────────────────
+app.get('/blog-what-problems-darkmatter-solves', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/blog-what-problems-darkmatter-solves.html'));
 });
 
 // ═══════════════════════════════════════════════════
@@ -3344,34 +3357,159 @@ ${images.map(img => img.public_url ? `<img src="${img.public_url}" alt="${img.fi
 // ═══════════════════════════════════════════════════
 app.get('/ext/callback', (req, res) => {
   res.send(`<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><title>DarkMatter — Connecting extension...</title>
-<style>body{font-family:system-ui,sans-serif;background:#0f1117;color:#e6edf3;display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:1rem;text-align:center;}</style>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>DarkMatter — Connecting extension</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:#f4f6fb;color:#0a0e1a;
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:2rem;
+}
+.card{
+  background:#fff;border:1px solid #e5e7eb;border-radius:12px;
+  padding:32px 28px;max-width:380px;width:100%;text-align:center;
+  box-shadow:0 4px 24px rgba(0,0,0,.06);
+}
+.logo{font-family:"SF Mono","Courier New",monospace;font-size:17px;font-weight:700;
+  background:linear-gradient(90deg,#7C3AED,#2563EB,#0891b2);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;display:inline-block;margin-bottom:20px;}
+.status-ic{font-size:2rem;margin-bottom:12px;}
+.title{font-size:15px;font-weight:700;color:#0a0e1a;margin-bottom:6px;}
+.sub{font-size:13px;color:#5a6480;line-height:1.6;}
+.spinner{
+  width:24px;height:24px;border:2px solid #e5e7eb;
+  border-top-color:#3b82f6;border-radius:50%;
+  animation:spin .7s linear infinite;margin:0 auto 12px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ok{color:#10b981;} .err{color:#ef4444;}
+</style>
 </head>
 <body>
-<div style="font-size:1.2rem;font-weight:700;">Connecting to DarkMatter Capture...</div>
-<div style="font-size:0.85rem;color:#8b949e;">You can close this tab after connecting.</div>
+<div class="card">
+  <div class="logo">DarkMatter</div>
+  <div id="spinner" class="spinner"></div>
+  <div class="status-ic" id="ic" style="display:none;"></div>
+  <div class="title" id="title">Connecting extension...</div>
+  <div class="sub"   id="sub">Fetching your account details.</div>
+</div>
 <script>
-// Read session from localStorage (set by login page)
-const raw = localStorage.getItem('dm_session');
-if (raw) {
+(async function() {
+  const title = document.getElementById('title');
+  const sub   = document.getElementById('sub');
+  const spinner = document.getElementById('spinner');
+  const ic    = document.getElementById('ic');
+
+  function done(ok, msg, detail) {
+    spinner.style.display = 'none';
+    ic.style.display = '';
+    ic.textContent = ok ? '✓' : '✗';
+    ic.className = 'status-ic ' + (ok ? 'ok' : 'err');
+    title.textContent = msg;
+    sub.textContent = detail || '';
+  }
+
+  // Step 1: read session from localStorage (set by login.html)
+  const raw = localStorage.getItem('dm_session');
+  if (!raw) {
+    return done(false, 'No session found', 'Please sign in at darkmatterhub.ai/login?ext=1 and try again.');
+  }
+
+  let session;
+  try { session = JSON.parse(raw); } catch(e) {
+    return done(false, 'Invalid session data', 'Please sign in again.');
+  }
+
+  if (!session?.access_token || !session?.user?.email) {
+    return done(false, 'Incomplete session', 'Please sign in again at darkmatterhub.ai/login?ext=1');
+  }
+
+  // Step 2: fetch the user's agent API key
+  let agentId = null, apiKey = null;
   try {
-    const session = JSON.parse(raw);
-    // Send to extension via chrome.runtime.sendMessage
-    // The extension ID is passed as a URL param or hardcoded
-    const extId = new URLSearchParams(location.search).get('ext_id') || '';
-    if (extId && window.chrome?.runtime) {
-      chrome.runtime.sendMessage(extId, { type: 'DM_SESSION', session }, r => {
-        if (r?.ok) {
-          document.querySelector('div').textContent = '✓ Connected! You can close this tab.';
-        }
-      });
-    } else {
-      // Fallback: just show success, user configures manually
-      document.querySelector('div').textContent = '✓ Signed in! Open the DarkMatter extension to continue.';
+    const r = await fetch('/dashboard/agents', {
+      headers: { 'Authorization': 'Bearer ' + session.access_token }
+    });
+    if (r.ok) {
+      const agents = await r.json();
+      if (agents[0]) { agentId = agents[0].agentId; apiKey = agents[0].apiKey; }
     }
   } catch(e) {}
-}
+
+  // If no agent exists yet, create one automatically
+  if (!agentId) {
+    try {
+      const r = await fetch('/dashboard/agents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+        body: JSON.stringify({ agentName: session.user.email + '-ext' })
+      });
+      if (r.ok) {
+        const d = await r.json();
+        agentId = d.agentId;
+        apiKey  = d.apiKey;
+      }
+    } catch(e) {}
+  }
+
+  if (!agentId || !apiKey) {
+    return done(false, 'Could not get API key', 'Try opening the dashboard and creating an agent manually, then sign in to the extension again.');
+  }
+
+  // Step 3: fetch workspace name (optional)
+  let workspaceName = null;
+  try {
+    const r = await fetch('/api/workspace', {
+      headers: { 'Authorization': 'Bearer ' + session.access_token }
+    });
+    if (r.ok) {
+      const d = await r.json();
+      if (d.workspace?.name) workspaceName = d.workspace.name;
+    }
+  } catch(e) {}
+
+  // Step 4: build auth payload
+  const auth = {
+    email:          session.user.email,
+    session_token:  session.access_token,
+    refresh_token:  session.refresh_token || null,
+    agent_id:       agentId,
+    api_key:        apiKey,
+    workspace_name: workspaceName,
+  };
+
+  // Step 5: send to extension via CustomEvent (picked up by session_bridge.js content script)
+  // session_bridge.js is injected on darkmatterhub.ai/* and listens for 'dm_auth'
+  window.dispatchEvent(new CustomEvent('dm_auth', { detail: auth }));
+
+  // Step 6: also try chrome.runtime.sendMessage as direct fallback
+  // This works if the extension declared externally_connectable for this origin
+  let sentDirect = false;
+  if (typeof chrome !== 'undefined' && chrome.runtime) {
+    try {
+      await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ type: 'SET_AUTH', auth }, (response) => {
+          if (chrome.runtime.lastError) { resolve(false); return; }
+          sentDirect = !!response?.ok;
+          resolve(sentDirect);
+        });
+      });
+    } catch(e) {}
+  }
+
+  // Wait briefly for the CustomEvent path to complete
+  await new Promise(r => setTimeout(r, 600));
+
+  done(true,
+    'Extension connected!',
+    'Recording is now active. You can close this tab and start using Claude, ChatGPT, or any supported AI tool.'
+  );
+})();
 </script>
 </body>
 </html>`);
@@ -4627,6 +4765,8 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
+
 // ═══════════════════════════════════════════════════════════════════════
 // WORKSPACE API — Team/Organization layer
 // ═══════════════════════════════════════════════════════════════════════
@@ -4637,14 +4777,17 @@ const http  = require('http');
 // ── Auth middleware for workspace routes ──────────────────────────────
 async function wsAuth(req, res, next) {
   try {
-    const token = (req.headers.authorization || '').replace('Bearer ', '');
+    const token = (req.headers.authorization || '').replace('Bearer ', '').trim();
     if (!token) return res.status(401).json({ error: 'No token' });
     const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (error || !user) return res.status(401).json({ error: 'Invalid session' });
+    if (error || !user) {
+      return res.status(401).json({ error: 'Session expired. Please sign in again.' });
+    }
     req.user = user;
     next();
   } catch(e) {
-    res.status(500).json({ error: 'Auth error' });
+    console.error('[wsAuth]', e.message);
+    res.status(401).json({ error: 'Authentication failed. Please sign in again.' });
   }
 }
 
@@ -4971,18 +5114,23 @@ app.get('/api/workspace/proxy-keys', wsAuth, async (req, res) => {
       .select('id, workspace_id, role').eq('user_id', req.user.id).single();
     if (!me) return res.status(404).json({ error: 'Not in a workspace' });
 
-    const query = supabase.from('proxy_keys').select('id, proxy_key, target_provider, label, is_active, last_used_at, real_key_hint');
+    // Build query with filter assigned (chaining returns new object each time)
+    let query = supabase.from('proxy_keys')
+      .select('id, proxy_key, target_provider, label, is_active, last_used_at, real_key_hint')
+      .order('created_at', { ascending: false });
+
     if (me.role === 'admin') {
-      query.eq('workspace_id', me.workspace_id);
+      query = query.eq('workspace_id', me.workspace_id);
     } else {
-      query.eq('member_id', me.id);
+      query = query.eq('member_id', me.id);
     }
-    const { data: keys } = await query.order('created_at', { ascending: false });
+
+    const { data: keys } = await query;
     res.json(keys || []);
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
-});
+});;
 
 // ═══════════════════════════════════════════════════════════════════════
 // PROXY — Phase 1 middleware for LLM API calls
@@ -5000,7 +5148,7 @@ const PROXY_TARGETS = {
 };
 
 // Auth via proxy key
-async function proxyAuth(req, res, next) {
+async async function proxyAuth(req, res, next) {
   try {
     const proxyKey = (req.headers['x-dm-key'] || req.headers['authorization'] || '')
       .replace('Bearer ', '').trim();
