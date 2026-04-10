@@ -410,7 +410,9 @@ pre:hover .code-copy{display:block;}pre:hover .code-lang{display:none;}
   <div class="h-right">
     <span class="refresh-ind" id="refresh-ind"></span>
     <span class="h-ws" id="h-ws" style="display:none;"></span>
-    <button class="avatar" id="useravatar" onclick="openModal('settings-modal')">?</button>
+    <button class="avatar" id="useravatar" onclick="openModal('settings-modal')" title="Settings">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  </button>
   </div>
 </header>
 
@@ -479,7 +481,7 @@ pre:hover .code-copy{display:block;}pre:hover .code-lang{display:none;}
           <button class="chain-tog" id="chain-tog" onclick="toggleChain()">
             <span class="chain-chev">&#9658;</span>
             View step-by-step technical details
-            <span id="chain-count" style="margin-left:4px;color:var(--text4);font-size:11px;"></span>
+            <span id="chain-count" style="margin-left:4px;color:var(--ink4);font-size:11px;"></span>
           </button>
           <div class="chain-body" id="chain-body"></div>
         </div>
@@ -655,7 +657,7 @@ pre:hover .code-copy{display:block;}pre:hover .code-lang{display:none;}
     <div class="mhd"><span class="mtitle">Share this record</span><button class="mx" onclick="closeModal('share-modal')">x</button></div>
     <div class="mbody">
       <div class="sri"><div class="srt" id="share-title"></div><div class="srm" id="share-meta"></div></div>
-      <div style="font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:16px;padding:10px 12px;background:rgba(255,255,255,.03);border-radius:8px;border:1px solid var(--border);">
+      <div style="font-size:13px;color:var(--ink2);line-height:1.65;margin-bottom:16px;padding:10px 12px;background:rgba(255,255,255,.03);border-radius:8px;border:1px solid var(--border);">
         Anyone you share this with can confirm that the conversation happened exactly as shown. Nothing can be changed after the fact. They do not need an account.
       </div>
       <div class="slbl">Share link</div>
@@ -777,9 +779,23 @@ if(!rawSess){location.href='/login';throw 0;}
 let session;try{session=JSON.parse(rawSess);}catch(e){location.href='/login';throw 0;}
 if(!session||!session.access_token){location.href='/login';throw 0;}
 
-const emailStr=session&&session.user&&session.user.email||'';
-document.getElementById('useravatar').textContent=(emailStr[0]||'?').toUpperCase();
-document.getElementById('set-email').textContent=emailStr;
+// Extract email — try session.user.email first, then decode JWT
+let emailStr=session&&session.user&&session.user.email||'';
+if(!emailStr&&session&&session.access_token){
+  try{
+    const pl=JSON.parse(atob(session.access_token.split('.')[1]));
+    emailStr=pl.email||pl.user_metadata&&pl.user_metadata.email||'';
+    // Update session with email for future use
+    if(emailStr&&session.user){session.user.email=emailStr;localStorage.setItem('dm_session',JSON.stringify(session));}
+  }catch(e){}
+}
+// If we have an email, show initial letter; otherwise keep the person SVG
+const avatarEl=document.getElementById('useravatar');
+if(emailStr&&avatarEl){
+  avatarEl.textContent=(emailStr[0]).toUpperCase();
+  avatarEl.title=emailStr;
+}
+document.getElementById('set-email').textContent=emailStr||'(no email)';
 
 async function authH(){const s=await refreshSession()||session;return{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token};}
 let dmKey=session&&session.dm_api_key||localStorage.getItem('dm_api_key')||'';
@@ -947,8 +963,18 @@ function toggleChain(){document.getElementById('chain-tog').classList.toggle('op
 function loadThreads(rc){
   rc=rc||0;
   const cached=sessionStorage.getItem('dm_records_v5');
-  if(cached){try{processCommits(JSON.parse(cached));showList();}catch(e){}}
-  else showSkeletons();
+  if(cached){
+    try{processCommits(JSON.parse(cached));showList();}catch(e){showSkeletons();}
+  } else {
+    // Show skeleton briefly, then empty state if fetch takes too long
+    showSkeletons();
+    setTimeout(function(){
+      // If still showing skeleton after 8s, transition to empty state
+      if(document.getElementById('sb-skeleton').style.display!=='none'){
+        showList(); // renderList will show "No records yet" if allThreads is empty
+      }
+    }, 8000);
+  }
   fetchRecords(rc);
 }
 
@@ -980,8 +1006,13 @@ async function fetchRecords(rc){
   }catch(e){
     if(mySeq!==_fetchSeq)return;
     setRefreshStatus('error');
+    console.warn('[DM] fetchRecords error:', e.message||e);
     if(!allThreads.length){
-      e.name==='AbortError'?showError('Request timed out.'):showError("Couldn't load records.");
+      if(e.name==='AbortError'){
+        showError('Request timed out. Check your connection.');
+      } else {
+        showError("Couldn't load records: "+(e.message||'unknown error'));
+      }
     }else{
       document.getElementById('conn-banner').classList.add('show');
     }
@@ -1048,7 +1079,7 @@ function renderList(){
   const el=document.getElementById('sb-content');
   if(!threads.length){
     el.innerHTML='<div class="sb-grp">'+(q?'No results for "'+esc(searchQ)+'"':'No records yet')+'</div>'
-      +(!q?'<div style="padding:4px 8px 8px;font-size:12px;color:var(--text4);">Set up the browser extension or API proxy to start recording automatically.</div>':'');
+      +(!q?'<div style="padding:4px 8px 8px;font-size:12px;color:var(--ink4);">Set up the browser extension or API proxy to start recording automatically.</div>':'');
     return;
   }
   let html='';
@@ -1340,7 +1371,7 @@ function renderProof(thread){
     +'<div class="pab-title">Share or verify independently</div>'
     +'<div class="pab-sub">Anyone can verify this record &mdash; they do not need a DarkMatter account. Share a link, or download a proof file that works completely offline.</div>'
     +'<div class="pab-cmd"><span class="pab-cmd-txt">python verify_darkmatter_chain.py bundle.json</span>'
-    +'<button style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:none;color:var(--text3);cursor:pointer;font-family:var(--mono);" onclick="navigator.clipboard.writeText(\'python verify_darkmatter_chain.py bundle.json\');toast(\'Copied\')">Copy</button></div>'
+    +'<button style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:none;color:var(--ink3);cursor:pointer;font-family:var(--mono);" onclick="navigator.clipboard.writeText(\'python verify_darkmatter_chain.py bundle.json\');toast(\'Copied\')">Copy</button></div>'
     +'<div class="pab-btns">'+primaryBtn+restBtns+'</div>'
     +'</div>';
 }
@@ -1522,7 +1553,7 @@ async function refreshWorkspaceStats(){
 function renderMembers(){
   const tbody=document.getElementById('members-tbody');
   if(!wsMembers.length){
-    tbody.innerHTML='<tr><td colspan="5" style="color:var(--text3);text-align:center;padding:20px;">No members yet. Invite your team.</td></tr>';return;
+    tbody.innerHTML='<tr><td colspan="5" style="color:var(--ink3);text-align:center;padding:20px;">No members yet. Invite your team.</td></tr>';return;
   }
   tbody.innerHTML=wsMembers.map(function(m){
     const name=m.display_name||(m.email&&m.email.split('@')[0])||'—';
