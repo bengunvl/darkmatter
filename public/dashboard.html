@@ -1449,10 +1449,16 @@ async function loadWorkspace(){
     const pkd=await pkr.json();
     if(pkd[0])myProxyKey=pkd[0].proxy_key;
     else{
-      const cr=await fetch('/api/workspace/proxy-keys',{method:'POST',headers:h,body:JSON.stringify({provider:'openai',label:'My proxy key'})});
-      const cd=await cr.json();myProxyKey=cd.proxyKey;
+      // No key yet — create one automatically
+      try{
+        const cr=await fetch('/api/workspace/proxy-keys',{method:'POST',headers:h,body:JSON.stringify({provider:'openai',label:'My proxy key'})});
+        const cd=await cr.json();
+        myProxyKey=cd.proxyKey||cd.proxy_key||null;
+      }catch(e){console.warn('proxy key create failed:',e);}
     }
-    document.getElementById('proxy-key-txt').textContent=myProxyKey||'—';
+    // Update all proxy key display elements
+    const pkEl=document.getElementById('proxy-key-txt');
+    if(pkEl)pkEl.textContent=myProxyKey||'(none — contact support)';
   }catch(e){console.error('Workspace:',e);}
 }
 
@@ -1497,7 +1503,7 @@ async function sendInvite(){
     if(!r.ok){msg.style.color='var(--red)';msg.textContent=d.error||'Failed.';return;}
     msg.style.color='var(--green)';msg.textContent='Invitation sent to '+email;
     document.getElementById('inv-email').value='';
-  }catch(e){msg.style.color='var(--red)';msg.textContent='Error — check connection.';}
+  }catch(e){msg.style.color='var(--red)';msg.textContent='Connection error. Check your internet and try again.';}
   finally{btn.disabled=false;btn.textContent='Send invitation';}
 }
 
