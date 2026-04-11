@@ -1754,16 +1754,26 @@ async function init(){
       document.getElementById('h-ws').style.display='';
     }
   }catch(e){}
-  // Show admin link if applicable
+  // Show admin link for admin emails
   try{
-    const h=await authH();
-    const r=await fetch('/admin/stats',{headers:h});
-    if(r.ok){
+    const adminEmails=['hello@darkmatterhub.ai'];
+    if(adminEmails.includes(emailStr)){
       const al=document.createElement('button');
       al.className='hl';al.textContent='Admin';
       al.style.cssText='color:var(--violet);font-weight:600;';
       al.onclick=function(){location.href='/admin';};
       document.querySelector('.h-nav').appendChild(al);
+    } else {
+      // Also check server for admin status (handles ADMIN_EMAILS env var)
+      const h=await authH();
+      const r=await fetch('/admin/stats',{headers:h});
+      if(r.ok){
+        const al=document.createElement('button');
+        al.className='hl';al.textContent='Admin';
+        al.style.cssText='color:var(--violet);font-weight:600;';
+        al.onclick=function(){location.href='/admin';};
+        document.querySelector('.h-nav').appendChild(al);
+      }
     }
   }catch(e){}
 }

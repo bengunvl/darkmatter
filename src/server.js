@@ -207,6 +207,53 @@ async function requireAuth(req, res, next) {
   next();
 }
 
+// ── flexAuth — accepts Supabase JWT (dashboard) OR dm_sk_ API key (SDK/CLI) ──
+async function flexAuth(req, res, next) {
+  const auth = (req.headers.authorization || '').replace('Bearer ', '').trim();
+  if (!auth) return res.status(401).json({ error: 'Authorization required' });
+
+  // Supabase JWT path (dashboard users)
+  if (!auth.startsWith('dm_sk_') && !auth.startsWith('dmp_')) {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser(auth);
+      if (!error && user) {
+        req.user = user;
+        req.authType = 'supabase';
+        return next();
+      }
+      // Try server-side refresh
+      const rt = req.headers['x-refresh-token'];
+      if (rt) {
+        const { data: rd } = await supabaseService.auth.refreshSession({ refresh_token: rt });
+        if (rd && rd.session) {
+          const { data: { user: ru } } = await supabase.auth.getUser(rd.session.access_token);
+          if (ru) {
+            req.user = ru;
+            req.authType = 'supabase';
+            res.setHeader('X-New-Access-Token', rd.session.access_token);
+            res.setHeader('X-New-Refresh-Token', rd.session.refresh_token || '');
+            return next();
+          }
+        }
+      }
+    } catch(e) {}
+  }
+
+  // API key path (SDK, CLI, agents)
+  try {
+    const keyHash = require('crypto').createHash('sha256').update(auth).digest('hex');
+    const { data: agent } = await supabaseService.from('agents')
+      .select('agent_id, agent_name, user_id').eq('api_key_hash', keyHash).single();
+    if (agent) {
+      req.agent = agent;
+      req.authType = 'apikey';
+      return next();
+    }
+  } catch(e) {}
+
+  return res.status(401).json({ error: 'Invalid API key or session' });
+}
+
 // ═══════════════════════════════════════════════════
 // PUBLIC ROUTES (no auth)
 // ═══════════════════════════════════════════════════
@@ -1347,7 +1394,7 @@ app.post('/api/fork/:ctxId', apiLimiter, requireApiKey, async (req, res) => {
 });
 
 // ── GET /api/verify/:ctxId ── standalone trust object ─
-app.get('/api/verify/:ctxId', requireApiKey, async (req, res) => {
+app.get('/api/verify/:ctxId', flexAuth, async (req, res) => {
   try {
     const { ctxId } = req.params;
     const chain     = [];
@@ -1404,7 +1451,7 @@ app.get('/api/verify/:ctxId', requireApiKey, async (req, res) => {
 //   commits         — ordered commits, each with _proof receipt
 //   export_hash     — SHA-256 of the entire bundle (uniquely identifies this export)
 //
-app.get('/api/export/:ctxId', requireApiKey, async (req, res) => {
+app.get('/api/export/:ctxId', flexAuth, async (req, res) => {
   try {
     const { ctxId } = req.params;
 
@@ -3547,9 +3594,13 @@ app.get('/r/:traceId', async (req, res) => {
     }
 
     // Verify chain integrity
+    // Only flag broken if BOTH hashes exist and don't match.
+    // Missing parent_hash = first commit or extension-captured turn (not broken).
     let chainIntact = true;
     for (let i = 1; i < commits.length; i++) {
-      if (commits[i].parent_hash && commits[i].parent_hash !== commits[i-1].integrity_hash) {
+      const prevHash = commits[i-1].integrity_hash;
+      const thisParent = commits[i].parent_hash;
+      if (thisParent && prevHash && thisParent !== prevHash) {
         chainIntact = false; break;
       }
     }
@@ -4437,55 +4488,7 @@ app.get('/join', (req, res) => {
 
 
 // ── GET /dashboard/commits ────────────────────────────────────────────
-app.get('/dashboard/commits', requireAuth, async (req, res) => {
-  try {
-    const { data: userAgents } = await supabaseService
-      .from('agents')
-      .select('agent_id, agent_name')
-      .eq('user_id', req.user.id);
-
-    const agentIds = (userAgents || []).map(a => a.agent_id);
-    const agentMap = Object.fromEntries((userAgents || []).map(a => [a.agent_id, a.agent_name]));
-
-    if (agentIds.length === 0) return res.json([]);
-
-    const idList = agentIds.map(id => `"${id}"`).join(',');
-    const { data, error } = await supabaseService
-      .from('commits')
-      .select('*')
-      .or([
-        `agent_id.in.(${idList})`,
-        `from_agent.in.(${idList})`,
-        `to_agent.in.(${idList})`
-      ].join(','))
-      .order('timestamp', { ascending: false })
-      .limit(200);
-
-    if (error) throw error;
-
-    // Return flat fields the dashboard JS expects
-    res.json((data || []).map(c => ({
-      id:               c.id,
-      trace_id:         c.trace_id    || c.id,
-      agent_id:         c.agent_id    || c.from_agent,
-      from_agent:       c.from_agent,
-      to_agent:         c.to_agent,
-      agent_name:       agentMap[c.from_agent] || c.agent_info?.name || c.from_agent,
-      event_type:       c.event_type  || 'commit',
-      timestamp:        c.timestamp,
-      client_timestamp: c.client_timestamp || c.timestamp,
-      accepted_at:      c.saved_at    || c.timestamp,
-      payload:          c.payload     || {},
-      integrity_hash:   c.integrity_hash,
-      parent_hash:      c.parent_hash,
-      payload_hash:     c.payload_hash,
-      verified:         c.verified    || false,
-      agent_info:       c.agent_info  || {},
-    })));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+;
 
 // ── GET /api/auth/refresh ──────────────────────────────────────────────
 app.post('/api/auth/refresh', async (req, res) => {
@@ -4519,6 +4522,94 @@ app.get('*', (req, res) => {
   res.sendFile(filePath, err => {
     if (err) res.status(404).send('Not found');
   });
+});
+
+// ── GET /admin/stats — admin check + basic stats ──────────────────────────
+app.get('/admin/stats', requireAuth, async (req, res) => {
+  try {
+    // Check if the authenticated user is an admin email
+    const adminEmails = (process.env.ADMIN_EMAILS || 'hello@darkmatterhub.ai').split(',').map(e => e.trim());
+    if (!adminEmails.includes(req.user.email)) {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+
+    const [agentsRes, commitsRes, usersRes] = await Promise.all([
+      supabaseService.from('agents').select('id', { count: 'exact', head: true }),
+      supabaseService.from('commits').select('id', { count: 'exact', head: true }),
+      supabaseService.auth.admin.listUsers({ page: 1, perPage: 1 }),
+    ]);
+
+    res.json({
+      admin: true,
+      email: req.user.email,
+      agents: agentsRes.count || 0,
+      commits: commitsRes.count || 0,
+      users: usersRes.data?.total || 0,
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── GET /admin — serve admin panel ────────────────────────────────────────
+app.get('/admin', requireAuth, (req, res) => {
+  res.sendFile(require('path').join(__dirname, '../public/admin.html'));
+});
+
+// ── GET /api/debug/me — diagnostic for "no records" issue (admin only) ──────
+app.get('/api/debug/me', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const email  = req.user.email;
+
+    // 1. Find agents for this user
+    const { data: agents, error: ae } = await supabaseService
+      .from('agents')
+      .select('agent_id, agent_name, user_id, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    const agentIds = (agents || []).map(a => a.agent_id);
+    const idList   = agentIds.map(id => '"' + id + '"').join(',');
+
+    // 2. Count commits for those agents
+    let commitCount = 0, sampleCommits = [];
+    if (agentIds.length > 0) {
+      const { data: commits, count } = await supabaseService
+        .from('commits')
+        .select('id, trace_id, from_agent, agent_id, timestamp', { count: 'exact' })
+        .or(['agent_id.in.(' + idList + ')', 'from_agent.in.(' + idList + ')'].join(','))
+        .order('timestamp', { ascending: false })
+        .limit(5);
+      commitCount  = count || (commits || []).length;
+      sampleCommits = commits || [];
+    }
+
+    // 3. Also check: any commits where from_agent matches agents but user_id was null
+    const { data: nullAgents } = await supabaseService
+      .from('agents')
+      .select('agent_id, agent_name, user_id, created_at')
+      .is('user_id', null)
+      .limit(5);
+
+    res.json({
+      auth_user_id:   userId,
+      auth_email:     email,
+      agents_found:   (agents || []).length,
+      agents:         agents || [],
+      commit_count:   commitCount,
+      sample_commits: sampleCommits,
+      null_user_id_agents: nullAgents || [],
+      diagnosis: agentIds.length === 0
+        ? 'NO AGENTS: No agents found with user_id = ' + userId + '. Commits exist but are linked to a different user_id or an agent with null user_id.'
+        : commitCount === 0
+          ? 'AGENTS EXIST but NO COMMITS found for agent IDs: ' + agentIds.join(', ')
+          : 'OK: Found ' + agentIds.length + ' agents and ' + commitCount + ' commits.',
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
