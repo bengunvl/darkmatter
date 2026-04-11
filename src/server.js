@@ -689,14 +689,24 @@ app.get('/dashboard/commits', requireAuth, async (req, res) => {
 
     if (error) throw error;
 
+    // Return fields the dashboard JS expects directly — no buildContext wrapping
     res.json((data || []).map(c => ({
-      ...buildContext(c, agentMap),
-      // Dashboard extras — keep legacy fields for UI compatibility
-      from:      agentMap[c.from_agent] || c.agent_info?.name || c.from_agent,
-      fromId:    c.from_agent,
-      to:        agentMap[c.to_agent]   || c.to_agent,
-      toId:      c.to_agent,
-      context:   c.context || {},
+      id:               c.id,
+      trace_id:         c.trace_id    || c.id,
+      agent_id:         c.agent_id    || c.from_agent,
+      from_agent:       c.from_agent,
+      to_agent:         c.to_agent,
+      agent_name:       agentMap[c.from_agent] || c.agent_info?.name || c.from_agent,
+      event_type:       c.event_type  || 'commit',
+      timestamp:        c.timestamp,
+      client_timestamp: c.client_timestamp || c.timestamp,
+      accepted_at:      c.saved_at    || c.timestamp,
+      payload:          c.payload     || {},
+      integrity_hash:   c.integrity_hash,
+      parent_hash:      c.parent_hash,
+      payload_hash:     c.payload_hash,
+      verified:         c.verified    || false,
+      agent_info:       c.agent_info  || {},
     })));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -3515,13 +3525,10 @@ body{
 </html>`);
 });
 
-
-
-
 // ═══════════════════════════════════════════════════════════════════════
 // PUBLIC RECORD VIEW — no auth required
-// GET /r/:traceId  →  JSON record for external sharing
-// GET /r/:traceId/html  →  self-contained HTML page (no login needed)
+// GET /r/:traceId       → human-readable HTML (default)
+// GET /r/:traceId?format=json → raw JSON
 // ═══════════════════════════════════════════════════════════════════════
 app.get('/r/:traceId', async (req, res) => {
   try {
@@ -3531,14 +3538,12 @@ app.get('/r/:traceId', async (req, res) => {
     const { data: commits, error } = await supabaseService
       .from('commits')
       .select('id, trace_id, from_agent, agent_id, agent_info, payload, timestamp, client_timestamp, event_type, integrity_hash, payload_hash, parent_hash, verified')
-      .or(`trace_id.eq."${traceId}",trace_id.eq.${traceId}`)
+      .or('trace_id.eq."' + traceId + '",trace_id.eq.' + traceId)
       .order('timestamp', { ascending: true });
 
-    if (error || !commits?.length) {
-      // Return clean 404 page
-      return res.status(404).send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><title>Record not found — DarkMatter</title>
-<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:"IBM Plex Sans",system-ui,sans-serif;background:#f4f6fb;color:#0a0e1a;display:flex;align-items:center;justify-content:center;min-height:100vh;}.card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:40px;max-width:400px;text-align:center;}.title{font-size:18px;font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}.sub{font-size:13px;color:#5a6480;line-height:1.6;}</style>
-</head><body><div class="card"><div style="font-size:2rem;margin-bottom:16px;opacity:.2;">🌑</div><div class="title">Record not found</div><div class="sub">This record may have been removed, or the link may be incorrect.<br/><br/><a href="/" style="color:#3b82f6;">Back to DarkMatter →</a></div></div></body></html>`);
+    if (error || !commits || !commits.length) {
+      if (req.query.format === 'json') return res.status(404).json({ error: 'Record not found.' });
+      return res.status(404).send('<!DOCTYPE html><html><head><title>Not found</title></head><body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;"><div style="text-align:center"><h2>Record not found</h2><p>This record may have been removed or the link is incorrect.</p><a href="/">Back to DarkMatter</a></div></body></html>');
     }
 
     // Verify chain integrity
@@ -3549,396 +3554,241 @@ app.get('/r/:traceId', async (req, res) => {
       }
     }
 
-    const accept = req.headers['accept'] || '';
-    const wantsJSON = accept.includes('application/json') || req.query.format === 'json';
-
-    if (wantsJSON) {
-      // JSON API response
-      const safe = commits.map(c => ({
-        id: c.id, trace_id: c.trace_id,
-        timestamp: c.client_timestamp || c.timestamp,
-        recorded_at: c.timestamp,
-        event_type: c.event_type,
-        integrity_hash: c.integrity_hash,
-        parent_hash: c.parent_hash,
-        verified: c.verified,
-        payload: { role: c.payload?.role, text: c.payload?.text, output: c.payload?.output,
-          summary: c.payload?.summary, prompt: c.payload?.prompt,
-          convTitle: c.payload?.convTitle, platform: c.payload?.platform, _source: c.payload?._source },
-      }));
-      return res.json({ trace_id: traceId, chain_intact: chainIntact, step_count: commits.length, commits: safe, verify_url: `${process.env.APP_URL || 'https://darkmatterhub.ai'}/r/${traceId}` });
+    if (req.query.format === 'json') {
+      return res.json({
+        trace_id: traceId, chain_intact: chainIntact, step_count: commits.length,
+        commits: commits.map(function(c) { return {
+          id: c.id, trace_id: c.trace_id,
+          timestamp: c.client_timestamp || c.timestamp,
+          recorded_at: c.timestamp,
+          event_type: c.event_type,
+          integrity_hash: c.integrity_hash,
+          parent_hash: c.parent_hash,
+          verified: c.verified,
+          payload: { role: c.payload && c.payload.role, text: c.payload && c.payload.text,
+            output: c.payload && c.payload.output, summary: c.payload && c.payload.summary,
+            prompt: c.payload && c.payload.prompt, convTitle: c.payload && c.payload.convTitle,
+            platform: c.payload && c.payload.platform, _source: c.payload && c.payload._source },
+        }; }),
+        verify_url: (process.env.APP_URL || 'https://darkmatterhub.ai') + '/r/' + traceId,
+      });
     }
 
-    // Build conversation for HTML render
-    const title = commits.find(c => c.payload?.convTitle)?.payload?.convTitle
-      || commits.find(c => (c.payload?.role === 'user') && c.payload?.text)?.payload?.text?.slice(0, 60)
-      || 'AI Conversation Record';
-    const platform = commits[0]?.payload?.platform || 'AI';
-    const source = commits[0]?.payload?._source || 'extension';
-    const firstTs = commits[0]?.client_timestamp || commits[0]?.timestamp || '';
-    const lastTs  = commits[commits.length-1]?.client_timestamp || commits[commits.length-1]?.timestamp || '';
-    const stepCount = commits.length;
+    // Build HTML render
+    function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-    const statusColor = chainIntact ? '#10b981' : '#ef4444';
-    const statusText  = chainIntact ? '✓ Record intact' : '✗ Mismatch detected';
-    const statusBg    = chainIntact ? 'rgba(16,185,129,.06)' : 'rgba(239,68,68,.06)';
-    const statusBd    = chainIntact ? 'rgba(16,185,129,.2)' : 'rgba(239,68,68,.2)';
+    var title = (function() {
+      for (var i = 0; i < commits.length; i++) {
+        var ct = commits[i].payload && commits[i].payload.convTitle;
+        if (ct && ct !== 'Untitled') return ct;
+      }
+      for (var i = 0; i < commits.length; i++) {
+        var p = commits[i].payload || {};
+        if (p.role === 'user' && p.text) return p.text.slice(0, 60) + (p.text.length > 60 ? '...' : '');
+      }
+      return 'AI Conversation Record';
+    })();
 
-    // Render messages
-    let messagesHTML = '';
-    commits.forEach((c, i) => {
-      const p = c.payload || {};
-      const role = p.role || (i % 2 === 0 ? 'user' : 'assistant');
-      const text = p.text || p.output || p.summary || p.prompt || '';
+    var platform = (commits[0] && commits[0].payload && commits[0].payload.platform) || 'AI';
+    var firstTs = (commits[0] && (commits[0].client_timestamp || commits[0].timestamp)) || '';
+    var stepCount = commits.length;
+    var statusColor = chainIntact ? '#065f46' : '#991b1b';
+    var statusText  = chainIntact ? '\u2713 Record intact' : '\u2717 Mismatch detected';
+    var statusBg    = chainIntact ? 'rgba(16,185,129,.06)' : 'rgba(239,68,68,.06)';
+    var statusBd    = chainIntact ? 'rgba(16,185,129,.2)'  : 'rgba(239,68,68,.2)';
+
+    // Build messages HTML
+    var messagesHTML = '';
+    commits.forEach(function(c, i) {
+      var p = c.payload || {};
+      var role = p.role || (i % 2 === 0 ? 'user' : 'assistant');
+      var text = p.text || p.output || p.summary || p.prompt || '';
       if (!text.trim()) return;
-      const ts = c.client_timestamp || c.timestamp || '';
-      const tsStr = ts ? new Date(ts).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', timeZone:'UTC' }) + ' UTC' : '';
-      const isUser = role === 'user';
-      // Provider-agnostic labels — YOU / AGENT, platform as quiet secondary
-      const platformHint = p.platform ? `<span style="font-weight:400;opacity:.5;margin-left:5px;">${escHtml(p.platform)}</span>` : '';
-      const agentName = p.agentName || p.agent_name || null;
-      const userLabel  = 'YOU';
-      const agentLabel = agentName ? escHtml(agentName) : 'AGENT';
-
+      var ts2 = c.client_timestamp || c.timestamp || '';
+      var tsStr = ts2 ? new Date(ts2).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', timeZone:'UTC', hour12:false }) + ' UTC' : '';
+      var isUser = role === 'user';
+      var platHint = p.platform ? '<span style="font-weight:400;opacity:.5;margin-left:5px;">' + escH(p.platform) + '</span>' : '';
+      var agentLabel = p.agentName || p.agent_name || 'AGENT';
       if (isUser) {
-        messagesHTML += `<div class="msg-grp"><div class="role-label user">${userLabel}${platformHint}</div><div class="bubble user">${escHtml(text)}</div><div class="msg-time user">${tsStr}</div></div>`;
+        messagesHTML += '<div class="msg-grp"><div class="role-label user">YOU' + platHint + '</div><div class="bubble user">' + escH(text) + '</div><div class="msg-time user">' + tsStr + '</div></div>';
       } else {
-        const rendered = simpleMarkdown(text);
-        messagesHTML += `<div class="msg-grp"><div class="role-label agent">${agentLabel}${platformHint}</div><div class="bubble agent">${rendered}</div><div class="msg-time agent">${tsStr}</div></div>`;
+        messagesHTML += '<div class="msg-grp"><div class="role-label agent">' + escH(agentLabel) + platHint + '</div><div class="bubble agent">' + escH(text) + '</div><div class="msg-time agent">' + tsStr + '</div></div>';
       }
     });
 
-    function escHtml(s) {
-      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
+    var verifyUrl = (process.env.APP_URL || 'https://darkmatterhub.ai') + '/r/' + traceId;
+    var jsonUrl   = verifyUrl + '?format=json';
+    var dateStr = firstTs ? new Date(firstTs).toLocaleDateString(undefined, {month:'short',day:'numeric',year:'numeric'}) : '';
 
-    function simpleMarkdown(text) {
-      const blocks = [];
-      let t = text.replace(/```([a-zA-Z0-9]*)\n?([\s\S]*?)```/g, (_, lang, code) => {
-        blocks.push({ lang: lang.trim(), code });
-        return `\x00BLK${blocks.length - 1}\x00`;
-      });
-      t = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      t = t.replace(/`([^`\n]+)`/g,'<code>$1</code>');
-      t = t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
-      t = t.replace(/\*([^*\n]+)\*/g,'<em>$1</em>');
-      t = t.replace(/^### (.+)$/gm,'<h4>$1</h4>').replace(/^## (.+)$/gm,'<h3>$1</h3>').replace(/^# (.+)$/gm,'<h2>$1</h2>');
-      t = t.replace(/^[-*] (.+)$/gm,'<li>$1</li>');
-      t = t.replace(/(<li>[\s\S]*?<\/li>\n?)+/g, m => `<ul>${m}</ul>`);
-      t = t.split(/\n\n+/).map(para => {
-        para = para.trim(); if (!para) return '';
-        if (/^<(h[2-4]|ul|ol|\x00BLK)/.test(para)) return para;
-        return '<p>' + para.replace(/\n/g,'<br>') + '</p>';
-      }).join('');
-      t = t.replace(/\x00BLK(\d+)\x00/g, (_, i) => {
-        const { lang, code } = blocks[+i];
-        const ec = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        return `<pre${lang ? ` data-lang="${lang}"` : ''}><code>${ec}</code></pre>`;
-      });
-      return t;
-    }
-
-    const verifyUrl = `${process.env.APP_URL || 'https://darkmatterhub.ai'}/r/${traceId}`;
-    const jsonUrl   = `${verifyUrl}?format=json`;
-
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<meta property="og:title" content="${escHtml(title)} — DarkMatter Record"/>
-<meta property="og:description" content="Verifiable AI conversation record. ${stepCount} steps. ${chainIntact ? 'Chain intact.' : 'Verification required.'}"/>
-<title>${escHtml(title)} — DarkMatter</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --ink:#0a0e1a;--ink2:#2d3552;--ink3:#5a6480;--ink4:#9199b0;
-  --bg:#f4f6fb;--bg2:#eceef5;--border:#e5e7eb;--border2:#dde1ed;
-  --blue:#3b82f6;--green:#10b981;--red:#ef4444;
-  --mono:"IBM Plex Mono","Courier New",monospace;
-  --sans:"IBM Plex Sans",sans-serif;
-  --grad:linear-gradient(90deg,#7C3AED,#2563EB,#0891b2);
-}
-body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;font-size:14px;}
-
-/* NAV */
-.nav{height:56px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:100;}
-.nav-logo{display:flex;align-items:center;gap:8px;text-decoration:none;}
-.nav-name{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.03em;}
-.nav-grad{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.nav-link{font-size:12px;color:var(--ink3);text-decoration:none;padding:4px 8px;border-radius:5px;transition:all .12s;}
-.nav-link:hover{background:var(--bg2);color:var(--ink);}
-.nav-cta{font-family:var(--mono);font-size:11.5px;font-weight:700;background:var(--ink);color:#fff;padding:6px 14px;border-radius:6px;text-decoration:none;transition:opacity .15s;}
-.nav-cta:hover{opacity:.85;}
-
-/* PAGE */
-.page{max-width:800px;margin:0 auto;padding:28px 20px 60px;}
-
-/* RECORD HEADER */
-.rec-head{background:#fff;border:1px solid var(--border);border-radius:8px;padding:18px 20px;margin-bottom:16px;}
-.rec-title{font-size:18px;font-weight:700;color:var(--ink);letter-spacing:-.03em;margin-bottom:10px;line-height:1.25;}
-.rec-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.status-badge{font-family:var(--mono);font-size:11px;font-weight:600;padding:3px 10px;border-radius:4px;background:${statusBg};color:${statusColor};border:1px solid ${statusBd};}
-.meta-chip{font-size:12px;color:var(--ink3);}
-.meta-sep{color:var(--border2);}
-
-/* VIEW SWITCHER */
-.view-switcher{display:flex;gap:4px;margin-bottom:16px;background:#fff;border:1px solid var(--border);border-radius:7px;padding:3px;width:fit-content;}
-.vs-btn{font-size:12px;padding:5px 12px;border-radius:5px;border:none;background:none;cursor:pointer;color:var(--ink3);font-family:var(--sans);transition:all .12s;}
-.vs-btn.on{background:var(--ink);color:#fff;font-weight:600;}
-.vs-btn:hover:not(.on){background:var(--bg2);color:var(--ink);}
-
-/* VIEWS */
-.view{display:none;} .view.on{display:block;}
-
-/* CONVERSATION VIEW */
-.conv-area{display:flex;flex-direction:column;gap:12px;}
-.msg-grp{clear:both;}
-.role-label{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink4);margin-bottom:4px;}
-.role-label.user{text-align:right;}
-.bubble{border-radius:3px;padding:10px 14px;font-size:14px;line-height:1.65;word-break:break-word;max-width:88%;display:inline-block;}
-.bubble.user{background:var(--ink);color:rgba(232,237,245,.92);border:1px solid rgba(0,0,0,.15);border-radius:3px 3px 1px 3px;float:right;clear:both;}
-.bubble.agent{background:#fff;border:1px solid var(--border);border-radius:1px 3px 3px 3px;float:left;clear:both;}
-.bubble.agent p{margin-bottom:.65em;} .bubble.agent p:last-child{margin-bottom:0;}
-.bubble.agent h2,.bubble.agent h3,.bubble.agent h4{font-weight:600;margin:10px 0 4px;}
-.bubble.agent code{font-family:var(--mono);font-size:12px;background:var(--bg2);padding:2px 5px;border-radius:3px;}
-.bubble.agent pre{background:#0f1629;border:1px solid #1a2440;border-radius:6px;padding:12px 14px;overflow-x:auto;margin:8px 0;}
-.bubble.agent pre code{background:none;color:rgba(232,237,245,.8);font-size:12px;}
-.bubble.agent ul,.bubble.agent ol{margin:4px 0 4px 18px;}
-.bubble.agent li{margin-bottom:2px;}
-.bubble.agent blockquote{border-left:3px solid var(--border2);padding:4px 10px;color:var(--ink3);margin:6px 0;}
-.bubble.agent strong{font-weight:600;} .bubble.agent em{font-style:italic;}
-.msg-time{font-size:10px;color:var(--ink4);font-family:var(--mono);margin-top:4px;clear:both;}
-.msg-time.user{text-align:right;}
-.clearfix{clear:both;height:0;}
-
-/* TIMELINE VIEW */
-.timeline{display:flex;flex-direction:column;gap:0;}
-.tl-step{display:flex;gap:14px;padding-bottom:16px;}
-.tl-step:last-child{padding-bottom:0;}
-.tl-line{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
-.tl-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--green);background:#fff;flex-shrink:0;margin-top:2px;}
-.tl-dot.user{border-color:var(--ink);}
-.tl-conn{flex:1;width:1px;background:var(--border);margin:3px 0;}
-.tl-step:last-child .tl-conn{display:none;}
-.tl-info{flex:1;min-width:0;background:#fff;border:1px solid var(--border);border-radius:7px;padding:11px 14px;}
-.tl-head{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;}
-.tl-step-n{font-family:var(--mono);font-size:9px;color:var(--ink4);}
-.tl-actor{font-size:12.5px;font-weight:600;color:var(--ink2);}
-.tl-time{font-size:10px;color:var(--ink4);margin-left:auto;font-family:var(--mono);}
-.tl-text{font-size:13.5px;color:var(--ink);line-height:1.6;}
-.tl-hash{font-family:var(--mono);font-size:9.5px;color:var(--ink4);margin-top:6px;word-break:break-all;}
-
-/* PROOF VIEW */
-.proof-area{display:flex;flex-direction:column;gap:12px;}
-.proof-banner{background:#fff;border:1px solid;border-radius:8px;padding:16px 18px;}
-.proof-banner-title{font-size:14px;font-weight:700;margin-bottom:6px;}
-.proof-banner-body{font-size:13px;line-height:1.65;color:var(--ink2);}
-.proof-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-@media(max-width:600px){.proof-grid{grid-template-columns:1fr;}}
-.pcard{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
-.pcard.ok{background:rgba(16,185,129,.04);border-color:rgba(16,185,129,.2);}
-.pcard.skip{opacity:.7;}
-.pcard-top{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
-.pcard-ic{font-size:13px;}
-.pcard-ic.ok{color:#065f46;}
-.pcard-ic.skip{color:var(--ink4);}
-.pcard-title{font-size:12.5px;font-weight:600;color:var(--ink);}
-.pcard-body{font-size:12px;color:var(--ink3);line-height:1.6;}
-.pcard-mono{font-family:var(--mono);font-size:9px;color:var(--ink4);margin-top:4px;word-break:break-all;}
-
-/* JSON VIEW */
-.json-area{background:#0f1629;border-radius:8px;padding:20px;overflow-x:auto;}
-.json-area pre{font-family:var(--mono);font-size:11.5px;line-height:1.7;color:rgba(232,237,245,.8);}
-
-/* ACTION BAR */
-.action-bar{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.ab-title{font-size:13px;font-weight:600;color:var(--ink);flex:1;min-width:180px;}
-.ab-sub{font-size:12px;color:var(--ink3);}
-.ab-btn{font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid var(--border2);background:#fff;color:var(--ink2);cursor:pointer;font-family:var(--sans);text-decoration:none;display:inline-block;transition:all .12s;}
-.ab-btn:hover{border-color:var(--blue);color:var(--blue);}
-.ab-btn.p{background:var(--ink);color:#fff;border-color:transparent;font-family:var(--mono);font-weight:700;}
-.ab-btn.p:hover{opacity:.85;}
-
-/* FOOTER */
-.page-footer{text-align:center;padding:24px 0;font-size:12px;color:var(--ink4);}
-.page-footer a{color:var(--ink3);text-decoration:none;}
-.page-footer a:hover{color:var(--ink2);}
-</style>
-</head>
-<body>
-
-<nav class="nav">
-  <a class="nav-logo" href="/">
-    <svg style="width:24px;height:24px;flex-shrink:0;" viewBox="0 0 40 40" fill="none">
-      <defs><linearGradient id="dlg-r" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7C3AED"/><stop offset="55%" stop-color="#2563EB"/><stop offset="100%" stop-color="#0891b2"/></linearGradient></defs>
-      <circle cx="20" cy="20" r="17" stroke="#e5e7eb" stroke-width="0.8" stroke-dasharray="2 3"/>
-      <circle cx="20" cy="5" r="3.2" fill="#7C3AED" opacity="0.95"/>
-      <circle cx="33" cy="28" r="2.6" fill="#2563EB" opacity="0.95"/>
-      <circle cx="7" cy="28" r="2.2" fill="#22D3EE" opacity="0.9"/>
-      <line x1="20" y1="8" x2="31" y2="26" stroke="url(#dlg-r)" stroke-width="0.6" opacity="0.5"/>
-      <line x1="20" y1="8" x2="9" y2="26" stroke="#7C3AED" stroke-width="0.6" opacity="0.4"/>
-      <line x1="30" y1="27" x2="10" y2="27" stroke="#22D3EE" stroke-width="0.6" opacity="0.4"/>
-      <circle cx="20" cy="20" r="2.5" fill="url(#dlg-r)" opacity="0.6"/>
-    </svg>
-    <span class="nav-name">Dark<span class="nav-grad">Matter</span></span>
-  </a>
-  <div class="nav-right">
-    <a href="/docs" class="nav-link">Docs</a>
-    <a href="/login" class="nav-link">Sign in</a>
-    <a href="/signup" class="nav-cta">Start free</a>
-  </div>
-</nav>
-
-<div class="page">
-
-  <!-- Record header -->
-  <div class="rec-head">
-    <div class="rec-title">${escHtml(title)}</div>
-    <div class="rec-meta">
-      <span class="status-badge">${statusText}</span>
-      <span class="meta-sep">·</span>
-      <span class="meta-chip">${stepCount} step${stepCount !== 1 ? 's' : ''}</span>
-      <span class="meta-sep">·</span>
-      <span class="meta-chip">${escHtml(platform)}</span>
-      ${firstTs ? `<span class="meta-sep">·</span><span class="meta-chip">${new Date(firstTs).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span>` : ''}
-    </div>
-  </div>
-
-  <!-- Action bar -->
-  <div class="action-bar">
-    <div>
-      <div class="ab-title">Anyone can verify this record</div>
-      <div class="ab-sub">Nothing can be changed after it was recorded. Share this link — no account required.</div>
-    </div>
-    <button class="ab-btn p" onclick="copyLink()">Copy link</button>
-    <a class="ab-btn" href="${jsonUrl}">Raw JSON</a>
-  </div>
-
-  <!-- View switcher -->
-  <div class="view-switcher">
-    <button class="vs-btn on" onclick="switchView('conv',this)">Conversation</button>
-    <button class="vs-btn" onclick="switchView('timeline',this)">Timeline</button>
-    <button class="vs-btn" onclick="switchView('proof',this)">Proof</button>
-    <button class="vs-btn" onclick="switchView('json',this)">Raw JSON</button>
-  </div>
-
-  <!-- CONVERSATION VIEW (default) -->
-  <div class="view on" id="view-conv">
-    <div class="conv-area">
-${messagesHTML}
-    </div>
-    <div class="clearfix"></div>
-  </div>
-
-  <!-- TIMELINE VIEW -->
-  <div class="view" id="view-timeline">
-    <div class="timeline">
-${commits.map((c, i) => {
-  const p = c.payload || {};
-  const role = p.role || (i % 2 === 0 ? 'user' : 'assistant');
-  const text = (p.text || p.output || p.summary || p.prompt || '').trim().slice(0, 300);
-  const ts = c.client_timestamp || c.timestamp || '';
-  const tsStr = ts ? new Date(ts).toLocaleString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false})+' UTC' : '';
-  const isUser = role === 'user';
-  const actor = isUser ? 'You' : (p.agentName || p.agent_name || 'Agent');
-  return `      <div class="tl-step">
-        <div class="tl-line"><div class="tl-dot${isUser?' user':''}"></div><div class="tl-conn"></div></div>
-        <div class="tl-info">
-          <div class="tl-head"><span class="tl-step-n">Step ${i+1}</span><span class="tl-actor">${escHtml(actor)}</span><span class="tl-time">${tsStr}</span></div>
-          <div class="tl-text">${escHtml(text)}${text.length >= 300 ? '…' : ''}</div>
-          ${c.integrity_hash ? `<div class="tl-hash">${c.integrity_hash.slice(0,16)}…</div>` : ''}
-        </div>
-      </div>`;
-}).join('\n')}
-    </div>
-  </div>
-
-  <!-- PROOF VIEW -->
-  <div class="view" id="view-proof">
-    <div class="proof-area">
-      <div class="proof-banner" style="border-color:${statusBd};background:${statusBg};">
-        <div class="proof-banner-title" style="color:${statusColor};">${chainIntact ? '✓ This record is intact' : '✗ Mismatch detected'}</div>
-        <div class="proof-banner-body">${chainIntact
-          ? `The ${stepCount} steps shown are exactly what was captured. The hash chain has been verified — nothing has been added, removed, or altered. This record can be independently verified using the proof file or the verification tool.`
-          : 'The record does not match its original hash. This may indicate tampering or a recording error. Download the proof file for independent investigation.'
-        }</div>
-      </div>
-      <div class="proof-grid">
-        <div class="pcard ${chainIntact?'ok':''}">
-          <div class="pcard-top"><span class="pcard-ic ${chainIntact?'ok':'skip'}">${chainIntact?'✓':'—'}</span><span class="pcard-title">Hash chain</span></div>
-          <div class="pcard-body">${chainIntact ? stepCount+' steps verified — each step matches the previous' : 'Chain verification failed'}</div>
-        </div>
-        <div class="pcard skip">
-          <div class="pcard-top"><span class="pcard-ic skip">—</span><span class="pcard-title">Log inclusion</span></div>
-          <div class="pcard-body">Inclusion proof generated at next checkpoint. Download the proof file to verify.</div>
-        </div>
-        <div class="pcard skip">
-          <div class="pcard-top"><span class="pcard-ic skip">—</span><span class="pcard-title">Checkpoint signed</span></div>
-          <div class="pcard-body">Available in the downloaded proof file.</div>
-        </div>
-        <div class="pcard skip">
-          <div class="pcard-top"><span class="pcard-ic skip">—</span><span class="pcard-title">Independent witness</span></div>
-          <div class="pcard-body">Download the proof file to check witness signatures.</div>
-        </div>
-      </div>
-      <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px 18px;">
-        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px;">Verify independently</div>
-        <div style="font-size:12px;color:var(--ink3);margin-bottom:12px;">No account required. The proof file is self-contained — your recipient can verify it offline.</div>
-        <div style="font-family:var(--mono);font-size:11px;background:#f4f6fb;border:1px solid var(--border);border-radius:5px;padding:7px 10px;color:var(--ink2);margin-bottom:10px;">python verify_darkmatter_chain.py bundle.json</div>
-        <a href="${jsonUrl}" class="ab-btn" style="margin-right:8px;">Download proof file (JSON)</a>
-        <a href="/integrity#spec" class="ab-btn">Integrity Spec →</a>
-      </div>
-    </div>
-  </div>
-
-  <!-- RAW JSON VIEW -->
-  <div class="view" id="view-json">
-    <div class="json-area">
-      <pre id="json-pre">Loading...</pre>
-    </div>
-  </div>
-
-  <div class="page-footer">
-    Recorded and verified by <a href="/">DarkMatter</a> · <a href="/integrity">Integrity Spec</a> · <a href="/docs">Documentation</a>
-  </div>
-
-</div>
-
-<script>
-const TRACE_ID = '${traceId}';
-let jsonLoaded = false;
-
-function switchView(name, btn) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
-  document.querySelectorAll('.vs-btn').forEach(b => b.classList.remove('on'));
-  document.getElementById('view-'+name).classList.add('on');
-  btn.classList.add('on');
-  // Lazy-load JSON
-  if (name === 'json' && !jsonLoaded) {
-    fetch('?format=json')
-      .then(r => r.json())
-      .then(data => {
-        document.getElementById('json-pre').textContent = JSON.stringify(data, null, 2);
-        jsonLoaded = true;
-      })
-      .catch(() => { document.getElementById('json-pre').textContent = 'Failed to load JSON.'; });
-  }
-}
-
-function copyLink() {
-  navigator.clipboard.writeText(location.href).then(() => {
-    const btn = document.querySelector('.ab-btn.p');
-    btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = 'Copy link', 1800);
-  });
-}
-</script>
-</body>
-</html>`;
+    var html = '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
+      + '<meta charset="UTF-8"/>\n'
+      + '<meta name="viewport" content="width=device-width,initial-scale=1"/>\n'
+      + '<title>' + escH(title) + ' \u2014 DarkMatter</title>\n'
+      + '<link rel="preconnect" href="https://fonts.googleapis.com"/>\n'
+      + '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>\n'
+      + '<style>\n'
+      + '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}\n'
+      + ':root{--ink:#0a0e1a;--ink2:#2d3552;--ink3:#5a6480;--ink4:#9199b0;--bg:#f4f6fb;--bg2:#eceef5;--border:#e5e7eb;--border2:#dde1ed;--blue:#3b82f6;--green:#10b981;--mono:"IBM Plex Mono","Courier New",monospace;--sans:"IBM Plex Sans",sans-serif;--grad:linear-gradient(90deg,#7C3AED,#2563EB,#0891b2);}\n'
+      + 'body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;font-size:14px;}\n'
+      + '.nav{height:56px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:100;}\n'
+      + '.nav-name{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.03em;}\n'
+      + '.nav-grad{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}\n'
+      + '.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}\n'
+      + '.nav-link{font-size:12px;color:var(--ink3);text-decoration:none;padding:4px 8px;border-radius:5px;}\n'
+      + '.nav-link:hover{background:var(--bg2);color:var(--ink);}\n'
+      + '.nav-cta{font-family:var(--mono);font-size:11.5px;font-weight:700;background:var(--ink);color:#fff;padding:6px 14px;border-radius:6px;text-decoration:none;}\n'
+      + '.page{max-width:780px;margin:0 auto;padding:28px 20px 60px;}\n'
+      + '.first-screen{background:#fff;border:1px solid var(--border);border-radius:10px;padding:24px 26px;margin-bottom:16px;}\n'
+      + '.fs-title{font-size:19px;font-weight:700;color:var(--ink);letter-spacing:-.03em;line-height:1.25;margin-bottom:12px;}\n'
+      + '.fs-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}\n'
+      + '.fs-status{font-family:var(--mono);font-size:11px;font-weight:600;padding:3px 10px;border-radius:4px;border:1px solid;}\n'
+      + '.fs-sep{color:var(--border2);font-size:11px;}\n'
+      + '.fs-chip{font-size:12px;color:var(--ink3);}\n'
+      + '.fs-integrity{font-size:13px;color:var(--ink2);line-height:1.65;margin-bottom:18px;padding:11px 14px;background:var(--bg);border-radius:6px;border-left:3px solid var(--border2);}\n'
+      + '.fs-actions{display:flex;gap:8px;flex-wrap:wrap;}\n'
+      + '.fs-btn-p{background:var(--ink);color:#fff;font-family:var(--mono);font-weight:700;font-size:12.5px;padding:8px 18px;border-radius:7px;border:none;cursor:pointer;transition:opacity .15s;}\n'
+      + '.fs-btn-p:hover{opacity:.85;}\n'
+      + '.fs-btn-s{background:#fff;color:var(--ink2);font-size:12.5px;padding:7px 16px;border-radius:7px;border:1px solid var(--border2);cursor:pointer;text-decoration:none;display:inline-block;font-family:var(--sans);}\n'
+      + '.fs-btn-s:hover{border-color:var(--ink3);color:var(--ink);}\n'
+      + '.view-switcher{display:flex;gap:4px;margin-bottom:16px;background:#fff;border:1px solid var(--border);border-radius:7px;padding:3px;width:fit-content;}\n'
+      + '.vs-btn{font-size:12px;padding:5px 12px;border-radius:5px;border:none;background:none;cursor:pointer;color:var(--ink3);font-family:var(--sans);}\n'
+      + '.vs-btn.on{background:var(--ink);color:#fff;font-weight:600;}\n'
+      + '.vs-btn:hover:not(.on){background:var(--bg2);color:var(--ink);}\n'
+      + '.view{display:none;}.view.on{display:block;}\n'
+      + '.conv-area{display:flex;flex-direction:column;gap:12px;}\n'
+      + '.msg-grp{clear:both;margin-bottom:4px;}\n'
+      + '.role-label{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink4);margin-bottom:3px;}\n'
+      + '.role-label.user{text-align:right;}\n'
+      + '.bubble{border-radius:3px;padding:9px 13px;font-size:13.5px;line-height:1.6;word-break:break-word;max-width:88%;display:inline-block;}\n'
+      + '.bubble.user{background:var(--ink);color:rgba(232,237,245,.92);border-radius:3px 3px 1px 3px;float:right;clear:both;}\n'
+      + '.bubble.agent{background:#fff;border:1px solid var(--border);border-radius:1px 3px 3px 3px;float:left;clear:both;}\n'
+      + '.msg-time{font-size:10px;color:var(--ink4);font-family:var(--mono);margin-top:3px;clear:both;}\n'
+      + '.msg-time.user{text-align:right;}\n'
+      + '.clearfix{clear:both;height:0;}\n'
+      + '.timeline{display:flex;flex-direction:column;}\n'
+      + '.tl-step{display:flex;gap:12px;padding-bottom:14px;}\n'
+      + '.tl-step:last-child{padding-bottom:0;}\n'
+      + '.tl-line{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}\n'
+      + '.tl-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--green);background:#fff;flex-shrink:0;margin-top:2px;}\n'
+      + '.tl-dot.user{border-color:var(--ink);}\n'
+      + '.tl-conn{flex:1;width:1px;background:var(--border);margin:3px 0;}\n'
+      + '.tl-step:last-child .tl-conn{display:none;}\n'
+      + '.tl-info{flex:1;background:#fff;border:1px solid var(--border);border-radius:7px;padding:10px 14px;}\n'
+      + '.tl-head{display:flex;align-items:baseline;gap:8px;margin-bottom:5px;}\n'
+      + '.tl-step-n{font-family:var(--mono);font-size:9px;color:var(--ink4);}\n'
+      + '.tl-actor{font-size:12.5px;font-weight:600;color:var(--ink2);}\n'
+      + '.tl-time{font-size:10px;color:var(--ink4);margin-left:auto;font-family:var(--mono);}\n'
+      + '.tl-text{font-size:13px;color:var(--ink);line-height:1.6;}\n'
+      + '.tl-hash{font-family:var(--mono);font-size:9px;color:var(--ink4);margin-top:5px;}\n'
+      + '.proof-area{display:flex;flex-direction:column;gap:12px;}\n'
+      + '.proof-banner{background:#fff;border:1px solid;border-radius:8px;padding:16px 18px;}\n'
+      + '.proof-banner-title{font-size:14px;font-weight:700;margin-bottom:6px;}\n'
+      + '.proof-banner-body{font-size:13px;line-height:1.65;color:var(--ink2);}\n'
+      + '.proof-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}\n'
+      + '.pcard{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;}\n'
+      + '.pcard.ok{background:rgba(16,185,129,.04);border-color:rgba(16,185,129,.2);}\n'
+      + '.pcard.skip{opacity:.7;}\n'
+      + '.pcard-top{display:flex;align-items:center;gap:7px;margin-bottom:5px;}\n'
+      + '.pcard-ic.ok{color:#065f46;font-size:13px;}.pcard-ic.skip{color:var(--ink4);font-size:13px;}\n'
+      + '.pcard-title{font-size:12.5px;font-weight:600;color:var(--ink);}\n'
+      + '.pcard-body{font-size:12px;color:var(--ink3);line-height:1.6;}\n'
+      + '.json-area{background:#0f1629;border-radius:8px;padding:20px;overflow-x:auto;}\n'
+      + '.json-area pre{font-family:var(--mono);font-size:11.5px;line-height:1.7;color:rgba(232,237,245,.8);}\n'
+      + '.ab-btn{font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid var(--border2);background:#fff;color:var(--ink2);text-decoration:none;display:inline-block;margin-right:6px;margin-top:8px;}\n'
+      + '.page-footer{text-align:center;padding:24px 0;font-size:12px;color:var(--ink4);}\n'
+      + '.page-footer a{color:var(--ink3);text-decoration:none;}\n'
+      + '</style>\n</head>\n<body>\n'
+      + '<nav class="nav">\n'
+      + '  <a href="/" style="display:flex;align-items:center;gap:8px;text-decoration:none;">\n'
+      + '    <svg style="width:24px;height:24px;" viewBox="0 0 40 40" fill="none"><defs><linearGradient id="dlg-r" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7C3AED"/><stop offset="55%" stop-color="#2563EB"/><stop offset="100%" stop-color="#0891b2"/></linearGradient></defs><circle cx="20" cy="20" r="17" stroke="#e5e7eb" stroke-width="0.8" stroke-dasharray="2 3"/><circle cx="20" cy="5" r="3.2" fill="#7C3AED" opacity="0.95"/><circle cx="33" cy="28" r="2.6" fill="#2563EB" opacity="0.95"/><circle cx="7" cy="28" r="2.2" fill="#22D3EE" opacity="0.9"/><line x1="20" y1="8" x2="31" y2="26" stroke="url(#dlg-r)" stroke-width="0.6" opacity="0.5"/><line x1="20" y1="8" x2="9" y2="26" stroke="#7C3AED" stroke-width="0.6" opacity="0.4"/><line x1="30" y1="27" x2="10" y2="27" stroke="#22D3EE" stroke-width="0.6" opacity="0.4"/><circle cx="20" cy="20" r="2.5" fill="url(#dlg-r)" opacity="0.6"/></svg>\n'
+      + '    <span class="nav-name">Dark<span class="nav-grad">Matter</span></span>\n'
+      + '  </a>\n'
+      + '  <div class="nav-right">\n'
+      + '    <a href="/docs" class="nav-link">Docs</a>\n'
+      + '    <a href="/login" class="nav-link">Sign in</a>\n'
+      + '    <a href="/signup" class="nav-cta">Start free</a>\n'
+      + '  </div>\n</nav>\n'
+      + '<div class="page">\n'
+      + '<div class="first-screen">\n'
+      + '  <div class="fs-title">' + escH(title) + '</div>\n'
+      + '  <div class="fs-meta">\n'
+      + '    <span class="fs-status" style="background:' + statusBg + ';color:' + statusColor + ';border-color:' + statusBd + ';">' + statusText + '</span>\n'
+      + '    <span class="fs-sep">\u00b7</span>\n'
+      + '    <span class="fs-chip">' + stepCount + ' step' + (stepCount !== 1 ? 's' : '') + '</span>\n'
+      + '    <span class="fs-sep">\u00b7</span>\n'
+      + '    <span class="fs-chip">' + escH(platform) + '</span>\n'
+      + (dateStr ? '    <span class="fs-sep">\u00b7</span>\n    <span class="fs-chip">' + escH(dateStr) + '</span>\n' : '')
+      + '  </div>\n'
+      + '  <div class="fs-integrity">' + (chainIntact ? 'This record has been cryptographically verified. Nothing has been added, removed, or altered since it was captured.' : 'This record could not be fully verified. Download the proof file for independent investigation.') + '</div>\n'
+      + '  <div class="fs-actions">\n'
+      + '    <button class="fs-btn-p" onclick="copyLink()">Copy link</button>\n'
+      + '    <a class="fs-btn-s" href="' + escH(jsonUrl) + '">Download proof (.json)</a>\n'
+      + '    <button class="fs-btn-s" onclick="switchView(this.dataset.v,this)" data-v="proof">View verification &rarr;</button>\n'
+      + '  </div>\n'
+      + '</div>\n'
+      + '<div class="view-switcher">\n'
+      + '<div class="view-switcher">\n'
+      + '  <button class="vs-btn on" data-v="conv" onclick="switchView(this.dataset.v,this)">Conversation</button>\n'
+      + '  <button class="vs-btn" data-v="timeline" onclick="switchView(this.dataset.v,this)">Timeline</button>\n'
+      + '  <button class="vs-btn" data-v="proof" onclick="switchView(this.dataset.v,this)">Proof</button>\n'
+      + '  <button class="vs-btn" data-v="json" onclick="switchView(this.dataset.v,this)">Raw JSON</button>\n'
+      + '<div class="view on" id="view-conv"><div class="conv-area">\n'
+      + messagesHTML
+      + '\n</div><div class="clearfix"></div></div>\n'
+      + '<div class="view" id="view-timeline"><div class="timeline">\n'
+      + commits.map(function(c, i) {
+          var p = c.payload || {};
+          var role = p.role || (i % 2 === 0 ? 'user' : 'assistant');
+          var text = (p.text || p.output || p.summary || p.prompt || '').slice(0, 280);
+          var ts3 = c.client_timestamp || c.timestamp || '';
+          var tsStr3 = ts3 ? new Date(ts3).toLocaleString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC',hour12:false})+' UTC' : '';
+          var isUser3 = role === 'user';
+          var actor = isUser3 ? 'You' : (p.agentName || p.agent_name || 'Agent');
+          return '<div class="tl-step"><div class="tl-line"><div class="tl-dot' + (isUser3?' user':'') + '"></div><div class="tl-conn"></div></div>'
+            + '<div class="tl-info"><div class="tl-head"><span class="tl-step-n">Step ' + (i+1) + '</span><span class="tl-actor">' + escH(actor) + '</span><span class="tl-time">' + tsStr3 + '</span></div>'
+            + '<div class="tl-text">' + escH(text) + (text.length >= 280 ? '\u2026' : '') + '</div>'
+            + (c.integrity_hash ? '<div class="tl-hash">' + c.integrity_hash.slice(0,16) + '\u2026</div>' : '')
+            + '</div></div>';
+        }).join('\n')
+      + '\n</div></div>\n'
+      + '<div class="view" id="view-proof"><div class="proof-area">\n'
+      + '<div class="proof-banner" style="border-color:' + statusBd + ';background:' + statusBg + ';">'
+      + '<div class="proof-banner-title" style="color:' + statusColor + ';">' + statusText + '</div>'
+      + '<div class="proof-banner-body">' + (chainIntact ? 'The ' + stepCount + ' steps shown are exactly what was captured. The hash chain has been verified \u2014 nothing has been added, removed, or altered.' : 'The record does not match its original hash. This may indicate tampering or a recording error.') + '</div>'
+      + '</div>\n'
+      + '<div class="proof-grid">\n'
+      + '<div class="pcard ' + (chainIntact?'ok':'') + '"><div class="pcard-top"><span class="pcard-ic ' + (chainIntact?'ok':'skip') + '">' + (chainIntact?'\u2713':'\u2014') + '</span><span class="pcard-title">Hash chain</span></div><div class="pcard-body">' + (chainIntact ? stepCount + ' steps verified' : 'Verification failed') + '</div></div>\n'
+      + '<div class="pcard skip"><div class="pcard-top"><span class="pcard-ic skip">\u2014</span><span class="pcard-title">Log inclusion</span></div><div class="pcard-body">Included at next checkpoint. Download proof file to verify.</div></div>\n'
+      + '<div class="pcard skip"><div class="pcard-top"><span class="pcard-ic skip">\u2014</span><span class="pcard-title">Checkpoint signed</span></div><div class="pcard-body">Available in downloaded proof file.</div></div>\n'
+      + '<div class="pcard skip"><div class="pcard-top"><span class="pcard-ic skip">\u2014</span><span class="pcard-title">Independent witness</span></div><div class="pcard-body">Check witness signatures in the proof file.</div></div>\n'
+      + '</div>\n'
+      + '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px 18px;">'
+      + '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px;">Verify independently</div>'
+      + '<div style="font-size:12px;color:var(--ink3);margin-bottom:10px;">No account required. The proof file works completely offline.</div>'
+      + '<a href="' + escH(jsonUrl) + '" class="ab-btn">Download proof file (.json)</a>'
+      + '<a href="/integrity#spec" class="ab-btn">Integrity Spec \u2192</a>'
+      + '</div></div></div>\n'
+      + '<div class="view" id="view-json"><div class="json-area"><pre id="json-pre">Loading...</pre></div></div>\n'
+      + '<div class="page-footer">Recorded and verified by <a href="/">DarkMatter</a> \u00b7 <a href="/integrity">Integrity Spec</a></div>\n'
+      + '</div>\n'
+      + '<script>\n'
+      + 'var jsonLoaded=false;\n'
+      + 'function switchView(name,btn){\n'
+      + '  document.querySelectorAll(".view").forEach(function(v){v.classList.remove("on");});\n'
+      + '  document.querySelectorAll(".vs-btn").forEach(function(b){b.classList.remove("on");});\n'
+      + '  document.getElementById("view-"+name).classList.add("on");\n'
+      + '  if(btn)btn.classList.add("on");\n'
+      + '  if(name==="json"&&!jsonLoaded){\n'
+      + '    fetch("?format=json").then(function(r){return r.json();}).then(function(data){\n'
+      + '      document.getElementById("json-pre").textContent=JSON.stringify(data,null,2);jsonLoaded=true;\n'
+      + '    }).catch(function(){document.getElementById("json-pre").textContent="Failed to load JSON.";});\n'
+      + '  }\n'
+      + '}\n'
+      + 'function copyLink(){navigator.clipboard.writeText(location.href).then(function(){\n'
+      + '  var btn=document.querySelector(".fs-btn-p");var orig=btn.textContent;\n'
+      + '  btn.textContent="Copied!";setTimeout(function(){btn.textContent=orig;},1800);\n'
+      + '});}\n'
+      + '</script>\n</body>\n</html>';
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);
@@ -3946,1257 +3796,12 @@ function copyLink() {
     console.error('/r/:traceId error:', e.message);
     res.status(500).json({ error: e.message });
   }
-});;
-
-// ═══════════════════════════════════════════════════
-// POLICIES API
-// GET  /api/policies        — list policies for authenticated agent
-// POST /api/policies        — register a new policy
-// DELETE /api/policies/:id  — delete a policy
-// Policies evaluate incoming commits before storage.
-// Full policy engine is an Enterprise feature.
-// ═══════════════════════════════════════════════════
-app.get('/api/policies', apiLimiter, requireApiKey, async (req, res) => {
-  try {
-    const agentId = req.agent.agent_id;
-    const { data, error } = await supabaseService
-      .from('agent_policies')
-      .select('*')
-      .eq('agent_id', agentId)
-      .order('created_at', { ascending: false });
-
-    // Table may not exist yet — return empty with docs link
-    if (error && error.code === '42P01') {
-      return res.json({ policies: [], note: 'Policy engine available — see /docs#policies for setup.' });
-    }
-    if (error) throw error;
-
-    res.json({ policies: data || [] });
-  } catch(err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/policies', apiLimiter, requireApiKey, async (req, res) => {
-  try {
-    const { name, description, condition, action, message } = req.body;
-    if (!name || !condition || !action) {
-      return res.status(400).json({ error: 'name, condition, and action are required' });
-    }
-    if (!['reject','flag','allow'].includes(action)) {
-      return res.status(400).json({ error: 'action must be reject, flag, or allow' });
-    }
-
-    const agentId = req.agent.agent_id;
-    const policyId = 'pol_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex');
-
-    const { data, error } = await supabaseService
-      .from('agent_policies')
-      .insert({
-        id:          policyId,
-        agent_id:    agentId,
-        name,
-        description: description || null,
-        condition,
-        action,
-        message:     message || null,
-        enabled:     true,
-      })
-      .select().single();
-
-    if (error && error.code === '42P01') {
-      // Table doesn't exist — return helpful message
-      return res.status(501).json({
-        error: 'Policy storage not yet enabled on this instance.',
-        note:  'Run the v12 schema migration to enable policies. See /docs#policies.',
-        policy_would_be: { id: policyId, name, condition, action }
-      });
-    }
-    if (error) throw error;
-
-    res.status(201).json({ policy: data, note: 'Policy registered. All future commits to this agent will be evaluated.' });
-  } catch(err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.delete('/api/policies/:policyId', apiLimiter, requireApiKey, async (req, res) => {
-  try {
-    const { policyId } = req.params;
-    const agentId = req.agent.agent_id;
-
-    const { error } = await supabaseService
-      .from('agent_policies')
-      .delete()
-      .eq('id', policyId)
-      .eq('agent_id', agentId); // ensure ownership
-
-    if (error && error.code === '42P01') {
-      return res.status(404).json({ error: 'Policy not found' });
-    }
-    if (error) throw error;
-
-    res.json({ deleted: policyId });
-  } catch(err) {
-    res.status(500).json({ error: err.message });
-  }
 });
 
 
-// ═══════════════════════════════════════════════════
-// TOKEN REFRESH — POST /api/auth/refresh
-// Fixes "commits disappear after staying logged in"
-// Supabase JWTs expire after 1 hour; this refreshes them
-// ═══════════════════════════════════════════════════
-app.post('/api/auth/refresh', async (req, res) => {
-  try {
-    const { refresh_token } = req.body;
-    if (!refresh_token) return res.status(400).json({ error: 'refresh_token required' });
-
-    const { data, error } = await supabaseService.auth.refreshSession({ refresh_token });
-    if (error) return res.status(401).json({ error: error.message });
-
-    res.json({
-      access_token:  data.session.access_token,
-      refresh_token: data.session.refresh_token,
-      expires_at:    data.session.expires_at,
-    });
-  } catch(err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ═══════════════════════════════════════════════════
-// ACCOUNT DELETION — DELETE /dashboard/account
-// deleteCommits: true  → hard delete all commit records
-// deleteCommits: false → anonymise (null user_id) — preserves chain integrity
-// Honest: we tell users what each choice means before they confirm
-// ═══════════════════════════════════════════════════
-app.delete('/dashboard/account', requireAuth, async (req, res) => {
-  try {
-    const userId       = req.user.id;
-    const deleteCommits = req.body?.deleteCommits === true;
-
-    // 1. Handle commits
-    if (deleteCommits) {
-      // Hard delete — breaks any shared chain links
-      const { data: agentIds } = await supabaseService
-        .from('agents').select('agent_id').eq('user_id', userId);
-      if (agentIds?.length) {
-        const ids = agentIds.map(a => a.agent_id);
-        await supabaseService.from('commits').delete().in('agent_id', ids);
-        await supabaseService.from('commit_content').delete().in('id',
-          (await supabaseService.from('commits').select('id').in('agent_id', ids)).data?.map(c=>c.id)||[]
-        );
-      }
-    } else {
-      // Anonymise — set user_id to null on agents so commits are orphaned but chain stays intact
-      await supabaseService.from('agents').update({ user_id: null }).eq('user_id', userId);
-    }
-
-    // 2. Delete agents
-    if (deleteCommits) {
-      await supabaseService.from('agents').delete().eq('user_id', userId);
-    }
-
-    // 3. Delete user account via Supabase admin API
-    const { error } = await supabaseService.auth.admin.deleteUser(userId);
-    if (error) throw error;
-
-    res.json({ deleted: true, commitsDeleted: deleteCommits });
-
-  } catch(err) {
-    console.error('Account deletion error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-// ── GET /dashboard/thread/:traceId ── redirect to dashboard with thread selected
-app.get('/dashboard/thread/:traceId', requireAuth, (req, res) => {
-  res.redirect(`/dashboard?t=${encodeURIComponent(req.params.traceId)}`);
-});
-
-// ── Static page routes ────────────────────────────────────────────────────────
-app.get('/compare',      (req, res) => res.sendFile(path.join(__dirname, '../public/compare.html')));
-app.get('/compliance',   (req, res) => res.sendFile(path.join(__dirname, '../public/compliance.html')));
-app.get('/threat-model', (req, res) => res.sendFile(path.join(__dirname, '../public/threat-model.html')));
-app.get('/integrity',    (req, res) => res.sendFile(path.join(__dirname, '../public/integrity.html')));
-
-// ═══════════════════════════════════════════════════
-// SUPERUSER ANALYTICS DASHBOARD
-// Only accessible to the darkmatter-admin agent (or agent matching SUPERUSER_AGENT_ID)
-// ═══════════════════════════════════════════════════
-
-function requireSuperuser(req, res, next) {
-  const superAgentId = process.env.SUPERUSER_AGENT_ID;
-  // Allow darkmatter-admin agent by name, or by SUPERUSER_AGENT_ID env var
-  const agentId   = req.agent?.agent_id;
-  const agentName = req.agent?.agent_name;
-  const isSuperuser = (superAgentId && agentId === superAgentId)
-    || agentName === 'darkmatter-admin';
-  if (!isSuperuser) return res.status(403).json({ error: 'Forbidden' });
-  next();
-}
-
-// ── GET /admin ── serve admin dashboard page ──────────────────────────────────
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/admin.html'));
-});
-
-// ── GET /admin/stats ── KPI overview ─────────────────────────────────────────
-app.get('/admin/stats', requireAuth, requireSuperuser, async (req, res) => {
-  try {
-    const now     = new Date();
-    const day1    = new Date(now - 86400000).toISOString();
-    const day7    = new Date(now - 7*86400000).toISOString();
-    const day30   = new Date(now - 30*86400000).toISOString();
-
-    const [
-      totalAgents, totalCommits, activeDay, activeWeek, activeMonth,
-      totalUsers, sharedChains, activationEvents
-    ] = await Promise.all([
-      supabaseService.from('agents').select('agent_id', { count: 'exact', head: true }),
-      supabaseService.from('commits').select('id', { count: 'exact', head: true }),
-      supabaseService.from('commits').select('id', { count: 'exact', head: true }).gte('saved_at', day1),
-      supabaseService.from('commits').select('id', { count: 'exact', head: true }).gte('saved_at', day7),
-      supabaseService.from('commits').select('id', { count: 'exact', head: true }).gte('saved_at', day30),
-      supabaseService.auth.admin.listUsers({ perPage: 1 }),
-      supabaseService.from('shared_chains').select('id', { count: 'exact', head: true }),
-      supabaseService.from('activation_events').select('event, user_id').gte('occurred_at', day30),
-    ]);
-
-    const events    = activationEvents.data || [];
-    const byEvent   = {};
-    const byUser    = new Set();
-    events.forEach(e => {
-      byEvent[e.event] = (byEvent[e.event] || 0) + 1;
-      byUser.add(e.user_id);
-    });
-
-    res.json({
-      kpis: {
-        totalUsers:    totalUsers.data?.total || 0,
-        totalAgents:   totalAgents.count || 0,
-        totalCommits:  totalCommits.count || 0,
-        commitsToday:  activeDay.count   || 0,
-        commits7d:     activeWeek.count  || 0,
-        commits30d:    activeMonth.count || 0,
-        sharedChains:  sharedChains.count || 0,
-        activeUsers30d: byUser.size,
-      },
-      activation: byEvent,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ── GET /admin/funnel ── activation funnel ────────────────────────────────────
-app.get('/admin/funnel', requireAuth, requireSuperuser, async (req, res) => {
-  try {
-    const { data: events } = await supabaseService
-      .from('activation_events')
-      .select('event, user_id, occurred_at')
-      .order('occurred_at', { ascending: false });
-
-    const funnel = [
-      'key_created', 'first_commit', 'first_replay',
-      'first_fork', 'first_diff', 'day2_return',
-    ];
-
-    const counts = {};
-    const usersByEvent = {};
-    (events || []).forEach(e => {
-      if (!usersByEvent[e.event]) usersByEvent[e.event] = new Set();
-      usersByEvent[e.event].add(e.user_id);
-      counts[e.event] = (counts[e.event] || 0) + 1;
-    });
-
-    const funnelData = funnel.map((evt, i) => {
-      const users = usersByEvent[evt]?.size || 0;
-      const prev  = i > 0 ? (usersByEvent[funnel[i-1]]?.size || 0) : users;
-      return { event: evt, users, conversionFromPrev: prev > 0 ? Math.round(users/prev*100) : 0 };
-    });
-
-    res.json({ funnel: funnelData, rawCounts: counts });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ── GET /admin/commands ── CLI command analytics ──────────────────────────────
-app.get('/admin/commands', requireAuth, requireSuperuser, async (req, res) => {
-  try {
-    const { data: events } = await supabaseService
-      .from('activation_events')
-      .select('event, user_id, metadata, occurred_at')
-      .like('event', 'cli_%')
-      .order('occurred_at', { ascending: false })
-      .limit(5000);
-
-    const commands = {};
-    (events || []).forEach(e => {
-      const cmd = e.metadata?.command || e.event;
-      if (!commands[cmd]) commands[cmd] = { total: 0, users: new Set(), lastSeen: null };
-      commands[cmd].total++;
-      commands[cmd].users.add(e.user_id);
-      if (!commands[cmd].lastSeen || e.occurred_at > commands[cmd].lastSeen) {
-        commands[cmd].lastSeen = e.occurred_at;
-      }
-    });
-
-    const result = Object.entries(commands).map(([cmd, d]) => ({
-      command:  cmd,
-      total:    d.total,
-      uniqueUsers: d.users.size,
-      lastSeen: d.lastSeen,
-    })).sort((a,b) => b.total - a.total);
-
-    res.json({ commands: result });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ── GET /admin/users ── user table ────────────────────────────────────────────
-app.get('/admin/users', requireAuth, requireSuperuser, async (req, res) => {
-  try {
-    const limit  = Math.min(parseInt(req.query.limit) || 100, 500);
-    const offset = parseInt(req.query.offset) || 0;
-
-    const [usersRes, agentsRes, eventsRes] = await Promise.all([
-      supabaseService.auth.admin.listUsers({ perPage: limit, page: Math.floor(offset/limit)+1 }),
-      supabaseService.from('agents').select('agent_id, user_id, created_at, last_active'),
-      supabaseService.from('activation_events').select('user_id, event, occurred_at'),
-    ]);
-
-    const users   = usersRes.data?.users || [];
-    const agents  = agentsRes.data || [];
-    const events  = eventsRes.data || [];
-
-    const agentsByUser  = {};
-    agents.forEach(a => {
-      if (!agentsByUser[a.user_id]) agentsByUser[a.user_id] = [];
-      agentsByUser[a.user_id].push(a);
-    });
-
-    const eventsByUser = {};
-    events.forEach(e => {
-      if (!eventsByUser[e.user_id]) eventsByUser[e.user_id] = {};
-      eventsByUser[e.user_id][e.event] = e.occurred_at;
-    });
-
-    const result = users.map(u => {
-      const ue      = eventsByUser[u.id] || {};
-      const ua      = agentsByUser[u.id] || [];
-      const hasCommit  = !!ue.first_commit;
-      const hasReplay  = !!ue.first_replay;
-      const hasFork    = !!ue.first_fork;
-      const hasDiff    = !!ue.first_diff;
-      const hasDay2    = !!ue.day2_return;
-      const score = [hasCommit,hasReplay,hasFork,hasDiff,hasDay2].filter(Boolean).length;
-      const status = score === 0 ? 'curious' : score <= 1 ? 'activated' : score <= 3 ? 'growing' : 'power_user';
-
-      return {
-        id:        u.id,
-        email:     u.email,
-        signupAt:  u.created_at,
-        lastSignIn: u.last_sign_in_at,
-        agents:    ua.length,
-        events:    ue,
-        status,
-        score,
-      };
-    });
-
-    res.json({ users: result, total: usersRes.data?.total || 0 });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ── GET /admin/trends ── time-series usage ────────────────────────────────────
-app.get('/admin/trends', requireAuth, requireSuperuser, async (req, res) => {
-  try {
-    const days = parseInt(req.query.days) || 30;
-    const from = new Date(Date.now() - days * 86400000).toISOString();
-
-    const { data: commits } = await supabaseService
-      .from('commits')
-      .select('saved_at, id')
-      .gte('saved_at', from)
-      .order('saved_at', { ascending: true });
-
-    const { data: shares } = await supabaseService
-      .from('shared_chains')
-      .select('created_at')
-      .gte('created_at', from);
-
-    // Group by day
-    const byDay = {};
-    (commits || []).forEach(c => {
-      const day = c.saved_at?.slice(0,10);
-      if (day) byDay[day] = (byDay[day] || 0) + 1;
-    });
-
-    const sharesByDay = {};
-    (shares || []).forEach(s => {
-      const day = s.created_at?.slice(0,10);
-      if (day) sharesByDay[day] = (sharesByDay[day] || 0) + 1;
-    });
-
-    // Fill in missing days
-    const result = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(Date.now() - i * 86400000).toISOString().slice(0,10);
-      result.push({ date: d, commits: byDay[d] || 0, shares: sharesByDay[d] || 0 });
-    }
-
-    res.json({ trends: result });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ═══════════════════════════════════════════════════
-// PUBLIC NETWORK STATS (no auth — for homepage)
-// ═══════════════════════════════════════════════════
-
-// ── POST /feedback ── feature requests & support ─────
-app.post('/feedback', feedbackLimiter, async (req, res) => {
-  try {
-    const type    = sanitizeText(req.body.type, 20);
-    const email   = sanitizeText(req.body.email, 200);
-    const message = sanitizeText(req.body.message, 2000);
-    if (!email || !message) return res.status(400).json({ error: 'Missing fields' });
-
-    const subject = type === 'feature'
-      ? `[DarkMatter] Feature Request from ${escapeHtml(email)}`
-      : `[DarkMatter] Bug Report from ${escapeHtml(email)}`;
-
-    // Send via Resend API
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from:    'noreply@darkmatterhub.ai',
-        to:      [process.env.FEEDBACK_EMAIL || 'hello@darkmatterhub.ai'],
-        subject,
-        html: `<p><strong>From:</strong> ${escapeHtml(email)}</p>
-               <p><strong>Type:</strong> ${escapeHtml(type)}</p>
-               <hr/>
-               <p>${escapeHtml(message).replace(/\n/g, '<br/>')}</p>`,
-      }),
-    });
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error('feedback error:', err);
-    res.json({ success: true }); // always return success to user
-  }
-});
-
-// ── GET /api/demo ── public seeded demo chain (no auth) ─
-// Returns a static demo replay so /demo page works without login
-app.get('/api/demo', async (req, res) => {
-  const now   = new Date('2026-03-24T10:00:00Z');
-  const t = ms => new Date(now.getTime() + ms).toISOString();
-
-  // Deterministic fake hashes for demo — not real chain but visually correct
-  const h = str => crypto.createHash('sha256').update(str).digest('hex');
-  const h1 = h('demo-root-payload');
-  const h2 = h('demo-step2-' + h1);
-  const h3 = h('demo-step3-' + h2);
-  const h4 = h('demo-fork-'  + h2);
-  const h5 = h('demo-step5-' + h4);
-
-  const demo = {
-    contextId:   'ctx_demo_killerchain',
-    shortId:     'killerchain',
-    rootId:      'ctx_demo_001',
-    totalSteps:  5,
-    chainIntact: true,
-    mode:        'full',
-    isDemo:      true,
-    summary: {
-      agents:     ['research-agent', 'writer-agent', 'reviewer-agent'],
-      models:     ['claude-opus-4-6', 'gpt-4o', 'claude-opus-4-6'],
-      eventTypes: ['commit', 'commit', 'fork', 'commit', 'checkpoint'],
-      forkPoints: ['ctx_demo_003'],
-      duration:   '14s',
-    },
-    replay: [
-      {
-        step: 1, id: 'ctx_demo_001', short_id: 'demo_001', eventType: 'commit',
-        createdBy: { agent_id: 'dm_aaa', agent_name: 'research-agent', role: 'researcher', provider: 'anthropic', model: 'claude-opus-4-6' },
-        targetAgent: 'writer-agent',
-        payload: {
-          input:  'Analyze the business case for AI agent infrastructure in 2026.',
-          output: '1. Multi-agent pipelines are now production-grade — teams run Claude, GPT, and open-source models in sequence.\n2. Context loss between agents is the #1 reliability failure mode.\n3. Regulation (EU AI Act Art. 12, US state laws) requires tamper-evident audit trails for high-risk AI.',
-          memory: { topic: 'AI infrastructure', depth: 'high-level', key_points: 3 },
-        },
-        integrity: { payload_hash: 'sha256:' + h1, parent_hash: null, verification_status: 'valid', chainValid: true },
-        timestamp: t(0),
-      },
-      {
-        step: 2, id: 'ctx_demo_002', short_id: 'demo_002', eventType: 'commit',
-        createdBy: { agent_id: 'dm_bbb', agent_name: 'writer-agent', role: 'writer', provider: 'openai', model: 'gpt-4o' },
-        targetAgent: 'reviewer-agent',
-        payload: {
-          input:  'Research findings from research-agent.',
-          output: 'AI infrastructure is no longer optional for production teams. As multi-agent pipelines become standard, the ability to track, replay, and verify decisions across model boundaries is the missing primitive. DarkMatter fills this gap — providing a Git-like execution history layer that works across Claude, GPT, and any framework.',
-          memory: { style: 'executive', word_target: 150 },
-        },
-        integrity: { payload_hash: 'sha256:' + h2, parent_hash: 'sha256:' + h1, verification_status: 'valid', chainValid: true },
-        timestamp: t(4000),
-      },
-      {
-        step: 3, id: 'ctx_demo_003', short_id: 'demo_003', eventType: 'fork',
-        createdBy: { agent_id: 'dm_bbb', agent_name: 'writer-agent', role: 'writer', provider: 'openai', model: 'gpt-4o' },
-        targetAgent: 'writer-agent',
-        fork_of: 'ctx_demo_002', fork_point: 'ctx_demo_002',
-        payload: {
-          input:  'Fork from ctx_demo_002 — trying a shorter, punchier draft.',
-          output: null,
-          memory: { forked_from: 'ctx_demo_002', style: 'punchy', word_target: 80 },
-        },
-        integrity: { payload_hash: 'sha256:' + h3, parent_hash: 'sha256:' + h2, verification_status: 'valid', chainValid: true },
-        timestamp: t(6000),
-      },
-      {
-        step: 4, id: 'ctx_demo_004', short_id: 'demo_004', eventType: 'commit',
-        createdBy: { agent_id: 'dm_bbb', agent_name: 'writer-agent', role: 'writer', provider: 'openai', model: 'gpt-4o' },
-        targetAgent: 'reviewer-agent',
-        payload: {
-          input:  'Fork branch — shorter draft.',
-          output: 'Multi-agent AI is here. The missing layer: knowing exactly what each agent decided, and why. DarkMatter makes every AI workflow replayable, forkable, and provably tamper-evident.',
-          memory: { style: 'punchy', words: 38 },
-        },
-        integrity: { payload_hash: 'sha256:' + h4, parent_hash: 'sha256:' + h3, verification_status: 'valid', chainValid: true },
-        timestamp: t(9000),
-      },
-      {
-        step: 5, id: 'ctx_demo_005', short_id: 'demo_005', eventType: 'checkpoint',
-        createdBy: { agent_id: 'dm_ccc', agent_name: 'reviewer-agent', role: 'reviewer', provider: 'anthropic', model: 'claude-opus-4-6' },
-        targetAgent: 'reviewer-agent',
-        payload: {
-          input:  'Review both drafts and recommend.',
-          output: 'Score: 9/10. Strength: the punchy draft (fork branch) communicates the core value in one sentence — far more effective for developer audiences. Recommendation: use the forked draft for the announcement post.',
-          memory: { status: 'reviewed', pipeline_complete: true },
-          variables: { recommended_branch: 'fork', winning_ctx: 'ctx_demo_004' },
-        },
-        integrity: { payload_hash: 'sha256:' + h5, parent_hash: 'sha256:' + h4, verification_status: 'valid', chainValid: true },
-        timestamp: t(14000),
-      },
-    ],
-  };
-
-  res.json(demo);
-});
-
-// ── GET /api/stats ── public network stats ───────────
-app.get('/api/stats', async (req, res) => {
-  try {
-    const [agentsRes, commitsRes] = await Promise.all([
-      supabaseService.from('agents').select('*', { count: 'exact', head: true }),
-      supabaseService.from('commits').select('id, verified'),
-    ]);
-
-    const commits  = commitsRes.data || [];
-    const verified = commits.filter(c => c.verified === true).length;
-    const rejected = commits.filter(c => c.verified === false).length;
-
-    res.json({
-      agents:   agentsRes.count  || 0,
-      commits:  commits.length,
-      verified,
-      rejected,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ═══════════════════════════════════════════════════
-// WEBHOOK DELIVERY
-// ═══════════════════════════════════════════════════
-
-
-// ── Fire event hooks for an agent ────────────────────
-async function fireEventHooks(agentId, event, payload) {
-  try {
-    const { data: hooks } = await supabaseService
-      .from('event_hooks')
-      .select('*')
-      .eq('agent_id', agentId)
-      .eq('enabled', true)
-      .contains('events', [event]);
-
-    if (!hooks?.length) return;
-
-    for (const hook of hooks) {
-      const body = JSON.stringify({
-        event,
-        hook_id:    hook.id,
-        agent_id:   agentId,
-        timestamp:  new Date().toISOString(),
-        ...payload,
-      });
-
-      const headers = { 'Content-Type': 'application/json' };
-      if (hook.secret) {
-        const sig = require('crypto')
-          .createHmac('sha256', hook.secret)
-          .update(body).digest('hex');
-        headers['X-DarkMatter-Signature'] = `sha256=${sig}`;
-        headers['X-DarkMatter-Event'] = event;
-      }
-
-      const start = Date.now();
-      let status = 'failed', httpStatus = null;
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch(hook.url, { method: 'POST', headers, body, signal: controller.signal });
-        clearTimeout(timeout);
-        httpStatus = res.status;
-        status = res.ok ? 'delivered' : 'failed';
-      } catch (e) {
-        status = 'failed';
-      }
-
-      const duration = Date.now() - start;
-
-      // Log delivery + update last_fired
-      await Promise.all([
-        supabaseService.from('hook_deliveries').insert({
-          id:           'hd_' + Date.now() + '_' + require('crypto').randomBytes(4).toString('hex'),
-          hook_id:      hook.id,
-          event,
-          ctx_id:       payload.ctxId || null,
-          status,
-          http_status:  httpStatus,
-          duration_ms:  duration,
-          attempted_at: new Date().toISOString(),
-        }),
-        supabaseService.from('event_hooks').update({
-          last_fired:    new Date().toISOString(),
-          failure_count: status === 'failed' ? (hook.failure_count + 1) : 0,
-        }).eq('id', hook.id),
-      ]).catch(() => {});
-    }
-  } catch (err) {
-    console.error('fireEventHooks error:', err.message);
-  }
-}
-
-// ── Detect if a URL is a Slack incoming webhook ──────
-function isSlackWebhookUrl(url) {
-  if (!url) return false;
-  try {
-    const parsed = new URL(url);
-    return parsed.hostname === 'hooks.slack.com';
-  } catch { return false; }
-}
-
-// ── Format a DarkMatter commit as a Slack Block Kit message ──
-function buildSlackPayload(commit, agentName) {
-  const eventType = commit.eventType || commit.context?._eventType || 'commit';
-  const ctxId     = commit.id || commit.commitId;
-  const from      = commit.from_agent || agentName || 'agent';
-  const short     = ctxId ? ctxId.slice(-8) : '—';
-  const ts        = commit.timestamp ? new Date(commit.timestamp).toLocaleString() : '';
-
-  const statusEmoji = {
-    commit:     '🔗',
-    fork:       '⑂',
-    checkpoint: '📍',
-    error:      '🔴',
-    override:   '⚠️',
-    verify_fail:'🔴',
-  }[eventType] || '🔗';
-
-  return {
-    text: `${statusEmoji} DarkMatter: ${eventType} from ${from}`,
-    blocks: [
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `${statusEmoji} *${eventType}* committed by \`${from}\``,
-        },
-      },
-      {
-        type: 'section',
-        fields: [
-          { type: 'mrkdwn', text: `*Context ID*\n\`${ctxId}\`` },
-          { type: 'mrkdwn', text: `*Short ID*\n\`${short}\`` },
-          { type: 'mrkdwn', text: `*Verified*\n${commit.verified ? '✅ yes' : '❌ no'}` },
-          { type: 'mrkdwn', text: `*Time*\n${ts}` },
-        ],
-      },
-      {
-        type: 'actions',
-        elements: [
-          {
-            type: 'button',
-            text: { type: 'plain_text', text: 'Replay chain' },
-            url:  `${process.env.BASE_URL || 'https://darkmatterhub.ai'}/dashboard`,
-            action_id: 'replay_chain',
-          },
-        ],
-      },
-      { type: 'divider' },
-    ],
-  };
-}
-
-async function deliverWebhook(agent, commit) {
-  if (!agent.webhook_url) return;
-
-  const isSlack   = isSlackWebhookUrl(agent.webhook_url);
-  const timestamp = commit.timestamp || new Date().toISOString();
-
-  let body, headers;
-
-  if (isSlack) {
-    // Slack Block Kit format
-    body    = JSON.stringify(buildSlackPayload(commit, agent.agent_name));
-    headers = { 'Content-Type': 'application/json' };
-  } else {
-    // Standard DarkMatter webhook format
-    const payload = {
-      event:     'commit.received',
-      commitId:  commit.id,
-      from:      commit.from_agent,
-      to:        commit.to_agent,
-      eventType: (commit.context?._eventType || 'commit'),
-      verified:  commit.verified,
-      timestamp,
-    };
-    body    = JSON.stringify(payload);
-    headers = { 'Content-Type': 'application/json' };
-    if (agent.webhook_secret) {
-      const sig = crypto
-        .createHmac('sha256', agent.webhook_secret)
-        .update(body)
-        .digest('hex');
-      headers['X-DarkMatter-Signature'] = `sha256=${sig}`;
-    }
-  }
-
-  const deliveryId = 'wh_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex');
-  let status = 'failed', httpStatus = null, response = null;
-
-  try {
-    const controller = new AbortController();
-    const timeout    = setTimeout(() => controller.abort(), 5000);
-
-    const res = await fetch(agent.webhook_url, {
-      method: 'POST', headers, body,
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    httpStatus = res.status;
-    response   = await res.text().catch(() => '');
-    status     = res.ok ? 'delivered' : 'failed';
-  } catch (err) {
-    response = err.message;
-  }
-
-  // Log delivery attempt
-  await supabaseService.from('webhook_deliveries').insert({
-    id:          deliveryId,
-    agent_id:    agent.agent_id,
-    commit_id:   commit.id,
-    webhook_url: agent.webhook_url,
-    status,
-    http_status: httpStatus,
-    response:    response?.slice(0, 500),
-    attempted_at: new Date().toISOString(),
-  }).catch(err => console.error('webhook log error:', err));
-
-  console.log(`  📡 Webhook ${status} → ${agent.webhook_url} [${httpStatus}]`);
-}
-
-// ═══════════════════════════════════════════════════
-// WEBHOOK + RETENTION DASHBOARD ROUTES
-// ═══════════════════════════════════════════════════
-
-// ── POST /dashboard/agents/:id/webhook ── set webhook ─
-app.post('/dashboard/agents/:agentId/webhook', requireAuth, async (req, res) => {
-  try {
-    const { agentId } = req.params;
-    const { webhookUrl, webhookSecret, slackChannel } = req.body;
-
-    if (webhookUrl && !isValidWebhookUrl(webhookUrl)) {
-      return res.status(400).json({ error: 'Invalid webhook URL — internal addresses are not allowed' });
-    }
-
-    // Detect Slack and validate
-    const isSlack = isSlackWebhookUrl(webhookUrl);
-    if (webhookUrl && !isSlack && !webhookUrl.startsWith('https://')) {
-      return res.status(400).json({ error: 'Webhook URL must be HTTPS' });
-    }
-
-    const { data: agent } = await supabaseService
-      .from('agents').select('agent_id').eq('agent_id', agentId).eq('user_id', req.user.id).single();
-    if (!agent) return res.status(403).json({ error: 'Agent not found' });
-
-    const update = { webhook_url: webhookUrl || null };
-    if (webhookSecret !== undefined) update.webhook_secret = webhookSecret || null;
-    if (slackChannel !== undefined)  update.slack_channel  = slackChannel ? sanitizeText(slackChannel, 100) : null;
-
-    const { error } = await supabaseService
-      .from('agents').update(update).eq('agent_id', agentId);
-    if (error) throw error;
-
-    res.json({
-      success:      true,
-      webhookUrl:   webhookUrl || null,
-      isSlack,
-      slackChannel: slackChannel || null,
-      note: isSlack
-        ? 'Slack webhook configured. Commits will be posted as Block Kit messages.'
-        : 'Webhook configured. Use X-DarkMatter-Signature header to verify.',
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ── POST /api/slack/test ── send test message to Slack webhook ──
-app.post('/api/slack/test', requireApiKey, async (req, res) => {
-  try {
-    const { webhookUrl } = req.body;
-    if (!webhookUrl) return res.status(400).json({ error: 'webhookUrl required' });
-    if (!isSlackWebhookUrl(webhookUrl)) return res.status(400).json({ error: 'Not a Slack webhook URL' });
-    if (!isValidWebhookUrl(webhookUrl)) return res.status(400).json({ error: 'Invalid URL' });
-
-    const testPayload = {
-      text: '✅ DarkMatter Slack integration is working',
-      blocks: [
-        {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: `✅ *DarkMatter connected*\n\nAgent \`${req.agent.agent_name}\` will post commit notifications here.\n\nEach commit, fork, and verify event will appear as a formatted message.`,
-          },
-        },
-        {
-          type: 'section',
-          fields: [
-            { type: 'mrkdwn', text: `*Agent*\n${req.agent.agent_name}` },
-            { type: 'mrkdwn', text: `*Status*\n✅ Connected` },
-          ],
-        },
-        { type: 'divider' },
-      ],
-    };
-
-    const res2 = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(testPayload),
-    });
-
-    if (res2.ok) {
-      res.json({ success: true, message: 'Test message sent to Slack' });
-    } else {
-      res.status(400).json({ success: false, error: `Slack returned ${res2.status}` });
-    }
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-
-// ── POST /dashboard/agents/:id/retention ── set retention ─
-app.post('/dashboard/agents/:agentId/retention', requireAuth, async (req, res) => {
-  try {
-    const { agentId }     = req.params;
-    const { retentionDays } = req.body;
-
-    const { data: agent } = await supabaseService
-      .from('agents').select('agent_id').eq('agent_id', agentId).eq('user_id', req.user.id).single();
-    if (!agent) return res.status(403).json({ error: 'Agent not found' });
-
-    // null = no retention (keep forever), otherwise user-defined minimum 1 day
-    const days = retentionDays === null ? null : Math.max(1, parseInt(retentionDays) || 1);
-
-    const { error } = await supabaseService
-      .from('agents').update({ retention_days: days }).eq('agent_id', agentId);
-    if (error) throw error;
-
-    res.json({ success: true, retentionDays: days });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ── GET /dashboard/agents/:id/webhooks ── delivery log ─
-app.get('/dashboard/agents/:agentId/webhooks', requireAuth, async (req, res) => {
-  try {
-    const { agentId } = req.params;
-
-    const { data: agent } = await supabaseService
-      .from('agents').select('agent_id').eq('agent_id', agentId).eq('user_id', req.user.id).single();
-    if (!agent) return res.status(403).json({ error: 'Agent not found' });
-
-    const { data, error } = await supabaseService
-      .from('webhook_deliveries')
-      .select('*')
-      .eq('agent_id', agentId)
-      .order('attempted_at', { ascending: false })
-      .limit(50);
-
-    if (error) throw error;
-    res.json(data || []);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ═══════════════════════════════════════════════════
-// RETENTION CLEANUP JOB — runs once daily
-// ═══════════════════════════════════════════════════
-
-async function runRetentionCleanup() {
-  try {
-    // Get all agents with a retention policy set
-    const { data: agents } = await supabaseService
-      .from('agents')
-      .select('agent_id, retention_days')
-      .not('retention_days', 'is', null);
-
-    if (!agents?.length) return;
-
-    let totalDeleted = 0;
-    for (const agent of agents) {
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - agent.retention_days);
-
-      const { data: deleted } = await supabaseService
-        .from('commits')
-        .delete()
-        .or(`from_agent.eq.${agent.agent_id},to_agent.eq.${agent.agent_id}`)
-        .lt('timestamp', cutoff.toISOString())
-        .select('id');
-
-      if (deleted?.length) {
-        totalDeleted += deleted.length;
-        console.log(`  🗑  Retention: deleted ${deleted.length} commits for agent ${agent.agent_id} (>${agent.retention_days}d)`);
-      }
-    }
-
-    if (totalDeleted > 0) console.log(`  🗑  Retention cleanup: ${totalDeleted} commits deleted`);
-  } catch (err) {
-    console.error('Retention cleanup error:', err.message);
-  }
-}
-
-// Run cleanup on startup, then every 24 hours
-runRetentionCleanup();
-setInterval(runRetentionCleanup, 24 * 60 * 60 * 1000);
-
-
-
-// ── GET /api/log/proof/:commitId ──────────────────────────────────────────
-// Returns inclusion proof for a specific commit.
-// No authentication required — verification material is public.
-app.get('/api/log/proof/:commitId', async (req, res) => {
-  try {
-    const proof = await generateProofForCommit(supabaseService, req.params.commitId);
-    if (!proof) {
-      return res.status(404).json({
-        error:  'Commit not found in log',
-        commit_id: req.params.commitId,
-        note:   'The commit may not yet be appended to the log, or may not exist',
-      });
-    }
-    res.json({
-      ...proof,
-      pubkey_url:     'https://darkmatterhub.ai/api/log/pubkey',
-      checkpoint_url: 'https://darkmatterhub.ai/api/log/checkpoint',
-      spec_url:       'https://darkmatterhub.ai/docs#integrity-spec',
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ── GET /api/log/pubkey ────────────────────────────────────────────────────
-// Returns DarkMatter's server signing public key.
-// Anyone can use this to verify checkpoint signatures independently.
-app.get('/api/log/pubkey', (req, res) => {
-  res.json({
-    algorithm:   'Ed25519',
-    public_key:  getServerPublicKeyPem(),
-    note:        'Use this key to verify checkpoint server_sig fields. See https://darkmatterhub.ai/docs#integrity-model',
-  });
-});
-
-// ── GET /api/log/checkpoint ────────────────────────────────────────────────
-// Returns the latest signed checkpoint (Phase 3: includes tree_root + checkpoint chain).
-app.get('/api/log/checkpoint', async (req, res) => {
-  try {
-    const { data } = await supabaseService
-      .from('checkpoints')
-      .select('checkpoint_id, position, tree_root, tree_size, log_root, server_sig, timestamp, previous_cp_id, previous_tree_root, published, published_url')
-      .order('position', { ascending: false })
-      .limit(1)
-      .single();
-    if (!data) return res.json({ checkpoint: null, message: 'No checkpoints yet' });
-    res.json({
-      checkpoint:    data,
-      pubkey_url:    'https://darkmatterhub.ai/api/log/pubkey',
-      github_url:    'https://github.com/darkmatter-hub/checkpoints',
-      spec_version:  CHECKPOINT_SCHEMA_VERSION,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ── GET /api/log/checkpoints ───────────────────────────────────────────────
-// Returns recent checkpoints for consistency verification.
-app.get('/api/log/checkpoints', async (req, res) => {
-  try {
-    const limit = Math.min(parseInt(req.query.limit) || 10, 100);
-    const { data } = await supabaseService
-      .from('checkpoints')
-      .select('position, log_root, tree_root, server_sig, timestamp, published, published_url')
-      .order('position', { ascending: false })
-      .limit(limit);
-    res.json({ checkpoints: data || [], pubkey_url: 'https://darkmatterhub.ai/api/log/pubkey' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ── GET /api/log/entry/:commitId ───────────────────────────────────────────
-// Returns the log entry for a specific commit (position, log_root, server_sig).
-app.get('/api/log/entry/:commitId', async (req, res) => {
-  try {
-    const { data } = await supabaseService
-      .from('log_entries')
-      .select('*')
-      .eq('commit_id', req.params.commitId)
-      .single();
-    if (!data) return res.status(404).json({ error: 'Commit not in log' });
-    res.json({ entry: data, pubkey_url: 'https://darkmatterhub.ai/api/log/pubkey' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ── POST /api/log/checkpoint ───────────────────────────────────────────────
-// Manually trigger a checkpoint publish (admin/superuser only).
-app.post('/api/log/checkpoint', requireApiKey, async (req, res) => {
-  if (req.agent?.agent_id !== process.env.SUPERUSER_AGENT_ID && req.agent?.agent_name !== 'darkmatter-admin') {
-    return res.status(403).json({ error: 'Superuser only' });
-  }
-  try {
-    const result = await publishCheckpoint(supabaseService);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-// ── GET /api/log/consistency ───────────────────────────────────────────────
-// Verify that checkpoint B is a valid append-only extension of checkpoint A.
-// Proves no log entries were deleted or rewritten between two snapshots.
-// No authentication required — verification material is public.
-//
-// Query params:
-//   from=<checkpoint_id>  — older checkpoint ID (or 'first' for earliest)
-//   to=<checkpoint_id>    — newer checkpoint ID (or 'latest' for most recent)
-//
-app.get('/api/log/consistency', async (req, res) => {
-  try {
-    const fromId = req.query.from;
-    const toId   = req.query.to;
-
-    // Resolve 'first' and 'latest' shortcuts
-    const { data: firstCp } = await supabaseService
-      .from('checkpoints')
-      .select('*')
-      .order('position', { ascending: true })
-      .limit(1)
-      .single();
-
-    const { data: latestCp } = await supabaseService
-      .from('checkpoints')
-      .select('*')
-      .order('position', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (!firstCp || !latestCp) {
-      return res.json({ consistent: null, message: 'No checkpoints yet' });
-    }
-
-    let cpA, cpB;
-
-    if (!fromId || fromId === 'first') {
-      cpA = firstCp;
-    } else {
-      const { data } = await supabaseService
-        .from('checkpoints').select('*').eq('checkpoint_id', fromId).single();
-      if (!data) return res.status(404).json({ error: `Checkpoint not found: ${fromId}` });
-      cpA = data;
-    }
-
-    if (!toId || toId === 'latest') {
-      cpB = latestCp;
-    } else {
-      const { data } = await supabaseService
-        .from('checkpoints').select('*').eq('checkpoint_id', toId).single();
-      if (!data) return res.status(404).json({ error: `Checkpoint not found: ${toId}` });
-      cpB = data;
-    }
-
-    if (cpA.position > cpB.position) {
-      return res.status(400).json({ error: 'from checkpoint must be older than to checkpoint' });
-    }
-
-    if (cpA.checkpoint_id === cpB.checkpoint_id) {
-      return res.json({ consistent: true, message: 'Same checkpoint', checkpoint: cpA.checkpoint_id });
-    }
-
-    const result = await verifyCheckpointConsistency(
-      supabaseService, cpA, cpB, getServerPublicKeyPem()
-    );
-
-    res.json({
-      ...result,
-      pubkey_url:  'https://darkmatterhub.ai/api/log/pubkey',
-      spec_url:    'https://darkmatterhub.ai/docs#integrity-spec',
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ── GET /api/log/verify ────────────────────────────────────────────────────
-// Verify log consistency from position A to B.
-app.get('/api/log/verify', async (req, res) => {
-  try {
-    const from = parseInt(req.query.from) || 0;
-    const to   = parseInt(req.query.to)   || 999999;
-    const { data: entries } = await supabaseService
-      .from('log_entries')
-      .select('position, commit_id, integrity_hash, log_root, server_sig, timestamp')
-      .gte('position', from)
-      .lte('position', to)
-      .order('position', { ascending: true });
-
-    const result = verifyLogConsistency(entries || [], getServerPublicKeyPem());
-    res.json({ ...result, entries_range: [from, to], pubkey_url: 'https://darkmatterhub.ai/api/log/pubkey' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-const PORT = process.env.PORT || 3000;
-
-// ── Phase 2: Checkpoint endpoint ─────────────────────────────────────────────
-// GET /api/audit/log          — read the audit log (public)
-// GET /api/audit/checkpoint   — get latest signed checkpoint
-// POST /api/audit/checkpoint  — create a new checkpoint (admin only)
-
-app.get('/api/audit/log', async (req, res) => {
-  try {
-    const limit  = Math.min(parseInt(req.query.limit  || '100'), 1000);
-    const offset = parseInt(req.query.offset || '0');
-    const { data, error } = await supabaseService
-      .from('audit_log')
-      .select('*')
-      .order('position', { ascending: true })
-      .range(offset, offset + limit - 1);
-    if (error) throw error;
-    res.json({ entries: data, count: data.length, offset });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-app.get('/api/audit/checkpoint', async (req, res) => {
-  try {
-    const { data, error } = await supabaseService
-      .from('audit_checkpoints')
-      .select('*')
-      .order('signed_at', { ascending: false })
-      .limit(1)
-      .single();
-    if (error && error.code !== 'PGRST116') throw error;
-    res.json({ checkpoint: data || null });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-app.post('/api/audit/checkpoint', requireAuth, async (req, res) => {
-  // Admin only — creates and signs a new checkpoint
-  const adminAgentId = process.env.SUPERUSER_AGENT_ID;
-  const isSuperuser = (adminAgentId && req.agent?.agent_id === adminAgentId)
-    || req.agent?.agent_name === 'darkmatter-admin';
-  if (!isSuperuser) {
-    return res.status(403).json({ error: 'Admin only' });
-  }
-  try {
-    const { data: entries, error } = await supabaseService
-      .from('audit_log')
-      .select('*')
-      .order('position', { ascending: true });
-    if (error) throw error;
-    if (!entries?.length) return res.status(400).json({ error: 'Log is empty' });
-
-    const last      = entries[entries.length - 1];
-    const count     = entries.length;
-    const logRoot   = last.log_hash;
-    const tipHash   = last.integrity_hash;
-    const signedAt  = new Date().toISOString();
-    const ckptId    = 'ckpt_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex');
-
-    // Sign with HMAC (Phase 2). Phase 4 upgrades to Ed25519 + external witnesses.
-    const body = JSON.stringify({ checkpoint_id: ckptId, log_count: count,
-      log_root: logRoot, tip_hash: tipHash, signed_at: signedAt });
-    const dmSecret = process.env.DM_CHECKPOINT_SECRET || 'dev-secret';
-    const sig = 'hmac-sha256:' + crypto.createHmac('sha256', dmSecret)
-      .update(body).digest('hex');
-
-    const checkpoint = {
-      id:           ckptId,
-      log_count:    count,
-      log_root:     logRoot,
-      tip_hash:     tipHash,
-      dm_signature: sig,
-      algorithm:    'hmac-sha256-v1',
-      signed_at:    signedAt,
-    };
-
-    await supabaseService.from('audit_checkpoints').insert(checkpoint);
-    res.json({ checkpoint });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`\n  🌑 DarkMatter running on http://localhost:${PORT}\n`);
-});
-
-module.exports = app;
-
+// ═══════════════════════════════════════════════════════════════════════
+// WORKSPACE ROUTES (appended from server_additions)
+// ═══════════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════════
 // WORKSPACE API — Team/Organization layer
@@ -5210,12 +3815,30 @@ async function wsAuth(req, res, next) {
   try {
     const token = (req.headers.authorization || '').replace('Bearer ', '').trim();
     if (!token) return res.status(401).json({ error: 'No token' });
+
+    // Try the token directly first
     const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (error || !user) {
-      return res.status(401).json({ error: 'Session expired. Please sign in again.' });
+    if (!error && user) { req.user = user; return next(); }
+
+    // Token expired — attempt server-side refresh using X-Refresh-Token header
+    const rt = req.headers['x-refresh-token'];
+    if (rt) {
+      try {
+        const { data: rd } = await supabaseService.auth.refreshSession({ refresh_token: rt });
+        if (rd && rd.session && rd.session.access_token) {
+          const { data: { user: ru } } = await supabase.auth.getUser(rd.session.access_token);
+          if (ru) {
+            req.user = ru;
+            res.setHeader('X-New-Access-Token', rd.session.access_token);
+            res.setHeader('X-New-Refresh-Token', rd.session.refresh_token || '');
+            res.setHeader('X-New-Expires-At', String(rd.session.expires_at || ''));
+            return next();
+          }
+        }
+      } catch (re) { /* refresh failed */ }
     }
-    req.user = user;
-    next();
+
+    return res.status(401).json({ error: 'Session expired. Please sign in again.' });
   } catch(e) {
     console.error('[wsAuth]', e.message);
     res.status(401).json({ error: 'Authentication failed. Please sign in again.' });
@@ -5545,23 +4168,18 @@ app.get('/api/workspace/proxy-keys', wsAuth, async (req, res) => {
       .select('id, workspace_id, role').eq('user_id', req.user.id).single();
     if (!me) return res.status(404).json({ error: 'Not in a workspace' });
 
-    // Build query with filter assigned (chaining returns new object each time)
-    let query = supabase.from('proxy_keys')
-      .select('id, proxy_key, target_provider, label, is_active, last_used_at, real_key_hint')
-      .order('created_at', { ascending: false });
-
+    const query = supabase.from('proxy_keys').select('id, proxy_key, target_provider, label, is_active, last_used_at, real_key_hint');
     if (me.role === 'admin') {
-      query = query.eq('workspace_id', me.workspace_id);
+      query.eq('workspace_id', me.workspace_id);
     } else {
-      query = query.eq('member_id', me.id);
+      query.eq('member_id', me.id);
     }
-
-    const { data: keys } = await query;
+    const { data: keys } = await query.order('created_at', { ascending: false });
     res.json(keys || []);
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
-});;
+});
 
 // ═══════════════════════════════════════════════════════════════════════
 // PROXY — Phase 1 middleware for LLM API calls
@@ -5816,3 +4434,98 @@ app.get('/join', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/join.html'));
 });
 
+
+
+// ── GET /dashboard/commits ────────────────────────────────────────────
+app.get('/dashboard/commits', requireAuth, async (req, res) => {
+  try {
+    const { data: userAgents } = await supabaseService
+      .from('agents')
+      .select('agent_id, agent_name')
+      .eq('user_id', req.user.id);
+
+    const agentIds = (userAgents || []).map(a => a.agent_id);
+    const agentMap = Object.fromEntries((userAgents || []).map(a => [a.agent_id, a.agent_name]));
+
+    if (agentIds.length === 0) return res.json([]);
+
+    const idList = agentIds.map(id => `"${id}"`).join(',');
+    const { data, error } = await supabaseService
+      .from('commits')
+      .select('*')
+      .or([
+        `agent_id.in.(${idList})`,
+        `from_agent.in.(${idList})`,
+        `to_agent.in.(${idList})`
+      ].join(','))
+      .order('timestamp', { ascending: false })
+      .limit(200);
+
+    if (error) throw error;
+
+    // Return flat fields the dashboard JS expects
+    res.json((data || []).map(c => ({
+      id:               c.id,
+      trace_id:         c.trace_id    || c.id,
+      agent_id:         c.agent_id    || c.from_agent,
+      from_agent:       c.from_agent,
+      to_agent:         c.to_agent,
+      agent_name:       agentMap[c.from_agent] || c.agent_info?.name || c.from_agent,
+      event_type:       c.event_type  || 'commit',
+      timestamp:        c.timestamp,
+      client_timestamp: c.client_timestamp || c.timestamp,
+      accepted_at:      c.saved_at    || c.timestamp,
+      payload:          c.payload     || {},
+      integrity_hash:   c.integrity_hash,
+      parent_hash:      c.parent_hash,
+      payload_hash:     c.payload_hash,
+      verified:         c.verified    || false,
+      agent_info:       c.agent_info  || {},
+    })));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/auth/refresh ──────────────────────────────────────────────
+app.post('/api/auth/refresh', async (req, res) => {
+  try {
+    const { refresh_token } = req.body;
+    if (!refresh_token) return res.status(400).json({ error: 'refresh_token required' });
+    const { data, error } = await supabaseService.auth.refreshSession({ refresh_token });
+    if (error) return res.status(401).json({ error: error.message });
+    res.json({
+      access_token:  data.session.access_token,
+      refresh_token: data.session.refresh_token,
+      expires_at:    data.session.expires_at,
+    });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Static file serving ────────────────────────────────────────────────
+const publicDir = path.join(__dirname, '../public');
+app.use(express.static(publicDir));
+
+// SPA fallback — serve dashboard for unknown routes when user is likely logged in
+app.get('*', (req, res) => {
+  // API routes should 404
+  if (req.path.startsWith('/api/') || req.path.startsWith('/proxy/')) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  // Serve the requested HTML file if it exists, else 404
+  const filePath = path.join(publicDir, req.path === '/' ? 'index.html' : req.path);
+  res.sendFile(filePath, err => {
+    if (err) res.status(404).send('Not found');
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`DarkMatter server running on port ${PORT}`);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});

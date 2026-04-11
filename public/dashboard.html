@@ -749,7 +749,8 @@ pre:hover .code-copy{display:block;}pre:hover .code-lang{display:none;}
 async function refreshSession(){
   const raw=localStorage.getItem('dm_session');if(!raw)return null;
   const s=JSON.parse(raw);
-  if(parseInt(s.expires_at||'0',10)-Math.floor(Date.now()/1000)>300)return s;
+  // Refresh if token expires in < 10 minutes (was 5 — expanded for safety)
+  if(parseInt(s.expires_at||'0',10)-Math.floor(Date.now()/1000)>600)return s;
   if(!s.refresh_token)return s;
   try{
     const r=await fetch('/api/auth/refresh',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({refresh_token:s.refresh_token})});
@@ -797,7 +798,12 @@ if(emailStr&&avatarEl){
 }
 document.getElementById('set-email').textContent=emailStr||'(no email)';
 
-async function authH(){const s=await refreshSession()||session;return{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token};}
+async function authH(){
+  const s=await refreshSession()||session;
+  const h={'Content-Type':'application/json','Authorization':'Bearer '+s.access_token};
+  if(s.refresh_token)h['X-Refresh-Token']=s.refresh_token;
+  return h;
+}
 let dmKey=session&&session.dm_api_key||localStorage.getItem('dm_api_key')||'';
 const keyH=()=>({'Content-Type':'application/json','Authorization':'Bearer '+dmKey});
 
@@ -990,6 +996,7 @@ async function fetchRecords(rc){
     const ep=wsData?'/api/workspace/commits':'/dashboard/commits';
     const r=await fetch(ep,{headers:h,signal:ctrl.signal});
     clearTimeout(to);
+    try{var nt=r.headers.get('X-New-Access-Token');if(nt){var sc=JSON.parse(localStorage.getItem('dm_session')||'{}');sc.access_token=nt;var nr2=r.headers.get('X-New-Refresh-Token');var ne2=r.headers.get('X-New-Expires-At');if(nr2)sc.refresh_token=nr2;if(ne2)sc.expires_at=ne2;localStorage.setItem('dm_session',JSON.stringify(sc));session=sc;}}catch(te){}
     if(r.status===401){
       if(rc>0)return showSessionExpired();
       await refreshSession();return fetchRecords(rc+1);
