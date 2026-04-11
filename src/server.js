@@ -177,16 +177,39 @@ async function requireApiKey(req, res, next) {
   }
 
   const apiKey = auth.replace('Bearer ', '').trim();
-
-  const { data, error } = await supabaseService
-    .rpc('get_agent_by_api_key', { p_api_key: apiKey });
-
-  if (error || !data || data.length === 0) {
-    return res.status(401).json({ error: 'Invalid API key' });
+  if (!apiKey.startsWith('dm_sk_') && !apiKey.startsWith('dmp_')) {
+    return res.status(401).json({ error: 'Invalid API key format' });
   }
 
-  req.agent = data[0]; // { agent_id, agent_name, user_id, public_key }
-  next();
+  try {
+    // Try direct api_key match first (most agents store key plaintext)
+    let { data, error } = await supabaseService
+      .from('agents')
+      .select('agent_id, agent_name, user_id, api_key')
+      .eq('api_key', apiKey)
+      .limit(1);
+
+    // Fallback: try api_key_hash
+    if (!data || data.length === 0) {
+      const keyHash = require('crypto').createHash('sha256').update(apiKey).digest('hex');
+      const res2 = await supabaseService
+        .from('agents')
+        .select('agent_id, agent_name, user_id, api_key')
+        .eq('api_key_hash', keyHash)
+        .limit(1);
+      data = res2.data;
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(401).json({ error: 'Invalid API key' });
+    }
+
+    req.agent = data[0];
+    next();
+  } catch(e) {
+    console.error('[requireApiKey]', e.message);
+    res.status(500).json({ error: 'Auth error' });
+  }
 }
 
 // ── Middleware: validate Supabase JWT (dashboard calls) ──
@@ -648,14 +671,29 @@ app.post('/dashboard/agents', requireAuth, async (req, res) => {
 // ── GET /dashboard/agents ── list user's agents ─────
 app.get('/dashboard/agents', requireAuth, async (req, res) => {
   try {
-    const { data, error } = await supabaseService
+    let { data, error } = await supabaseService
       .from('agents')
       .select('agent_id, agent_name, api_key, created_at, last_active, webhook_url, retention_days')
       .eq('user_id', req.user.id)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    res.json(data.map(a => ({
+
+    // Auto-create a default agent if user has none
+    // This ensures extension captures always have somewhere to land
+    if (!data || data.length === 0) {
+      const agentId  = generateAgentId();
+      const apiKey   = generateApiKey();
+      const agentName = (req.user.email || 'my').split('@')[0] + '-agent';
+      const { data: newAgent, error: createErr } = await supabaseService
+        .from('agents')
+        .insert({ agent_id: agentId, agent_name: agentName, user_id: req.user.id, api_key: apiKey })
+        .select()
+        .single();
+      if (!createErr && newAgent) data = [newAgent];
+    }
+
+    res.json((data || []).map(a => ({
       agentId:       a.agent_id,
       agentName:     a.agent_name,
       apiKey:        a.api_key,
