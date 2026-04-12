@@ -220,7 +220,23 @@ async function requireAuth(req, res, next) {
   }
 
   const token = auth.replace('Bearer ', '').trim();
-  const { data: { user }, error } = await supabaseAnon.auth.getUser(token);
+  let { data: { user }, error } = await supabaseAnon.auth.getUser(token);
+
+  // If token is expired, try server-side refresh
+  if ((error || !user) && req.headers['x-refresh-token']) {
+    try {
+      const { data: rd } = await supabaseService.auth.refreshSession({ refresh_token: req.headers['x-refresh-token'] });
+      if (rd && rd.user) {
+        user = rd.user;
+        error = null;
+        if (rd.session) {
+          res.setHeader('X-New-Access-Token', rd.session.access_token);
+          res.setHeader('X-New-Refresh-Token', rd.session.refresh_token);
+          res.setHeader('X-New-Expires-At', rd.session.expires_at);
+        }
+      }
+    } catch (refreshErr) {}
+  }
 
   if (error || !user) {
     return res.status(401).json({ error: 'Invalid session' });
@@ -2271,7 +2287,8 @@ app.post('/enterprise/inquiry', feedbackLimiter, async (req, res) => {
       message:      sanitizeText(message, 2000),
     });
 
-    // Notify via email
+    // Notify via email (non-blocking - inquiry still saved if email fails)
+    if (process.env.RESEND_API_KEY && process.env.FEEDBACK_EMAIL) {
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -2287,7 +2304,8 @@ app.post('/enterprise/inquiry', feedbackLimiter, async (req, res) => {
                   <p><b>Use case:</b> ${escapeHtml(useCase)}</p>
                   <p><b>Message:</b> ${escapeHtml(message)}</p>`,
       }),
-    });
+    }).catch(e => console.error('Inquiry email failed:', e.message));
+    }
 
     res.json({
       received: true,
@@ -4008,6 +4026,30 @@ h1{font-size:26px;font-weight:700;letter-spacing:-.04em;color:var(--ink);margin-
 });
 
 
+
+// ── GET /api/demo ── serve static demo data ───────────────────────────
+app.get('/api/demo', (req, res) => {
+  res.json({
+    contextId:  'ctx_demo_a3f7c2d9',
+    rootId:     'ctx_demo_a3f7c2d9',
+    totalSteps: 5,
+    chainIntact: true,
+    summary: {
+      agents:      ['research-agent', 'writer-agent'],
+      models:      ['claude-sonnet-4-6', 'gpt-4o'],
+      forkPoints:  [],
+      duration:    '4.2s',
+    },
+    steps: [
+      { id: 'ctx_demo_1', step: 1, agent: 'research-agent', model: 'claude-sonnet-4-6', action: 'plan_task',       integrityHash: 'a3f7c2', parentHash: null,   verified: true, timestamp: new Date(Date.now()-20000).toISOString() },
+      { id: 'ctx_demo_2', step: 2, agent: 'research-agent', model: 'gpt-4o',            action: 'web_research',   integrityHash: 'd9b14e', parentHash: 'a3f7c2', verified: true, timestamp: new Date(Date.now()-15000).toISOString() },
+      { id: 'ctx_demo_3', step: 3, agent: 'research-agent', model: 'claude-sonnet-4-6', action: 'validate_sources',integrityHash: '7e2a91', parentHash: 'd9b14e', verified: true, timestamp: new Date(Date.now()-10000).toISOString() },
+      { id: 'ctx_demo_4', step: 4, agent: 'writer-agent',   model: 'gpt-4o',            action: 'draft_report',   integrityHash: 'c5f830', parentHash: '7e2a91', verified: true, timestamp: new Date(Date.now()-5000).toISOString()  },
+      { id: 'ctx_demo_5', step: 5, agent: 'writer-agent',   model: 'claude-sonnet-4-6', action: 'finalize_output',integrityHash: 'f1d290', parentHash: 'c5f830', verified: true, timestamp: new Date(Date.now()).toISOString()         },
+    ],
+  });
+});
+
 // ═══════════════════════════════════════════════════════════════════════
 // WORKSPACE ROUTES (appended from server_additions)
 // ═══════════════════════════════════════════════════════════════════════
@@ -4676,7 +4718,9 @@ app.get('*', (req, res) => {
     return res.status(404).json({ error: 'Not found' });
   }
   // Serve the requested HTML file if it exists, else 404
-  const filePath = path.join(publicDir, req.path === '/' ? 'index.html' : req.path);
+  let filePath = path.join(publicDir, req.path === '/' ? 'index.html' : req.path);
+  // If path has no extension, try .html
+  if (!path.extname(filePath)) filePath = filePath + '.html';
   res.sendFile(filePath, err => {
     if (err) res.status(404).send('Not found');
   });

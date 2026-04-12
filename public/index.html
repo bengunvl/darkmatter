@@ -108,9 +108,33 @@ a{text-decoration:none;color:inherit;}
 }
 .hero-h1 .accent{color:var(--blue-light);}
 .hero-sub{
-  font-family:var(--mono);font-size:clamp(13px,1.5vw,16px);
-  color:var(--dark-text2);line-height:1.8;max-width:580px;margin-bottom:40px;
+  font-family:var(--sans);font-size:clamp(16px,2vw,20px);
+  color:var(--dark-text2);line-height:1.8;max-width:560px;margin:0 auto 12px;
 }
+.hero-mech{
+  font-family:var(--mono);font-size:0.72rem;color:var(--dark-text3);
+  max-width:480px;margin:0 auto 32px;line-height:1.6;position:relative;z-index:2;
+}
+.verify-card{
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);
+  border-radius:14px;padding:24px 28px;max-width:480px;margin:0 auto;
+  position:relative;z-index:2;text-align:left;
+  backdrop-filter:blur(8px);
+}
+.vc-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:12px;}
+.vc-header-left{flex:1;min-width:0;}
+.vc-label{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dark-text3);margin-bottom:5px;}
+.vc-title{font-size:15px;font-weight:700;color:var(--dark-text);letter-spacing:-.02em;line-height:1.3;}
+.vc-status{font-family:var(--mono);font-size:11px;font-weight:600;color:#34d399;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);padding:3px 10px;border-radius:4px;white-space:nowrap;flex-shrink:0;}
+.vc-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.vc-chip{font-family:var(--mono);font-size:11px;color:var(--dark-text3);}
+.vc-sep{color:rgba(255,255,255,.2);font-size:11px;}
+.vc-divider{height:1px;background:rgba(255,255,255,.08);margin-bottom:14px;}
+.vc-section-label{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dark-text3);margin-bottom:10px;}
+.vc-checks{display:flex;flex-direction:column;gap:7px;margin-bottom:16px;}
+.vc-check{font-size:13px;color:var(--dark-text2);display:flex;align-items:center;gap:8px;}
+.vc-ok{color:#34d399;font-size:13px;flex-shrink:0;}
+.vc-footer{font-family:var(--mono);font-size:10.5px;color:var(--dark-text3);border-top:1px solid rgba(255,255,255,.08);padding-top:12px;}
 .hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:56px;position:relative;z-index:2;}
 .btn-p{font-family:var(--mono);font-size:13px;font-weight:600;background:#fff;color:var(--ink);padding:13px 28px;border-radius:8px;letter-spacing:.01em;transition:opacity .15s,transform .12s;display:inline-block;}
 .btn-p:hover{opacity:.9;transform:translateY(-1px);}
@@ -306,45 +330,72 @@ footer{background:var(--dark2);border-top:1px solid var(--dark-border);padding:4
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-eyebrow">Independent execution record for AI systems</div>
   <h1 class="hero-h1">
-    AI systems cannot<br><span class="accent">audit themselves.</span>
+    Every AI decision becomes<br><span class="accent">a record you can verify.</span>
   </h1>
-  <p class="hero-sub">
-    When an AI system makes a decision, prove who made it, what happened, and that the record hasn't been altered.<br>
-    Your agent hashes each step client-side, signs it with its own key, and commits it to an independent append-only log.
+  <p class="hero-sub" style="font-size:1.15rem;line-height:1.8;max-width:560px;margin:0 auto 12px;">
+    Reconstruct what happened.<br>
+    See who made the decision.<br>
+    Verify it hasn't been altered.
   </p>
+  <p class="hero-mech">Each step is hashed client-side, signed with its own key, and committed to an independent append-only log.</p>
   <div class="hero-actions">
     <a href="/demo" class="btn-p">Run demo →</a>
-    <a href="/docs" class="btn-o">Read the docs</a>
+    <a href="/signup" class="btn-o">Start free</a>
   </div>
 
-  <!-- Stage bar -->
-  <div class="stage-bar">
-    <div class="stage">Record</div>
-    <div class="stage">Reconstruct</div>
-    <div class="stage">Compare</div>
-    <div class="stage">Verify</div>
-  </div>
-
-  <!-- Chain demo -->
-  <div class="chain-showcase">
-    <div class="cs-bar">
-      <div class="cs-dot r"></div><div class="cs-dot y"></div><div class="cs-dot g"></div>
-      <span class="cs-label">chain · ctx_1775a4b2...</span>
-      <span style="margin-left:auto;font-size:10px;color:var(--dark-text3);">SHA-256 · chain intact ✓</span>
+  <!-- Verification card -->
+  <div class="verify-card">
+    <div class="vc-header">
+      <div class="vc-header-left">
+        <div class="vc-label">Decision record</div>
+        <div class="vc-title">Approve transaction · $250,000</div>
+      </div>
+      <div class="vc-status">✓ Record intact</div>
     </div>
-    <div class="cs-row"><span class="cs-num">1</span><span class="cs-icon ok"></span><span class="cs-name">plan_task</span><span class="cs-model">claude-sonnet-4-6</span><span class="cs-badge ok">✓ valid</span><span class="cs-hash">a3f7c2</span></div>
-    <div class="cs-row"><span class="cs-num">2</span><span class="cs-icon ok"></span><span class="cs-name">web_research</span><span class="cs-model">gpt-4o</span><span class="cs-badge ok">✓ valid</span><span class="cs-hash">d9b14e</span></div>
-    <div class="cs-row"><span class="cs-num">3</span><span class="cs-icon ok"></span><span class="cs-name">validate_sources</span><span class="cs-model">claude-sonnet-4-6</span><span class="cs-badge ok">✓ valid</span><span class="cs-hash">7e2a91</span></div>
-    <div class="cs-row"><span class="cs-num">4</span><span class="cs-icon ok"></span><span class="cs-name">draft_report ⑂ fork</span><span class="cs-model">grok-3</span><span class="cs-badge ok">✓ valid</span><span class="cs-hash">c5f830</span></div>
-    <div class="cs-row"><span class="cs-num">5</span><span class="cs-icon ok"></span><span class="cs-name">finalize_output</span><span class="cs-model">claude-sonnet-4-6</span><span class="cs-badge ok">✓ valid</span><span class="cs-hash">f1d290</span></div>
+    <div class="vc-meta">
+      <span class="vc-chip">treasury-agent</span>
+      <span class="vc-sep">·</span>
+      <span class="vc-chip">Apr 10, 14:10 UTC</span>
+      <span class="vc-sep">·</span>
+      <span class="vc-chip">4 steps</span>
+    </div>
+    <div class="vc-divider"></div>
+    <div class="vc-section-label">Verification result</div>
+    <div class="vc-checks">
+      <div class="vc-check"><span class="vc-ok">✓</span> Payload hash matches</div>
+      <div class="vc-check"><span class="vc-ok">✓</span> Chain integrity intact</div>
+      <div class="vc-check"><span class="vc-ok">✓</span> Agent signature valid</div>
+      <div class="vc-check"><span class="vc-ok">✓</span> Included in checkpoint</div>
+    </div>
+    <div class="vc-footer">This record can be verified independently.</div>
   </div>
 </div>
 
 <!-- TRANSITION -->
 <div class="dark-to-light"></div>
 
+
+<!-- THREE QUESTIONS STRIP -->
+<div style="background:#fff;border-bottom:1px solid #e5e7eb;padding:40px;">
+  <div style="max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0;">
+    <div style="padding:24px 32px;border-right:1px solid #e5e7eb;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:10px;">What happened?</div>
+      <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px;letter-spacing:-.02em;">Reconstruct every step</div>
+      <div style="font-size:13.5px;color:var(--ink3);line-height:1.65;">Every input and output is preserved in order. See the exact sequence of decisions.</div>
+    </div>
+    <div style="padding:24px 32px;border-right:1px solid #e5e7eb;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:10px;">Who made the decision?</div>
+      <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px;letter-spacing:-.02em;">Bind each step to an identity</div>
+      <div style="font-size:13.5px;color:var(--ink3);line-height:1.65;">Every step is signed by the agent that produced it. Ownership is provable, not assumed.</div>
+    </div>
+    <div style="padding:24px 32px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:10px;">Can the record be trusted?</div>
+      <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px;letter-spacing:-.02em;">Verify hashes and signatures</div>
+      <div style="font-size:13.5px;color:var(--ink3);line-height:1.65;">Tamper detection is cryptographic. Verification works offline, without trusting DarkMatter.</div>
+    </div>
+  </div>
+</div>
 
 <!-- ── PROBLEMS — why DarkMatter exists ── -->
 <div style="background:#fff;padding:80px 40px;">
@@ -529,16 +580,47 @@ footer{background:var(--dark2);border-top:1px solid var(--dark-border);padding:4
   </div>
 </div>
 
+<!-- WHAT VERIFICATION CHECKS -->
+<div style="background:#fff;padding:72px 40px;">
+  <div style="max-width:900px;margin:0 auto;text-align:center;">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:14px;">What verification checks</div>
+    <h2 style="font-size:clamp(24px,3vw,36px);font-weight:700;letter-spacing:-.04em;color:var(--ink);margin-bottom:12px;">Four things every record proves.</h2>
+    <p style="font-size:15px;color:var(--ink3);margin-bottom:48px;">These checks run on every record. They can be run offline, by anyone, without a DarkMatter account.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:28px;">
+      <div style="background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.18);border-radius:8px;padding:18px 20px;text-align:left;">
+        <div style="color:#065f46;font-size:16px;margin-bottom:8px;">✓</div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;">Payload hash matches</div>
+        <div style="font-size:12.5px;color:var(--ink3);line-height:1.6;">The content wasn't changed after it was signed.</div>
+      </div>
+      <div style="background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.18);border-radius:8px;padding:18px 20px;text-align:left;">
+        <div style="color:#065f46;font-size:16px;margin-bottom:8px;">✓</div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;">Chain integrity intact</div>
+        <div style="font-size:12.5px;color:var(--ink3);line-height:1.6;">No steps were inserted, removed, or reordered.</div>
+      </div>
+      <div style="background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.18);border-radius:8px;padding:18px 20px;text-align:left;">
+        <div style="color:#065f46;font-size:16px;margin-bottom:8px;">✓</div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;">Agent signature valid</div>
+        <div style="font-size:12.5px;color:var(--ink3);line-height:1.6;">The signing agent is cryptographically identified.</div>
+      </div>
+      <div style="background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.18);border-radius:8px;padding:18px 20px;text-align:left;">
+        <div style="color:#065f46;font-size:16px;margin-bottom:8px;">✓</div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;">Included in checkpoint</div>
+        <div style="font-size:12.5px;color:var(--ink3);line-height:1.6;">The record is anchored in a signed, append-only log.</div>
+      </div>
+    </div>
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--ink);">This record has not been altered.</p>
+  </div>
+</div>
+
 <!-- CTA -->
 <div class="cta">
   <div class="container" style="text-align:center;">
-    <h2 class="cta-h">Start recording your<br>agents today.</h2>
-    <p class="cta-sub">Free tier · unlimited agents · no credit card required.</p>
+    <h2 class="cta-h">Run the demo and verify<br>your first record.</h2>
+    <p class="cta-sub">See how a decision becomes a record you can inspect, share, and verify.</p>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-      <a href="/signup" class="btn-p">Get started free →</a>
-      <a href="/demo" class="btn-o">Run the demo first</a>
+      <a href="/demo" class="btn-p">Run demo →</a>
+      <a href="/signup" class="btn-o">Start free</a>
     </div>
-    <p class="cta-note">Run the demo locally, or start recording through the dashboard.</p>
   </div>
 </div>
 
