@@ -2019,17 +2019,35 @@ startPoll();
 let claudeKeyId = null;
 
 async function loadClaudeKey() {
+  const statusEl  = document.getElementById('claude-key-status');
+  const formEl    = document.getElementById('claude-key-form');
+  const savedEl   = document.getElementById('claude-key-saved');
+  const displayEl = document.getElementById('claude-key-display');
+  const toggleEl  = document.getElementById('claude-recording-toggle');
   try {
-    const h = dmKey ? keyH() : await authH();
-    const r = await fetch('/api/recording-keys', { headers: h });
-    const keys = await r.json();
-    const claudeKey = (keys || []).find(k => k.provider === 'anthropic');
+    // Always refresh session before loading keys
+    const s = await refreshSession() || session;
+    const h = {
+      'Content-Type':  'application/json',
+      'Authorization': 'Bearer ' + s.access_token,
+    };
+    if (s.refresh_token) h['X-Refresh-Token'] = s.refresh_token;
 
-    const statusEl  = document.getElementById('claude-key-status');
-    const formEl    = document.getElementById('claude-key-form');
-    const savedEl   = document.getElementById('claude-key-saved');
-    const displayEl = document.getElementById('claude-key-display');
-    const toggleEl  = document.getElementById('claude-recording-toggle');
+    const r = await fetch('/api/recording-keys', { headers: h });
+
+    if (r.status === 401) {
+      if (statusEl) statusEl.textContent = 'Session expired — please sign in again.';
+      return;
+    }
+
+    const body = await r.json();
+    if (!r.ok) {
+      if (statusEl) statusEl.textContent = 'Error: ' + (body.error || r.status);
+      return;
+    }
+
+    const keys = Array.isArray(body) ? body : [];
+    const claudeKey = keys.find(k => k.provider === 'anthropic');
 
     if (claudeKey) {
       claudeKeyId = claudeKey.id;
@@ -2038,8 +2056,6 @@ async function loadClaudeKey() {
       if (toggleEl) toggleEl.checked = claudeKey.recording_enabled;
       if (formEl) formEl.style.display = 'none';
       if (savedEl) savedEl.style.display = '';
-
-      // Update env export line with proxy key
       updateEnvExportLine();
     } else {
       claudeKeyId = null;
@@ -2048,8 +2064,8 @@ async function loadClaudeKey() {
       if (savedEl) savedEl.style.display = 'none';
     }
   } catch(e) {
-    const statusEl = document.getElementById('claude-key-status');
-    if (statusEl) statusEl.textContent = 'Could not load recording keys.';
+    if (statusEl) statusEl.textContent = 'Could not load recording keys: ' + e.message;
+    console.error('[DM] loadClaudeKey error:', e);
   }
 }
 
@@ -2061,18 +2077,30 @@ async function saveClaudeKey() {
   if (!apiKey.startsWith('sk-')) return toast('Key should start with sk-ant-...');
 
   try {
-    const h = dmKey ? keyH() : await authH();
+    const s = await refreshSession() || session;
+    const h = {
+      'Content-Type':  'application/json',
+      'Authorization': 'Bearer ' + s.access_token,
+    };
+    if (s.refresh_token) h['X-Refresh-Token'] = s.refresh_token;
+
     const r = await fetch('/api/recording-keys', {
       method: 'POST',
-      headers: { ...h, 'Content-Type': 'application/json' },
+      headers: h,
       body: JSON.stringify({ provider: 'anthropic', apiKey, label: labelInp?.value?.trim() || null }),
     });
     const d = await r.json();
-    if (!r.ok) return toast('Error: ' + (d.error || 'Save failed'));
+    if (!r.ok) {
+      console.error('[DM] saveClaudeKey error:', d);
+      return toast('Error: ' + (d.error || 'Save failed'));
+    }
     if (keyInp) keyInp.value = '';
     toast('Claude API key saved — recording enabled');
     await loadClaudeKey();
-  } catch(e) { toast('Save failed: ' + e.message); }
+  } catch(e) {
+    console.error('[DM] saveClaudeKey exception:', e);
+    toast('Save failed: ' + e.message);
+  }
 }
 
 async function toggleClaudeRecording(enabled) {
