@@ -331,12 +331,11 @@ footer{background:var(--dark2);border-top:1px solid var(--dark-border);padding:4
 <!-- HERO -->
 <div class="hero">
   <h1 class="hero-h1">
-    Every AI decision becomes<br><span class="accent">a record you can verify.</span>
+    AI systems make decisions.<br><span class="accent">DarkMatter makes them provable.</span>
   </h1>
-  <p class="hero-sub" style="font-size:1.15rem;line-height:1.8;max-width:560px;margin:0 auto 12px;">
-    Reconstruct what happened.<br>
-    See who made the decision.<br>
-    Verify it hasn't been altered.
+  <p class="hero-sub" style="font-size:1.1rem;line-height:1.8;max-width:580px;margin:0 auto 12px;">
+    The independent audit layer for AI agents —<br>
+    whether they run on Claude, OpenAI, or your own infrastructure.
   </p>
   <p class="hero-mech">Each step is hashed client-side, signed with its own key, and committed to an independent append-only log.</p>
   <div class="hero-actions">
@@ -550,6 +549,62 @@ footer{background:var(--dark2);border-top:1px solid var(--dark-border);padding:4
         <div class="how-card-num">03</div>
         <div class="how-card-title">The record can be verified</div>
         <div class="how-card-body">Anyone can verify the full execution — offline, without trusting DarkMatter. Export a verifiable JSON proof bundle. Share the standalone verifier. Your auditor needs no account and no access to your system.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CLAUDE MANAGED AGENTS -->
+<div style="background:#0d1117;padding:72px 40px;">
+  <div style="max-width:980px;margin:0 auto;">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#58a6ff;margin-bottom:14px;">Claude Managed Agents</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;">
+      <div>
+        <h2 style="font-size:clamp(24px,3vw,36px);font-weight:700;letter-spacing:-.04em;color:rgba(230,237,243,.95);line-height:1.15;margin-bottom:18px;">Claude runs your agents.<br>DarkMatter proves what they did.</h2>
+        <p style="font-size:15px;color:rgba(230,237,243,.55);line-height:1.8;margin-bottom:20px;">Anthropic stores the logs. DarkMatter stores the proof. These are not the same thing. One record is written by the operator. The other can be verified without trusting anyone.</p>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px;">
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="color:#3fb950;font-size:13px;flex-shrink:0;margin-top:1px;">✓</span>
+            <span style="font-size:13.5px;color:rgba(230,237,243,.7);line-height:1.6;">Works with <strong style="color:rgba(230,237,243,.9);">Claude Managed Agents</strong> — sessions, events, streaming</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="color:#3fb950;font-size:13px;flex-shrink:0;margin-top:1px;">✓</span>
+            <span style="font-size:13.5px;color:rgba(230,237,243,.7);line-height:1.6;">One line of setup — <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:rgba(255,255,255,.08);padding:1px 6px;border-radius:3px;">export ANTHROPIC_BASE_URL=https://darkmatterhub.ai/ext/claude</code></span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="color:#3fb950;font-size:13px;flex-shrink:0;margin-top:1px;">✓</span>
+            <span style="font-size:13.5px;color:rgba(230,237,243,.7);line-height:1.6;">Independent verification — no Anthropic account required to verify the record</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a href="/integrations/claude" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;background:#fff;color:#0d1117;padding:9px 20px;border-radius:7px;text-decoration:none;">See integration →</a>
+          <a href="/docs#claude" style="font-size:12.5px;color:rgba(230,237,243,.55);padding:9px 16px;border:1px solid rgba(255,255,255,.12);border-radius:7px;text-decoration:none;transition:border-color .15s;">Read the docs</a>
+        </div>
+      </div>
+      <div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:20px;font-family:'IBM Plex Mono',monospace;font-size:12px;">
+          <div style="color:rgba(230,237,243,.35);font-size:10px;margin-bottom:14px;letter-spacing:.08em;">OWNERSHIP LAYER</div>
+          <div style="display:flex;flex-direction:column;gap:0;">
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px 6px 0 0;">
+              <span style="color:rgba(230,237,243,.35);font-size:10px;width:80px;">Execution</span>
+              <span style="color:rgba(230,237,243,.7);">Anthropic</span>
+              <span style="margin-left:auto;font-size:10px;color:rgba(230,237,243,.3);">managed agents</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-top:none;">
+              <span style="color:rgba(230,237,243,.35);font-size:10px;width:80px;">Logs</span>
+              <span style="color:rgba(230,237,243,.7);">Anthropic</span>
+              <span style="margin-left:auto;font-size:10px;color:rgba(230,237,243,.3);">trust-based</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.3);border-top:none;border-radius:0 0 6px 6px;">
+              <span style="color:rgba(230,237,243,.35);font-size:10px;width:80px;">Proof</span>
+              <span style="color:#58a6ff;font-weight:600;">DarkMatter</span>
+              <span style="margin-left:auto;font-size:10px;color:#3fb950;">independent ✓</span>
+            </div>
+          </div>
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.06);font-size:10.5px;color:rgba(230,237,243,.35);line-height:1.7;">
+            The more powerful agents become,<br>the more unacceptable it is for them<br>to audit themselves.
+          </div>
+        </div>
       </div>
     </div>
   </div>

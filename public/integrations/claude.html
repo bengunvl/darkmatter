@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Claude Managed Agents Integration — DarkMatter</title>
+<meta name="description" content="The independent audit layer for Claude Managed Agents. Prove what your Claude agents did — without trusting Anthropic's logs."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --ink:#0d1117;--ink2:#24292f;--ink3:#57606a;--ink4:#8c949e;
+  --bg:#f8f9fb;--border:#e2e6ef;
+  --blue:#2563EB;--green:#10b981;
+  --mono:"IBM Plex Mono","Courier New",monospace;
+  --sans:"IBM Plex Sans",sans-serif;
+  --grad:linear-gradient(135deg,#7C3AED,#2563EB,#0891b2);
+}
+body{font-family:var(--sans);color:var(--ink);background:#fff;-webkit-font-smoothing:antialiased;}
+.dm-nav{position:sticky;top:0;z-index:100;height:58px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 40px;gap:12px;}
+.dm-nav-logo{display:flex;align-items:center;gap:8px;text-decoration:none;margin-right:auto;}
+.dm-nav-name{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.03em;}
+.dm-nav-grad{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.dm-nav a.nav-link{font-size:13px;color:var(--ink3);text-decoration:none;padding:4px 8px;border-radius:5px;}
+.dm-nav a.nav-link:hover{color:var(--ink);background:var(--bg);}
+.dm-nav-cta{font-family:var(--mono);font-size:12px;font-weight:700;background:var(--ink);color:#fff;padding:6px 16px;border-radius:6px;text-decoration:none;}
+.dm-nav-cta:hover{opacity:.85;}
+.hero{background:#0d1117;padding:72px 40px 64px;text-align:center;}
+.hero-eye{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#58a6ff;margin-bottom:16px;}
+.hero-h1{font-size:clamp(28px,4vw,50px);font-weight:700;letter-spacing:-.04em;color:rgba(230,237,243,.95);line-height:1.1;margin-bottom:18px;}
+.hero-h1 .dm{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero-sub{font-size:16px;color:rgba(230,237,243,.55);line-height:1.8;max-width:560px;margin:0 auto 28px;}
+.hero-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.btn-p{font-family:var(--mono);font-size:13px;font-weight:700;background:#fff;color:#0d1117;padding:10px 24px;border-radius:7px;text-decoration:none;display:inline-block;}
+.btn-p:hover{opacity:.9;}
+.btn-o{font-size:13px;color:rgba(230,237,243,.7);padding:10px 20px;border:1px solid rgba(255,255,255,.15);border-radius:7px;text-decoration:none;display:inline-block;}
+.btn-o:hover{border-color:rgba(255,255,255,.3);}
+.page{max-width:860px;margin:0 auto;padding:64px 40px 80px;}
+.section{margin-bottom:56px;}
+.section-eye{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:10px;}
+.section-h2{font-size:clamp(20px,2.5vw,28px);font-weight:700;letter-spacing:-.03em;color:var(--ink);margin-bottom:12px;line-height:1.2;}
+.section-lead{font-size:15px;color:var(--ink3);line-height:1.8;max-width:620px;}
+.ownership{display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:32px 0;}
+.ow-col{padding:20px 22px;}
+.ow-col:not(:last-child){border-right:1px solid var(--border);}
+.ow-label{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink4);margin-bottom:8px;}
+.ow-owner{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+.ow-note{font-size:12px;color:var(--ink3);line-height:1.5;}
+.ow-col.dm{background:rgba(16,185,129,.04);border-color:rgba(16,185,129,.2)!important;}
+.ow-col.dm .ow-owner{color:var(--green);}
+.steps{display:flex;flex-direction:column;gap:0;margin:28px 0;}
+.step{display:flex;gap:20px;padding-bottom:28px;}
+.step:last-child{padding-bottom:0;}
+.step-line{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font-family:var(--mono);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.step-conn{flex:1;width:2px;background:var(--border);margin:4px 0;}
+.step:last-child .step-conn{display:none;}
+.step-body{flex:1;padding-top:3px;}
+.step-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:6px;}
+.step-desc{font-size:13px;color:var(--ink3);line-height:1.7;}
+.code{background:#0d1117;border-radius:8px;padding:18px 20px;margin:12px 0;overflow-x:auto;}
+.code pre{font-family:var(--mono);font-size:12px;line-height:1.8;color:rgba(230,237,243,.8);}
+.code .cm{color:rgba(230,237,243,.32);}
+.code .kw{color:#79c0ff;}
+.code .st{color:#a5d6ff;}
+.code .ok{color:#3fb950;}
+.modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:24px 0;}
+.mode-card{border:1px solid var(--border);border-radius:8px;padding:18px 20px;}
+.mode-card.best{border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.03);}
+.mode-badge{font-family:var(--mono);font-size:10px;font-weight:600;padding:2px 8px;border-radius:3px;margin-bottom:10px;display:inline-block;}
+.mode-badge.client{background:rgba(16,185,129,.1);color:#065f46;border:1px solid rgba(16,185,129,.25);}
+.mode-badge.proxy{background:rgba(245,158,11,.08);color:#92400e;border:1px solid rgba(245,158,11,.2);}
+.mode-title{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:6px;}
+.mode-desc{font-size:12.5px;color:var(--ink3);line-height:1.6;}
+.faq-item{margin-bottom:20px;}
+.faq-q{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:5px;}
+.faq-a{font-size:13.5px;color:var(--ink3);line-height:1.7;}
+.faq-a code{font-family:var(--mono);font-size:11.5px;background:#f4f6fb;padding:1px 5px;border-radius:3px;}
+.cta-strip{background:#0d1117;border-radius:10px;padding:36px 40px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-top:56px;}
+.cta-strip-h{font-size:20px;font-weight:700;color:rgba(230,237,243,.95);letter-spacing:-.03em;}
+.cta-strip-sub{font-size:13px;color:rgba(230,237,243,.45);margin-top:4px;}
+.cta-strip-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.dm-footer{border-top:1px solid var(--border);padding:28px 40px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.dm-footer-copy{font-size:12px;color:var(--ink4);margin-right:auto;}
+.dm-footer a{font-size:12px;color:var(--ink3);text-decoration:none;}
+.dm-footer a:hover{color:var(--ink);}
+@media(max-width:700px){
+  .dm-nav{padding:0 16px;}
+  .page{padding:40px 20px;}
+  .hero{padding:48px 20px;}
+  .ownership,.modes{grid-template-columns:1fr;}
+  .ow-col:not(:last-child){border-right:none;border-bottom:1px solid var(--border);}
+  .cta-strip{padding:24px;flex-direction:column;}
+}
+</style>
+</head>
+<body>
+
+<nav class="dm-nav">
+  <a class="dm-nav-logo" href="/">
+    <svg style="width:22px;height:22px;" viewBox="0 0 40 40" fill="none">
+      <defs><linearGradient id="dlg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7C3AED"/><stop offset="55%" stop-color="#2563EB"/><stop offset="100%" stop-color="#0891b2"/></linearGradient></defs>
+      <circle cx="20" cy="20" r="17" stroke="#e5e7eb" stroke-width="0.8" stroke-dasharray="2 3"/>
+      <circle cx="20" cy="5" r="3.2" fill="#7C3AED" opacity="0.95"/>
+      <circle cx="33" cy="28" r="2.6" fill="#2563EB" opacity="0.95"/>
+      <circle cx="7" cy="28" r="2.2" fill="#22D3EE" opacity="0.9"/>
+      <line x1="20" y1="8" x2="31" y2="26" stroke="url(#dlg)" stroke-width="0.6" opacity="0.5"/>
+      <line x1="20" y1="8" x2="9" y2="26" stroke="#7C3AED" stroke-width="0.6" opacity="0.4"/>
+      <line x1="30" y1="27" x2="10" y2="27" stroke="#22D3EE" stroke-width="0.6" opacity="0.4"/>
+      <circle cx="20" cy="20" r="2.5" fill="url(#dlg)" opacity="0.6"/>
+    </svg>
+    <span class="dm-nav-name">Dark<span class="dm-nav-grad">Matter</span></span>
+  </a>
+  <a href="/docs" class="nav-link">Docs</a>
+  <a href="/compare" class="nav-link">Compare</a>
+  <a href="/integrity" class="nav-link">Integrity</a>
+  <a href="/signup" class="dm-nav-cta">Start free</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-eye">Claude Managed Agents × DarkMatter</div>
+  <h1 class="hero-h1">Claude runs your agents.<br><span class="dm">DarkMatter proves what they did.</span></h1>
+  <p class="hero-sub">Anthropic stores the logs. DarkMatter stores the proof. One record is written by the operator. The other can be verified without trusting anyone.</p>
+  <div class="hero-actions">
+    <a href="/signup" class="btn-p">Start recording free →</a>
+    <a href="/docs" class="btn-o">Read the docs</a>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="section">
+    <div class="section-eye">The gap Claude cannot fill</div>
+    <h2 class="section-h2">Anthropic knows what happened.<br>They cannot prove it independently.</h2>
+    <p class="section-lead">When Claude Managed Agents runs your pipeline, Anthropic controls execution, infrastructure, and the log. Every record is written by the operator. That is the conflict of interest DarkMatter was built to solve.</p>
+    <div class="ownership">
+      <div class="ow-col">
+        <div class="ow-label">Agent execution</div>
+        <div class="ow-owner">Anthropic</div>
+        <div class="ow-note">Managed containers, tooling, and runtime</div>
+      </div>
+      <div class="ow-col">
+        <div class="ow-label">Session logs</div>
+        <div class="ow-owner">Anthropic</div>
+        <div class="ow-note">Stored on Anthropic servers — trust-based, not independently provable</div>
+      </div>
+      <div class="ow-col dm">
+        <div class="ow-label">Independent proof</div>
+        <div class="ow-owner">DarkMatter</div>
+        <div class="ow-note">Cryptographic records outside your system — verifiable offline, no Anthropic access required</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eye">Integration</div>
+    <h2 class="section-h2">One line of setup.</h2>
+    <p class="section-lead" style="margin-bottom:24px;">Point the Anthropic SDK at DarkMatter. Every call — messages, managed agent sessions, streaming events — is automatically recorded as a verifiable DarkMatter record.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-line"><div class="step-num">1</div><div class="step-conn"></div></div>
+        <div class="step-body">
+          <div class="step-title">Set your base URL</div>
+          <div class="step-desc">One environment variable routes all Anthropic SDK calls through DarkMatter.</div>
+          <div class="code"><pre><span class="cm"># In your shell or .env</span>
+export ANTHROPIC_BASE_URL=https://darkmatterhub.ai/ext/claude
+export DM_PROXY_KEY=dmp_your_proxy_key</pre></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-line"><div class="step-num">2</div><div class="step-conn"></div></div>
+        <div class="step-body">
+          <div class="step-title">Use the Anthropic SDK normally</div>
+          <div class="step-desc">No code changes. DarkMatter sits transparently in the request path and forwards everything to Anthropic unchanged.</div>
+          <div class="code"><pre><span class="kw">import</span> anthropic
+
+client = anthropic.Anthropic()  <span class="cm"># picks up ANTHROPIC_BASE_URL automatically</span>
+
+<span class="cm"># Managed Agents session — recorded automatically</span>
+session = client.beta.sessions.create(
+    agent_id=<span class="st">"agent_..."</span>,
+    environment_id=<span class="st">"env_..."</span>
+)
+
+<span class="cm"># Every event becomes a verifiable DarkMatter record</span>
+<span class="kw">for</span> event <span class="kw">in</span> client.beta.sessions.stream(session.id, events=[...]):
+    process(event)
+
+<span class="ok"># → Each step: hash-linked, timestamped, verifiable offline</span></pre></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-line"><div class="step-num">3</div><div class="step-conn"></div></div>
+        <div class="step-body">
+          <div class="step-title">Verify any record — without Anthropic</div>
+          <div class="step-desc">Export a proof bundle. Your auditor, regulator, or legal team can verify it offline with no DarkMatter account and no Anthropic access.</div>
+          <div class="code"><pre><span class="cm"># Standalone offline verification</span>
+python verify_darkmatter_chain.py proof_bundle.json
+
+<span class="ok">✓ Payload hash matches
+✓ Chain integrity intact
+✓ Agent signature valid
+✓ Included in checkpoint
+
+This record has not been altered.</span></pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eye">Trust model</div>
+    <h2 class="section-h2">Two capture modes. One honest distinction.</h2>
+    <p class="section-lead" style="margin-bottom:24px;">DarkMatter never hides the trust boundary. Every record is labeled with how it was captured so you always know what the verification claim means.</p>
+    <div class="modes">
+      <div class="mode-card best">
+        <span class="mode-badge client">✦ Client-signed</span>
+        <div class="mode-title">SDK or browser extension</div>
+        <div class="mode-desc">Payload hashed and signed on your machine before reaching DarkMatter. Full cryptographic independence — DarkMatter never sees the pre-hash payload.</div>
+      </div>
+      <div class="mode-card">
+        <span class="mode-badge proxy">⇄ Proxy · forwarded</span>
+        <div class="mode-title">ANTHROPIC_BASE_URL proxy</div>
+        <div class="mode-desc">Key forwarded per-call, never stored. Captured in transit. Hash chain is intact. Best for zero-effort setup.</div>
+      </div>
+      <div class="mode-card">
+        <span class="mode-badge proxy">⇄ Proxy · stored key</span>
+        <div class="mode-title">Dashboard key storage</div>
+        <div class="mode-desc">Key stored in DarkMatter dashboard. Convenient for development — upgrade to SDK or forwarded key for production independence.</div>
+      </div>
+    </div>
+    <div style="background:#f4f6fb;border:1px solid #e2e6ef;border-left:3px solid var(--blue);border-radius:6px;padding:14px 18px;font-size:13.5px;color:#2d3552;line-height:1.7;">
+      Every record in your dashboard shows its capture mode. Proxy records include a one-click path to upgrade to client-signed verification.
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eye">Questions</div>
+    <h2 class="section-h2" style="margin-bottom:24px;">Common questions</h2>
+    <div class="faq-item">
+      <div class="faq-q">Does this add latency to my Claude calls?</div>
+      <div class="faq-a">No. DarkMatter records the interaction after forwarding the response to your application. The client receives Anthropic's response at normal speed — recording happens asynchronously after the response is sent.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Does DarkMatter store my Anthropic API key?</div>
+      <div class="faq-a">Only if you explicitly add it via the dashboard. Using <code>ANTHROPIC_API_KEY</code> with <code>ANTHROPIC_BASE_URL</code> — your key is forwarded per-call in the request header and never written to disk on DarkMatter's servers.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Can I verify records without a DarkMatter account?</div>
+      <div class="faq-a">Yes. Export a proof bundle from the dashboard. The standalone Python verifier works offline with no dependencies and no account. Your legal team, a regulator, or a client can verify the record independently.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Does this work with the Messages API too, not just Managed Agents?</div>
+      <div class="faq-a">Both. The <code>ANTHROPIC_BASE_URL</code> proxy captures all Claude API calls — <code>/v1/messages</code>, <code>/v1/sessions</code>, <code>/v1/sessions/{id}/events</code>, and streaming.</div>
+    </div>
+  </div>
+
+  <div class="cta-strip">
+    <div>
+      <div class="cta-strip-h">Start recording Claude sessions now.</div>
+      <div class="cta-strip-sub">Free tier · unlimited agents · no credit card required.</div>
+    </div>
+    <div class="cta-strip-actions">
+      <a href="/signup" class="btn-p">Start free →</a>
+      <a href="/docs" class="btn-o">Read the docs</a>
+    </div>
+  </div>
+
+</div>
+
+<footer class="dm-footer">
+  <span class="dm-footer-copy">© 2026 DarkMatter</span>
+  <a href="/integrity">Integrity Spec</a>
+  <a href="/compare">Compare</a>
+  <a href="/docs">Docs</a>
+  <a href="/pricing">Pricing</a>
+</footer>
+
+</body>
+</html>

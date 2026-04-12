@@ -1034,6 +1034,7 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
         hash_mismatch:       hashMismatch || false,
         verified:            true,
         verification_reason: 'API key authenticated',
+      capture_mode: 'client_signed',
         timestamp,
       });
 
@@ -1084,6 +1085,7 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
       parent_hash:         parentHash,
       verified:            true,
       verification_reason: 'API key authenticated',
+      capture_mode: 'client_signed',
       timestamp,
     }, { [req.agent.agent_id]: req.agent.agent_name, [toAgentId]: recipientAgent?.agent_name || toAgentId });
 
@@ -1414,6 +1416,7 @@ app.post('/api/fork/:ctxId', apiLimiter, requireApiKey, async (req, res) => {
       parent_hash:         forkCommit.integrity_hash,
       verified:            true,
       verification_reason: 'Fork from authenticated agent',
+      capture_mode: 'client_signed',
       timestamp,
     });
 
@@ -2125,6 +2128,7 @@ app.post('/enterprise/commit', apiLimiter, requireApiKey, async (req, res) => {
       parent_hash:         parentHash,
       verified:            true,
       verification_reason: 'BYOK encrypted commit',
+      capture_mode: 'client_signed',
       timestamp,
     });
 
@@ -4237,6 +4241,7 @@ app.all('/ext/claude/*', claudeProxyAuth, async (req, res) => {
           upstreamPath, requestBody, responseText: fullBuffer,
           statusCode: upstreamRes.statusCode, latencyMs: Date.now() - requestStart,
           userId: req.userId, member: req.member, clientTs, isStreaming: true,
+          captureMode: req.headers['x-dm-forward-key'] ? 'proxy_forwarded' : 'proxy_stored',
         });
       });
     });
@@ -4262,6 +4267,7 @@ app.all('/ext/claude/*', claudeProxyAuth, async (req, res) => {
           upstreamPath, requestBody, responseText: buffer,
           statusCode: upstreamRes.statusCode, latencyMs: Date.now() - requestStart,
           userId: req.userId, member: req.member, clientTs, isStreaming: false,
+          captureMode: req.headers['x-dm-forward-key'] ? 'proxy_forwarded' : 'proxy_stored',
         });
       });
     });
@@ -4272,7 +4278,7 @@ app.all('/ext/claude/*', claudeProxyAuth, async (req, res) => {
 });
 
 // ── Record a Claude API interaction as a DarkMatter commit ────────────
-async function recordClaudeInteraction({ upstreamPath, requestBody, responseText, statusCode, latencyMs, userId, member, clientTs, isStreaming }) {
+async function recordClaudeInteraction({ upstreamPath, requestBody, responseText, statusCode, latencyMs, userId, member, clientTs, isStreaming, captureMode }) {
   try {
     if (!userId) return;
 
@@ -4358,6 +4364,7 @@ async function recordClaudeInteraction({ upstreamPath, requestBody, responseText
       branch_key:       'main',
       verified:         true,
       verification_reason: 'Claude proxy capture',
+      capture_mode: captureMode || 'proxy_forwarded',
     });
 
   } catch(e) {
@@ -5036,6 +5043,7 @@ async function commitProxyInteraction({ provider, upstreamPath, requestBody, res
       branch_key:       'main',
       verified:         true,
       verification_reason: 'Proxy capture',
+      capture_mode: captureMode || 'proxy_forwarded',
     });
 
   } catch(e) {

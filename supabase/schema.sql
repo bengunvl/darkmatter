@@ -497,5 +497,17 @@ create table if not exists user_recording_keys (
 
 create index if not exists user_recording_keys_user_id on user_recording_keys(user_id);
 alter table user_recording_keys enable row level security;
+-- Authenticated users can manage their own keys
 create policy "user_recording_keys_own" on user_recording_keys
+  for all to authenticated
   using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Service role bypasses RLS for server-side operations
+create policy "user_recording_keys_service" on user_recording_keys
+  for all to service_role
+  using (true) with check (true);
+
+-- Add capture_mode column to commits (run once)
+alter table commits add column if not exists capture_mode text
+  check (capture_mode in ('client_signed','proxy_forwarded','proxy_stored'))
+  default 'client_signed';

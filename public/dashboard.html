@@ -1149,16 +1149,25 @@ function recordStatus(t){
   if(t.commits.every(c=>c.verified||(c.integrity&&c.integrity.verification_status==='valid')))return'ok';
   return'none';
 }
+function captureMode(t){
+  // Check capture_mode field first (v2 commits), fall back to _source inference
+  const tip=[...t.commits].sort((a,b)=>ts(b).localeCompare(ts(a)))[0];
+  if(tip&&tip.capture_mode) return tip.capture_mode;
+  const src=(t.commits[0]&&t.commits[0].payload&&(t.commits[0].payload._source||t.commits[0].payload.source))||'sdk';
+  if(src==='extension')  return 'client_signed';
+  if(src==='sdk')        return 'client_signed';
+  if(src==='claude_proxy'||src==='proxy') return 'proxy_forwarded';
+  return 'client_signed';
+}
 function captureSource(t){
   const src=(t.commits[0]&&t.commits[0].payload&&(t.commits[0].payload._source||t.commits[0].payload.source))||'sdk';
   return src;
 }
-function sourceLabel(src){
-  if(src==='extension')     return{label:'Browser extension',   trust:'client'};
-  if(src==='claude_proxy')  return{label:'Claude proxy',        trust:'proxy'};
-  if(src==='proxy')         return{label:'API proxy',           trust:'proxy'};
-  if(src==='sdk')           return{label:'SDK',                 trust:'client'};
-  return{label:src||'SDK', trust:'client'};
+function sourceLabel(mode){
+  if(mode==='client_signed')   return{label:'Client-signed',    trust:'client',   desc:'Hashed and signed before reaching DarkMatter'};
+  if(mode==='proxy_forwarded') return{label:'Proxy · forwarded',trust:'proxy',    desc:'Captured in transit — key not stored'};
+  if(mode==='proxy_stored')    return{label:'Proxy · stored key',trust:'proxy',   desc:'Captured in transit'};
+  return{label:'Client-signed', trust:'client', desc:'Hashed and signed before reaching DarkMatter'};
 }
 
 // ── SEARCH (ranked, content-aware) ──────────────────────────
@@ -1403,10 +1412,11 @@ function selectThread(id){
     fail:'<span class="sbadge fail">&#10007; Record mismatch</span>',
     none:'<span class="sbadge none">Not yet verified</span>',
   };
-  const si=sourceLabel(src);
+  const mode=captureMode(selThread);
+  const si=sourceLabel(mode);
   const trustBadge=si.trust==='proxy'
-    ?'<span class="sbadge" style="background:rgba(245,158,11,.08);color:#92400e;border:1px solid rgba(245,158,11,.25);">⇄ proxy</span>'
-    :'<span class="sbadge" style="background:rgba(16,185,129,.06);color:#065f46;border:1px solid rgba(16,185,129,.2);">✦ client-signed</span>';
+    ?'<span class="sbadge" style="background:rgba(245,158,11,.08);color:#92400e;border:1px solid rgba(245,158,11,.25);">⇄ '+esc(si.label)+'</span>'
+    :'<span class="sbadge" style="background:rgba(16,185,129,.06);color:#065f46;border:1px solid rgba(16,185,129,.2);">✦ '+esc(si.label)+'</span>';
   const memberChip=selThread.member?'<span class="mc strong">'+esc(selThread.member.display_name||selThread.member.email)+'</span><span class="msep">&#183;</span>':'';
   const agentChip=(selThread.agentName&&!selThread.member)?'<span class="mc">'+esc(selThread.agentName)+'</span><span class="msep">&#183;</span>':'';
 
@@ -1607,10 +1617,10 @@ function renderProof(thread){
   const verifyHeadline=status==='ok'?'This record has not been altered.':status==='fail'?'A mismatch was detected.':'Not yet verified';
 
   // Trust note for proxy-captured records
-  const threadSrc=selThread?captureSource(selThread):'sdk';
-  const proxyNote=(threadSrc==='proxy'||threadSrc==='claude_proxy')
-    ?'<div style="font-size:11.5px;color:#92400e;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:6px;padding:8px 12px;margin-bottom:12px;">'+
-      '<strong>Proxy-captured record.</strong> Payload hashing occurred server-side. The hash chain is intact, but full client-side independence requires the SDK or browser extension.</div>'
+  const threadMode=selThread?captureMode(selThread):'client_signed';
+  const threadSi=sourceLabel(threadMode);
+  const proxyNote=threadSi.trust==='proxy'
+    ?'<div style="font-size:11.5px;color:#92400e;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:6px;padding:8px 12px;margin-bottom:12px;">'      +'<div style="font-weight:600;margin-bottom:3px;">⇄ '+esc(threadSi.label)+'</div>'      +'Payload hashing occurred server-side. The hash chain is intact, but full cryptographic independence requires the DarkMatter SDK or browser extension.'      +'<br><a href="/docs#sdk" style="color:#92400e;font-weight:600;font-size:11px;margin-top:4px;display:inline-block;">Upgrade this agent to client-signed →</a>'      +'</div>'
     :'';
 
   scroll.innerHTML=
