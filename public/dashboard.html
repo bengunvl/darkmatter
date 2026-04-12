@@ -2267,27 +2267,32 @@ function renderProviderRow(provider, key) {
   const enabled   = connected && key.recording_enabled;
   const keyId     = key ? key.id : '';
   const hint      = key ? (key.key_hint || '...') : '';
+  const dotColor  = connected ? (enabled ? 'var(--green)' : 'var(--amber)') : 'var(--border3)';
 
-  return '<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:#fff;">'
-    // Provider name + status dot
-    + '<div style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:'+(connected?(enabled?'var(--green)':'var(--amber)'):'var(--border3)')+'"></div>'
-    + '<div style="flex:1;min-width:0;">'
-    +   '<div style="font-size:12.5px;font-weight:500;color:var(--ink);">'+esc(provider.name)+'</div>'
-    +   (connected
-          ? '<div style="font-family:var(--mono);font-size:10px;color:var(--ink3);">'+esc(hint)+'&nbsp;&nbsp;·&nbsp;&nbsp;'+(enabled?'Recording on':'Paused')+'</div>'
-          : '<div style="font-size:11px;color:var(--ink4);">Not connected</div>')
-    + '</div>'
-    // Actions
-    + '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">'
-    + (connected
-        ? '<label class="tog" title="'+(enabled?'Pause':'Resume')+' recording" style="margin:0;">'
-          + '<input type="checkbox" '+(enabled?'checked':'')+' onchange="toggleProviderKey(''+esc(keyId)+'',this.checked)"/>'
-          + '<span class="togs"></span></label>'
-          + '<button class="sbtn" style="font-size:10.5px;padding:2px 8px;" onclick="showAddKeyForm(''+esc(provider.id)+'')">Replace</button>'
-          + '<button class="sbtn dng" style="font-size:10.5px;padding:2px 8px;" onclick="deleteProviderKey(''+esc(keyId)+'')">Remove</button>'
-        : '<button class="sbtn" style="font-size:10.5px;padding:3px 9px;border-color:var(--blue);color:var(--blue);" onclick="showAddKeyForm(''+esc(provider.id)+'')">Connect</button>')
-    + '</div>'
-    + '</div>';
+  // Use data attributes for all dynamic values — never inline JS string args
+  var html = '<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:#fff;">';
+  html += '<div style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:'+dotColor+'"></div>';
+  html += '<div style="flex:1;min-width:0;">';
+  html += '<div style="font-size:12.5px;font-weight:500;color:var(--ink);">'+esc(provider.name)+'</div>';
+  if (connected) {
+    html += '<div style="font-family:var(--mono);font-size:10px;color:var(--ink3);">'+esc(hint)+'&nbsp;·&nbsp;'+(enabled?'Recording on':'Paused')+'</div>';
+  } else {
+    html += '<div style="font-size:11px;color:var(--ink4);">Not connected</div>';
+  }
+  html += '</div>';
+  html += '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">';
+  if (connected) {
+    // Use data attributes — no JS inside the attribute value
+    html += '<label class="tog" style="margin:0;" title="'+(enabled?'Pause':'Resume')+' recording">'
+          + '<input type="checkbox" class="dm-provider-toggle" data-key-id="'+esc(keyId)+'" '+(enabled?'checked':'')+'>'
+          + '<span class="togs"></span></label>';
+    html += '<button class="sbtn dm-replace-key" data-provider="'+esc(provider.id)+'" style="font-size:10.5px;padding:2px 8px;">Replace</button>';
+    html += '<button class="sbtn dng dm-delete-key" data-key-id="'+esc(keyId)+'" style="font-size:10.5px;padding:2px 8px;">Remove</button>';
+  } else {
+    html += '<button class="sbtn dm-connect-key" data-provider="'+esc(provider.id)+'" style="font-size:10.5px;padding:3px 9px;border-color:var(--blue);color:var(--blue);">Connect</button>';
+  }
+  html += '</div></div>';
+  return html;
 }
 
 function showAddKeyForm(providerId) {
@@ -2373,6 +2378,22 @@ async function deleteProviderKey(keyId) {
 // (keeps backward compat with openModal hook)
 const _origLoadClaudeKey = loadClaudeKey;
 loadClaudeKey = loadConnectedModels;
+
+// Delegated event handler for connected models table
+// Uses data attributes to avoid any JS-in-attribute quote issues
+document.addEventListener('change', function(e) {
+  if (e.target.classList.contains('dm-provider-toggle')) {
+    toggleProviderKey(e.target.dataset.keyId, e.target.checked);
+  }
+});
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('dm-connect-key') || e.target.classList.contains('dm-replace-key')) {
+    showAddKeyForm(e.target.dataset.provider);
+  }
+  if (e.target.classList.contains('dm-delete-key')) {
+    deleteProviderKey(e.target.dataset.keyId);
+  }
+});
 
 function copyVerifyCmd(btn){navigator.clipboard.writeText('python verify_darkmatter_chain.py bundle.json').then(function(){var t=btn.textContent;btn.textContent='Copied!';setTimeout(function(){btn.textContent=t;},1500);});}
 
