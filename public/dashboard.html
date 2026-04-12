@@ -751,6 +751,48 @@ pre:hover .code-copy{display:block;}pre:hover .code-lang{display:none;}
             </div></div>
           </div>
         </div>
+        <!-- Claude Managed Agents Proxy Setup -->
+        <div class="sc">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;">
+            <div class="sc-t" style="margin-bottom:0;">Claude Managed Agents proxy</div>
+            <span class="adv-tag">NEW</span>
+          </div>
+          <div class="sc-s">Record every Claude API call automatically — including Managed Agent sessions, messages, and events. Two setup options.</div>
+
+          <div style="margin-bottom:16px;">
+            <div style="font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;">Option 1 — Environment variable (fastest)</div>
+            <div class="px-code" style="flex-direction:column;align-items:flex-start;gap:4px;font-size:11px;">
+              <div style="color:var(--ink4);"># In your shell or .env file</div>
+              <div>export ANTHROPIC_BASE_URL=https://darkmatterhub.ai/ext/claude</div>
+              <div>export ANTHROPIC_API_KEY=sk-ant-...    # your real key</div>
+              <div style="color:var(--ink4);"># Add your DarkMatter proxy key</div>
+              <div>export DM_PROXY_KEY=<span id="adv-proxy-key-display" style="color:var(--blue);">loading...</span></div>
+            </div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:6px;line-height:1.5;">Then use the Anthropic SDK normally — all calls are automatically recorded.</div>
+            <div class="px-code" style="margin-top:8px;font-size:11px;">
+              <span class="px-ct" id="env-export-line">export ANTHROPIC_BASE_URL=https://darkmatterhub.ai/ext/claude</span>
+              <button class="px-cp" onclick="copyEnvExport()">Copy</button>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;">Option 2 — Dashboard key (no env vars)</div>
+            <div style="font-size:11.5px;color:var(--ink3);line-height:1.6;margin-bottom:8px;">Add your Anthropic key in Settings → Claude Recording. DarkMatter will use it automatically for all proxy calls.</div>
+            <button class="abtn" onclick="closeModal('settings-modal');setTimeout(()=>openModal('settings-modal'),50)">Open Claude Recording settings →</button>
+          </div>
+
+          <div style="margin-top:14px;padding:10px 12px;background:var(--gbg);border:1px solid var(--gbd);border-radius:6px;font-size:11.5px;color:#065f46;line-height:1.6;">
+            ✓ Works with Messages API, Managed Agents sessions, streaming, and all Claude models<br>
+            ✓ Your API key is never logged — forwarded directly to Anthropic<br>
+            ✓ Every call becomes a verifiable DarkMatter record
+          </div>
+
+          <div style="margin-top:10px;">
+            <button class="abtn" onclick="testClaudeProxy()" id="claude-proxy-test-btn">Test connection →</button>
+            <div id="claude-proxy-test-res" style="font-size:11px;margin-top:5px;color:var(--ink3);font-family:var(--mono);"></div>
+          </div>
+        </div>
+
         <div class="sc" id="policy-card" style="display:none;">
           <div class="sc-t">Recording policy</div>
           <div class="pol-row">
@@ -822,6 +864,44 @@ pre:hover .code-copy{display:block;}pre:hover .code-lang{display:none;}
         <div class="ssec-t">Data</div>
         <div class="srow"><div><div class="slabel">Export all records</div><div class="sdesc">Download your complete history as JSON</div></div><div><button class="sbtn" onclick="exportAll()">Export</button></div></div>
         <div class="srow"><div><div class="slabel">Refresh</div><div class="sdesc">Reload records from server</div></div><div><button class="sbtn" onclick="fetchRecords();toast('Refreshing...')">Refresh</button></div></div>
+      </div>
+      <div class="ssec" id="claude-recording-section">
+        <div class="ssec-t">Claude Recording</div>
+        <div id="claude-key-status" style="font-size:11.5px;color:var(--ink3);margin-bottom:10px;line-height:1.6;">
+          Loading...
+        </div>
+        <div id="claude-key-form">
+          <div class="field">
+            <label>Anthropic API Key</label>
+            <input type="password" id="claude-api-key-inp" placeholder="sk-ant-api03-..." autocomplete="off" style="font-family:var(--mono);font-size:11px;"/>
+          </div>
+          <div class="field">
+            <label>Label (optional)</label>
+            <input type="text" id="claude-key-label-inp" placeholder="e.g. production" autocomplete="off"/>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:4px;">
+            <button class="mfbtn mfo" onclick="saveClaudeKey()" style="font-size:11px;padding:5px 12px;">Save key</button>
+            <button class="mfbtn mfc" onclick="cancelClaudeKey()" id="claude-cancel-btn" style="display:none;font-size:11px;padding:5px 12px;">Cancel</button>
+          </div>
+        </div>
+        <div id="claude-key-saved" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bg3);">
+            <div>
+              <div class="slabel" id="claude-key-display" style="font-family:var(--mono);font-size:11px;color:var(--ink2);"></div>
+              <div class="sdesc">Anthropic API key — used for Claude proxy recording</div>
+            </div>
+            <div style="display:flex;gap:5px;align-items:center;">
+              <label class="tog" title="Enable/disable recording">
+                <input type="checkbox" id="claude-recording-toggle" onchange="toggleClaudeRecording(this.checked)"/>
+                <span class="togs"></span>
+              </label>
+            </div>
+          </div>
+          <div style="padding:8px 0;display:flex;gap:5px;flex-wrap:wrap;">
+            <button class="sbtn" onclick="showClaudeKeyForm()">Replace key</button>
+            <button class="sbtn dng" onclick="deleteClaudeKey()">Remove</button>
+          </div>
+        </div>
       </div>
       <div class="ssec">
         <div class="ssec-t">Resources</div>
@@ -1661,7 +1741,7 @@ async function loadWorkspace(){
     wsMembers=md.members||[];renderMembers();
     const pkr=await fetch('/api/workspace/proxy-keys',{headers:h});
     const pkd=await pkr.json();
-    if(pkd[0])myProxyKey=pkd[0].proxy_key;
+    if(pkd[0]){myProxyKey=pkd[0].proxy_key;updateEnvExportLine();}
     else{
       // No key yet — create one automatically
       try{
@@ -1864,7 +1944,7 @@ document.addEventListener('keydown',function(e){
 });
 
 // ── MODALS ─────────────────────────────────────────────────────
-function openModal(id){document.getElementById(id).classList.add('open');}
+function openModal(id){document.getElementById(id).classList.add('open');if(id==='settings-modal')loadClaudeKey();}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function closeBg(id,e){if(e.target===document.getElementById(id))closeModal(id);}
 
@@ -1935,6 +2015,147 @@ document.addEventListener('visibilitychange', function(){
   if(document.visibilityState === 'visible') fetchRecords().catch(function(){});
 });
 startPoll();
+// ── CLAUDE RECORDING KEYS ─────────────────────────────────────────────
+let claudeKeyId = null;
+
+async function loadClaudeKey() {
+  try {
+    const h = dmKey ? keyH() : await authH();
+    const r = await fetch('/api/recording-keys', { headers: h });
+    const keys = await r.json();
+    const claudeKey = (keys || []).find(k => k.provider === 'anthropic');
+
+    const statusEl  = document.getElementById('claude-key-status');
+    const formEl    = document.getElementById('claude-key-form');
+    const savedEl   = document.getElementById('claude-key-saved');
+    const displayEl = document.getElementById('claude-key-display');
+    const toggleEl  = document.getElementById('claude-recording-toggle');
+
+    if (claudeKey) {
+      claudeKeyId = claudeKey.id;
+      if (statusEl) statusEl.textContent = 'Claude API key connected. Recording is ' + (claudeKey.recording_enabled ? 'enabled' : 'paused') + '.';
+      if (displayEl) displayEl.textContent = claudeKey.key_hint || 'sk-ant-...';
+      if (toggleEl) toggleEl.checked = claudeKey.recording_enabled;
+      if (formEl) formEl.style.display = 'none';
+      if (savedEl) savedEl.style.display = '';
+
+      // Update env export line with proxy key
+      updateEnvExportLine();
+    } else {
+      claudeKeyId = null;
+      if (statusEl) statusEl.textContent = 'No Claude API key added yet. Add your key to enable proxy recording.';
+      if (formEl) formEl.style.display = '';
+      if (savedEl) savedEl.style.display = 'none';
+    }
+  } catch(e) {
+    const statusEl = document.getElementById('claude-key-status');
+    if (statusEl) statusEl.textContent = 'Could not load recording keys.';
+  }
+}
+
+async function saveClaudeKey() {
+  const keyInp   = document.getElementById('claude-api-key-inp');
+  const labelInp = document.getElementById('claude-key-label-inp');
+  const apiKey   = keyInp?.value?.trim();
+  if (!apiKey) return toast('Enter your Anthropic API key');
+  if (!apiKey.startsWith('sk-')) return toast('Key should start with sk-ant-...');
+
+  try {
+    const h = dmKey ? keyH() : await authH();
+    const r = await fetch('/api/recording-keys', {
+      method: 'POST',
+      headers: { ...h, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider: 'anthropic', apiKey, label: labelInp?.value?.trim() || null }),
+    });
+    const d = await r.json();
+    if (!r.ok) return toast('Error: ' + (d.error || 'Save failed'));
+    if (keyInp) keyInp.value = '';
+    toast('Claude API key saved — recording enabled');
+    await loadClaudeKey();
+  } catch(e) { toast('Save failed: ' + e.message); }
+}
+
+async function toggleClaudeRecording(enabled) {
+  if (!claudeKeyId) return;
+  try {
+    const h = dmKey ? keyH() : await authH();
+    await fetch('/api/recording-keys/' + claudeKeyId, {
+      method: 'PATCH',
+      headers: { ...h, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recording_enabled: enabled }),
+    });
+    toast('Claude recording ' + (enabled ? 'enabled' : 'paused'));
+    const statusEl = document.getElementById('claude-key-status');
+    if (statusEl) statusEl.textContent = 'Claude API key connected. Recording is ' + (enabled ? 'enabled' : 'paused') + '.';
+  } catch(e) { toast('Toggle failed'); }
+}
+
+async function deleteClaudeKey() {
+  if (!claudeKeyId) return;
+  if (!confirm('Remove your Claude API key? Recording will stop.')) return;
+  try {
+    const h = dmKey ? keyH() : await authH();
+    await fetch('/api/recording-keys/' + claudeKeyId, { method: 'DELETE', headers: h });
+    claudeKeyId = null;
+    toast('Claude API key removed');
+    await loadClaudeKey();
+  } catch(e) { toast('Delete failed'); }
+}
+
+function showClaudeKeyForm() {
+  const formEl   = document.getElementById('claude-key-form');
+  const savedEl  = document.getElementById('claude-key-saved');
+  const cancelEl = document.getElementById('claude-cancel-btn');
+  if (formEl)   formEl.style.display = '';
+  if (savedEl)  savedEl.style.display = 'none';
+  if (cancelEl) cancelEl.style.display = '';
+}
+
+function cancelClaudeKey() {
+  loadClaudeKey();
+}
+
+function updateEnvExportLine() {
+  // Show proxy key in the env export block
+  const pkDisplay = document.getElementById('adv-proxy-key-display');
+  if (pkDisplay && myProxyKey) pkDisplay.textContent = myProxyKey;
+}
+
+function copyEnvExport() {
+  const pk = myProxyKey || 'YOUR_DM_PROXY_KEY';
+  const lines = [
+    'export ANTHROPIC_BASE_URL=https://darkmatterhub.ai/ext/claude',
+    'export DM_PROXY_KEY=' + pk,
+  ].join('\n');
+  navigator.clipboard.writeText(lines).then(() => toast('Env vars copied'));
+}
+
+async function testClaudeProxy() {
+  const btn = document.getElementById('claude-proxy-test-btn');
+  const res = document.getElementById('claude-proxy-test-res');
+  if (btn) { btn.textContent = 'Testing...'; btn.disabled = true; }
+  if (res) res.textContent = '';
+  try {
+    const h = dmKey ? keyH() : await authH();
+    const headers = { ...h };
+    if (myProxyKey) headers['X-DM-Key'] = myProxyKey;
+    const r = await fetch('/ext/claude/status', { headers });
+    const d = await r.json();
+    if (r.ok) {
+      if (res) res.textContent = '✓ Connected — ' + (d.message || 'proxy active');
+      if (res) res.style.color = 'var(--green)';
+    } else {
+      if (res) res.textContent = '✗ ' + (d.error || 'Connection failed');
+      if (res) res.style.color = 'var(--red)';
+    }
+  } catch(e) {
+    if (res) { res.textContent = '✗ ' + e.message; res.style.color = 'var(--red)'; }
+  } finally {
+    if (btn) { btn.textContent = 'Test connection →'; btn.disabled = false; }
+  }
+}
+
+
 function copyVerifyCmd(btn){navigator.clipboard.writeText('python verify_darkmatter_chain.py bundle.json').then(function(){var t=btn.textContent;btn.textContent='Copied!';setTimeout(function(){btn.textContent=t;},1500);});}
 
 </script>

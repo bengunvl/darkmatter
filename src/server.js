@@ -4050,6 +4050,353 @@ app.get('/api/demo', (req, res) => {
   });
 });
 
+
+// ═══════════════════════════════════════════════════════════════════════
+// CLAUDE MANAGED AGENTS PROXY — /ext/claude/*
+// Usage: export ANTHROPIC_BASE_URL=https://darkmatterhub.ai/ext/claude
+//
+// Every API call is intercepted, recorded as a DarkMatter commit,
+// then forwarded to api.anthropic.com unchanged.
+//
+// Auth: X-DM-Key: dmp_... (proxy key) or X-DM-User-Token: <jwt>
+//       X-DM-Forward-Key: sk-ant-... (your real Anthropic key, never stored)
+// ═══════════════════════════════════════════════════════════════════════
+
+const ANTHROPIC_HOST = 'api.anthropic.com';
+
+// Auth for Claude proxy — accepts proxy key OR user JWT (for dashboard toggle)
+async function claudeProxyAuth(req, res, next) {
+  try {
+    // Option 1: proxy key (dmp_...)
+    const authHeader = (req.headers['authorization'] || '').replace('Bearer ', '').trim();
+    const xDmKey = (req.headers['x-dm-key'] || '').trim();
+    const proxyKey = xDmKey || authHeader;
+
+    if (proxyKey.startsWith('dmp_')) {
+      const { data: pk } = await supabaseService.from('proxy_keys')
+        .select('*, workspace_members(user_id, display_name, email, agent_id, workspaces(*))')
+        .eq('proxy_key', proxyKey).eq('is_active', true).single();
+      if (!pk) return res.status(401).json({ error: 'Invalid DarkMatter proxy key' });
+      await supabaseService.from('proxy_keys').update({ last_used_at: new Date().toISOString() }).eq('id', pk.id);
+      req.proxyKey  = pk;
+      req.member    = pk.workspace_members;
+      req.workspace = pk.workspace_members?.workspaces;
+      req.userId    = pk.workspace_members?.user_id;
+      req.authMode  = 'proxy_key';
+      return next();
+    }
+
+    // Option 2: user JWT from dashboard (for "Record Claude sessions" toggle)
+    const userToken = req.headers['x-dm-user-token'] || authHeader;
+    if (userToken && !userToken.startsWith('dmp_')) {
+      const { data: { user }, error } = await supabaseAnon.auth.getUser(userToken);
+      if (!error && user) {
+        req.userId   = user.id;
+        req.authMode = 'user_token';
+        return next();
+      }
+      // Try refresh
+      const rt = req.headers['x-refresh-token'];
+      if (rt) {
+        const { data: rd } = await supabaseService.auth.refreshSession({ refresh_token: rt });
+        if (rd?.user) {
+          req.userId   = rd.user.id;
+          req.authMode = 'user_token';
+          if (rd.session) {
+            res.setHeader('X-New-Access-Token',  rd.session.access_token);
+            res.setHeader('X-New-Refresh-Token', rd.session.refresh_token);
+          }
+          return next();
+        }
+      }
+    }
+
+    return res.status(401).json({
+      error: 'Auth required. Use X-DM-Key: dmp_... or X-DM-User-Token: <jwt>',
+      docs:  'https://darkmatterhub.ai/docs#claude-proxy'
+    });
+  } catch(e) {
+    res.status(500).json({ error: 'Claude proxy auth error: ' + e.message });
+  }
+}
+
+// ── GET /ext/claude/status — test connectivity ────────────────────────
+app.get('/ext/claude/status', claudeProxyAuth, (req, res) => {
+  res.json({
+    status:    'connected',
+    mode:      req.authMode,
+    workspace: req.workspace?.name || null,
+    message:   'DarkMatter Claude proxy active. Set ANTHROPIC_BASE_URL=https://darkmatterhub.ai/ext/claude',
+    recording: true,
+  });
+});
+
+// ── GET/POST/DELETE /ext/claude/v1/agents ── Managed Agents passthrough ─
+// ── GET/POST /ext/claude/v1/sessions ─────────────────────────────────
+// ── ALL /ext/claude/* — full Claude API passthrough with recording ─────
+app.all('/ext/claude/*', claudeProxyAuth, async (req, res) => {
+  const upstreamPath = req.path.replace('/ext/claude', '') || '/';
+  const clientTs     = new Date().toISOString();
+  const requestStart = Date.now();
+  const requestBody  = req.body;
+
+  // Real Anthropic key: from X-DM-Forward-Key header (never stored)
+  // or from user's stored recording key (encrypted, decrypted server-side)
+  let realAnthropicKey = req.headers['x-dm-forward-key'] || '';
+
+  if (!realAnthropicKey && req.userId) {
+    // Look up user's stored recording key
+    const { data: rk } = await supabaseService.from('user_recording_keys')
+      .select('encrypted_key')
+      .eq('user_id', req.userId)
+      .eq('provider', 'anthropic')
+      .eq('recording_enabled', true)
+      .single();
+    if (rk?.encrypted_key) {
+      // For now: stored as-is (no server-side encryption without user BYOK key)
+      // In production: decrypt with user-provided BYOK key
+      realAnthropicKey = rk.encrypted_key;
+    }
+  }
+
+  if (!realAnthropicKey) {
+    return res.status(400).json({
+      error: 'No Anthropic API key found.',
+      options: [
+        'Pass your key in X-DM-Forward-Key header (never stored)',
+        'Add your key in the DarkMatter dashboard under Settings → Claude Recording'
+      ]
+    });
+  }
+
+  // Build headers for Anthropic
+  const upstreamHeaders = {
+    'Content-Type':       req.headers['content-type'] || 'application/json',
+    'x-api-key':          realAnthropicKey,
+    'anthropic-version':  req.headers['anthropic-version'] || '2023-06-01',
+    'User-Agent':         'DarkMatter-Proxy/1.0',
+  };
+  // Forward beta headers (for Managed Agents)
+  if (req.headers['anthropic-beta']) upstreamHeaders['anthropic-beta'] = req.headers['anthropic-beta'];
+
+  const isStreaming = requestBody?.stream === true
+    || upstreamPath.includes('/stream')
+    || req.headers['accept'] === 'text/event-stream';
+
+  if (isStreaming) {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Transfer-Encoding', 'chunked');
+
+    let fullBuffer = '';
+    const upstream = https.request({
+      hostname: ANTHROPIC_HOST,
+      path:     upstreamPath + (req.url.includes('?') ? '?' + req.url.split('?')[1] : ''),
+      method:   req.method,
+      headers:  upstreamHeaders,
+    }, (upstreamRes) => {
+      res.writeHead(upstreamRes.statusCode, {
+        'Content-Type':  'text/event-stream',
+        'Cache-Control': 'no-cache',
+      });
+      upstreamRes.on('data', (chunk) => {
+        res.write(chunk);
+        fullBuffer += chunk.toString();
+      });
+      upstreamRes.on('end', async () => {
+        res.end();
+        await recordClaudeInteraction({
+          upstreamPath, requestBody, responseText: fullBuffer,
+          statusCode: upstreamRes.statusCode, latencyMs: Date.now() - requestStart,
+          userId: req.userId, member: req.member, clientTs, isStreaming: true,
+        });
+      });
+    });
+    upstream.on('error', (e) => { res.end(); console.error('[DarkMatter/claude] stream error:', e.message); });
+    if (requestBody && req.method !== 'GET') upstream.write(JSON.stringify(requestBody));
+    upstream.end();
+
+  } else {
+    const upstream = https.request({
+      hostname: ANTHROPIC_HOST,
+      path:     upstreamPath + (req.url.includes('?') ? '?' + req.url.split('?')[1] : ''),
+      method:   req.method,
+      headers:  upstreamHeaders,
+    }, (upstreamRes) => {
+      let buffer = '';
+      upstreamRes.on('data', (chunk) => { buffer += chunk.toString(); });
+      upstreamRes.on('end', async () => {
+        // Copy upstream response headers (minus transfer-encoding for node compat)
+        const outHeaders = { ...upstreamRes.headers };
+        delete outHeaders['transfer-encoding'];
+        res.status(upstreamRes.statusCode).set(outHeaders).send(buffer);
+        await recordClaudeInteraction({
+          upstreamPath, requestBody, responseText: buffer,
+          statusCode: upstreamRes.statusCode, latencyMs: Date.now() - requestStart,
+          userId: req.userId, member: req.member, clientTs, isStreaming: false,
+        });
+      });
+    });
+    upstream.on('error', (e) => { res.status(502).json({ error: 'Upstream error: ' + e.message }); });
+    if (requestBody && req.method !== 'GET') upstream.write(JSON.stringify(requestBody));
+    upstream.end();
+  }
+});
+
+// ── Record a Claude API interaction as a DarkMatter commit ────────────
+async function recordClaudeInteraction({ upstreamPath, requestBody, responseText, statusCode, latencyMs, userId, member, clientTs, isStreaming }) {
+  try {
+    if (!userId) return;
+
+    // Determine what kind of Claude call this is
+    const isSession   = upstreamPath.includes('/sessions');
+    const isEvent     = upstreamPath.includes('/events');
+    const isMessages  = upstreamPath.includes('/messages');
+    const isManagedAgent = isSession || isEvent || upstreamPath.includes('/agents');
+
+    // Extract meaningful content from request
+    const model       = requestBody?.model || (isManagedAgent ? 'managed-agent' : 'claude');
+    const messages    = requestBody?.messages || requestBody?.events || [];
+    const sessionId   = requestBody?.session_id || upstreamPath.match(/sessions\/([^/]+)/)?.[1] || null;
+    const agentId     = requestBody?.agent_id   || upstreamPath.match(/agents\/([^/]+)/)?.[1]   || null;
+    const lastMsg     = messages[messages.length - 1];
+    const inputText   = typeof lastMsg?.content === 'string'
+      ? lastMsg.content
+      : lastMsg?.text || JSON.stringify(lastMsg || {});
+
+    // Extract response content
+    let outputText = '';
+    let parsedResponse = null;
+    try {
+      parsedResponse = JSON.parse(responseText);
+      outputText = parsedResponse?.content?.[0]?.text           // Claude messages
+        || parsedResponse?.choices?.[0]?.message?.content       // OpenAI compat
+        || parsedResponse?.completion                            // older Anthropic
+        || parsedResponse?.message                               // session events
+        || (typeof parsedResponse?.output === 'string' ? parsedResponse.output : '')
+        || '';
+    } catch(e) {}
+
+    const payload = {
+      _source:        'claude_proxy',
+      _provider:      'anthropic',
+      _model:         model,
+      _path:          upstreamPath,
+      _latency_ms:    latencyMs,
+      _status:        statusCode,
+      _streaming:     isStreaming,
+      _session_id:    sessionId,
+      _agent_id:      agentId,
+      _call_type:     isManagedAgent ? 'managed_agent' : 'messages',
+      role:           'assistant',
+      text:           outputText.slice(0, 10000),
+      prompt:         inputText.slice(0, 2000),
+      input_messages: messages.length,
+      platform:       'Claude API',
+    };
+
+    // Find or create an agent for this user
+    const { data: userAgents } = await supabaseService.from('agents')
+      .select('agent_id, api_key').eq('user_id', userId).limit(1);
+
+    let dmAgentId = userAgents?.[0]?.agent_id;
+    if (!dmAgentId) return; // No agent yet — user hasn't set up DarkMatter
+
+    // Get parent for chain linking
+    const { data: parentData } = await supabaseService.from('commits')
+      .select('integrity_hash')
+      .or(`from_agent.eq."${dmAgentId}",agent_id.eq."${dmAgentId}"`)
+      .order('timestamp', { ascending: false }).limit(1).single();
+
+    const parentHash  = parentData?.integrity_hash || 'root';
+    const crypto      = require('crypto');
+    const payloadHash = crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+    const integrityH  = crypto.createHash('sha256').update(payloadHash + parentHash).digest('hex');
+    const traceId     = sessionId ? 'claude_' + sessionId : 'claude_' + Date.now();
+
+    await supabaseService.from('commits').insert({
+      id:               'ctx_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex'),
+      trace_id:         traceId,
+      from_agent:       dmAgentId,
+      agent_id:         dmAgentId,
+      agent_info:       { name: member?.display_name || 'Claude Proxy', source: 'claude_proxy', provider: 'anthropic' },
+      payload,
+      payload_hash:     payloadHash,
+      parent_hash:      parentHash,
+      integrity_hash:   integrityH,
+      timestamp:        clientTs,
+      client_timestamp: clientTs,
+      event_type:       'commit',
+      branch_key:       'main',
+      verified:         true,
+      verification_reason: 'Claude proxy capture',
+    });
+
+  } catch(e) {
+    console.error('[DarkMatter/claude] Record error:', e.message);
+  }
+}
+
+// ── GET/POST /api/recording-keys — manage user Claude API keys ────────
+app.get('/api/recording-keys', requireAuth, async (req, res) => {
+  try {
+    const { data, error } = await supabaseService.from('user_recording_keys')
+      .select('id, provider, key_hint, recording_enabled, label, created_at, last_used_at')
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    res.json(data || []);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/recording-keys', requireAuth, async (req, res) => {
+  try {
+    const { provider = 'anthropic', apiKey, label } = req.body;
+    if (!apiKey) return res.status(400).json({ error: 'apiKey required' });
+
+    // Store key hint (last 4 chars) for display — never expose full key
+    const keyHint = apiKey.slice(0, 10).replace(/./g, (c, i) => i < 4 ? c : '•') + '...' + apiKey.slice(-4);
+
+    // Store encrypted key — in prod this would be encrypted with a server key
+    // For MVP: store directly (key is only used server-side for proxying)
+    // Remove any existing key for this provider
+    await supabaseService.from('user_recording_keys')
+      .delete().eq('user_id', req.user.id).eq('provider', provider);
+
+    const { data, error } = await supabaseService.from('user_recording_keys').insert({
+      user_id:          req.user.id,
+      provider,
+      key_hint:         keyHint,
+      encrypted_key:    apiKey,   // TODO: encrypt in production
+      recording_enabled: true,
+      label:            label || null,
+    }).select('id, provider, key_hint, recording_enabled, label, created_at').single();
+
+    if (error) throw error;
+    res.json({ success: true, key: data });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/recording-keys/:id', requireAuth, async (req, res) => {
+  try {
+    const { recording_enabled } = req.body;
+    const { data, error } = await supabaseService.from('user_recording_keys')
+      .update({ recording_enabled })
+      .eq('id', req.params.id).eq('user_id', req.user.id)
+      .select('id, recording_enabled').single();
+    if (error) throw error;
+    res.json({ success: true, key: data });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/recording-keys/:id', requireAuth, async (req, res) => {
+  try {
+    await supabaseService.from('user_recording_keys')
+      .delete().eq('id', req.params.id).eq('user_id', req.user.id);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ═══════════════════════════════════════════════════════════════════════
 // WORKSPACE ROUTES (appended from server_additions)
 // ═══════════════════════════════════════════════════════════════════════

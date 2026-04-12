@@ -320,3 +320,182 @@ alter table agents
 -- Index for provision lookups (email → user already handled by auth.users)
 -- No additional tables needed — provision uses auth.admin API + agents table
 
+
+-- ═══════════════════════════════════════════════════
+-- Schema v10: Projects/workspaces + bookmarks
+-- Run in Supabase SQL Editor when ready to build team features
+-- ═══════════════════════════════════════════════════
+
+-- Projects / workspaces (team adoption layer)
+create table if not exists projects (
+  id           text primary key,            -- proj_xxxxxxxx
+  name         text not null,
+  owner_id     uuid references auth.users(id) on delete cascade,
+  slug         text unique,                 -- for URLs
+  created_at   timestamptz default now()
+);
+
+-- Project members
+create table if not exists project_members (
+  project_id   text references projects(id) on delete cascade,
+  user_id      uuid references auth.users(id) on delete cascade,
+  role         text default 'member',       -- owner | admin | member
+  joined_at    timestamptz default now(),
+  primary key (project_id, user_id)
+);
+
+-- Saved/bookmarked chains
+create table if not exists saved_chains (
+  id           text primary key,
+  user_id      uuid references auth.users(id) on delete cascade,
+  ctx_id       text not null,
+  label        text,
+  project_id   text references projects(id) on delete set null,
+  saved_at     timestamptz default now()
+);
+create index if not exists saved_chains_user_idx on saved_chains(user_id, saved_at desc);
+
+
+-- ═══════════════════════════════════════════════════
+-- Schema v11: Rich content storage
+-- Separates large/binary content from chain metadata
+-- Run when ready to support extension capture + rich responses
+-- ═══════════════════════════════════════════════════
+
+-- Content blobs — large text, HTML, images stored separately from chain metadata
+-- The commits table keeps a small summary; full content lives here
+create table if not exists commit_content (
+  id            text primary key,            -- matches commits.id
+  format        text not null default 'text', -- text | markdown | html | json
+  text_content  text,                         -- full text (up to ~1GB in Postgres text col)
+  html_content  text,                         -- rendered HTML version
+  token_count   integer,                      -- estimated token count
+  char_count    integer,                      -- character count
+  has_images    boolean default false,
+  has_code      boolean default false,
+  has_tables    boolean default false,
+  created_at    timestamptz default now()
+);
+
+-- Attachments — images, files, code blocks stored in object storage
+create table if not exists commit_attachments (
+  id            text primary key,            -- att_xxx
+  commit_id     text references commits(id) on delete cascade,
+  type          text not null,               -- image | code | file | audio | video | table | chart
+  storage_provider text default 'supabase', -- supabase | s3 | r2 | gcs
+  storage_bucket  text,
+  storage_key     text,                      -- path in bucket
+  public_url      text,                      -- CDN URL if public
+  mime_type       text,
+  size_bytes      integer,
+  filename        text,
+  language        text,                      -- for code blocks: python | js | sql | etc
+  inline_content  text,                      -- for small content (<10KB): store inline
+  position        integer,                   -- order within the response
+  metadata        jsonb default '{}',
+  created_at      timestamptz default now()
+);
+create index if not exists commit_attachments_commit_idx on commit_attachments(commit_id);
+
+-- Conversation threads — for extension capture (browser sessions)
+-- Groups commits into a conversation with metadata
+create table if not exists conversation_threads (
+  id              text primary key,            -- conv_xxx (from URL UUID)
+  platform        text not null,               -- claude | chatgpt | grok | gemini | perplexity
+  platform_url    text,                        -- original conversation URL
+  title           text,                        -- extracted or user-set conversation title
+  user_id         uuid references auth.users(id) on delete cascade,
+  root_ctx_id     text,                        -- first commit in thread
+  tip_ctx_id      text,                        -- most recent commit
+  turn_count      integer default 0,
+  models_used     text[],                      -- e.g. ['claude-opus-4-6', 'gpt-4o']
+  total_tokens    integer default 0,
+  created_at      timestamptz default now(),
+  updated_at      timestamptz default now()
+);
+create index if not exists conv_threads_user_idx on conversation_threads(user_id, updated_at desc);
+create index if not exists conv_threads_platform_idx on conversation_threads(platform);
+
+-- RLS policies
+alter table commit_content     enable row level security;
+alter table commit_attachments enable row level security;
+alter table conversation_threads enable row level security;
+
+create policy "Users see own content" on commit_content
+  for all using (
+    id in (select c.id from commits c join agents a on c.agent_id=a.agent_id where a.user_id=auth.uid())
+  );
+
+create policy "Users see own attachments" on commit_attachments
+  for all using (
+    commit_id in (select c.id from commits c join agents a on c.agent_id=a.agent_id where a.user_id=auth.uid())
+  );
+
+create policy "Users see own threads" on conversation_threads
+  for all using (user_id = auth.uid());
+
+
+-- ═══════════════════════════════════════════════════
+-- Schema v12: Agent policies
+-- Policies evaluate commits before storage.
+-- action = 'reject' | 'flag' | 'allow'
+-- condition = JS-style expression string evaluated server-side
+-- ═══════════════════════════════════════════════════
+create table if not exists agent_policies (
+  id          text primary key,
+  agent_id    text not null references agents(agent_id) on delete cascade,
+  name        text not null,
+  description text,
+  condition   text not null,       -- e.g. "!payload.model"
+  action      text not null default 'flag', -- reject | flag | allow
+  message     text,                -- returned to caller when policy fires
+  enabled     boolean default true,
+  created_at  timestamptz default now()
+);
+create index if not exists agent_policies_agent_idx on agent_policies(agent_id);
+alter table agent_policies enable row level security;
+create policy "Users manage own policies" on agent_policies
+  for all using (
+    agent_id in (select agent_id from agents where user_id = auth.uid())
+  );
+
+-- Schema v13: Rich content storage for conversation reconstruction
+-- Run in Supabase SQL editor (no special characters)
+-- This enables storing full LLM conversation turns with HTML, images, code
+-- for complete audit reconstruction of user prompt + agent response
+
+-- Add html_content and storage columns to commit_content if not present
+alter table commit_content
+  add column if not exists storage_provider text default 'inline',
+  add column if not exists prompt_text      text,
+  add column if not exists prompt_html      text;
+
+-- Increase no limits on text columns (Postgres text is unbounded)
+-- Nothing needed — text columns already unlimited
+
+-- Add platform metadata to commits for faster filtering
+alter table commits
+  add column if not exists platform    text,
+  add column if not exists conv_id     text,
+  add column if not exists actor_role  text;
+
+create index if not exists commits_platform_idx on commits(agent_id, platform);
+create index if not exists commits_conv_idx     on commits(conv_id);
+
+-- ── User API keys for BYOK recording (Claude Managed Agents, etc.) ────────
+create table if not exists user_recording_keys (
+  id              text primary key default 'urk_' || extract(epoch from now())::bigint || '_' || substr(md5(random()::text), 0, 8),
+  user_id         uuid references auth.users(id) on delete cascade,
+  provider        text not null,              -- 'anthropic' | 'openai' | 'google'
+  key_hint        text not null,              -- last 4 chars, e.g. "sk-...a1b2"
+  encrypted_key   text,                       -- AES-256 encrypted, user-provided BYOK encryption key
+  recording_enabled boolean default true,
+  label           text,                       -- optional user label
+  created_at      timestamptz default now(),
+  last_used_at    timestamptz
+);
+
+create index if not exists user_recording_keys_user_id on user_recording_keys(user_id);
+alter table user_recording_keys enable row level security;
+create policy "user_recording_keys_own" on user_recording_keys
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
