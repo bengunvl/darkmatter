@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Who Actually Needs Provable AI Records | DarkMatter Blog</title>
+<meta name="description" content="Not every company needs to prove what their AI did. Here is an honest map of who does, who will, and who never will. Plus the one question that separates them.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #ffffff; --bg-0: #f8f8f7; --bg-1: #f2f2f0; --brd: #e8e8e4; --brd-mid: #d8d8d2;
+  --t0: #0a0a09; --t1: #3a3a35; --t2: #6a6a62; --t3: #9a9a90;
+  --purple: #6b4fbb; --teal: #4ab8c8;
+  --grn: #0f7b4d; --grn-bg: rgba(15,123,77,0.07); --grn-brd: rgba(15,123,77,0.18);
+  --red: #c8102e; --red-bg: rgba(200,16,46,0.07); --red-brd: rgba(200,16,46,0.18);
+  --amber: #b45309; --amber-bg: rgba(180,83,9,0.07); --amber-brd: rgba(180,83,9,0.2);
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+  --serif: 'Lora', Georgia, serif;
+}
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--bg); color: var(--t0); font-size: 15px; line-height: 1.6; overflow-x: hidden; }
+
+/* NAV */
+nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--brd); display: flex; align-items: center; justify-content: space-between; padding: 0 40px; height: 56px; }
+.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.logo-wm { font-family: var(--sans); font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.logo-dark { color: var(--t0); }
+.logo-grad { background: linear-gradient(90deg, var(--purple) 0%, var(--teal) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.nav-links { display: flex; align-items: center; gap: 28px; list-style: none; }
+.nav-links a { font-size: 13.5px; font-weight: 500; color: var(--t2); text-decoration: none; transition: color .15s; }
+.nav-links a:hover, .nav-links a.active { color: var(--t0); }
+.nav-right a { display: flex; align-items: center; color: var(--t2); transition: color .15s; }
+.nav-right a:hover { color: var(--t0); }
+
+/* ARTICLE CONTAINER */
+.article-wrap { max-width: 680px; margin: 0 auto; padding: 64px 40px 100px; }
+
+/* META */
+.article-meta { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; }
+.article-tag { font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--purple); background: rgba(107,79,187,0.07); border: 1px solid rgba(107,79,187,0.18); padding: 3px 9px; border-radius: 3px; }
+.article-date { font-family: var(--mono); font-size: 11px; color: var(--t3); }
+.article-read { font-family: var(--mono); font-size: 11px; color: var(--t3); }
+
+h1.article-title {
+  font-family: var(--serif);
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--t0);
+  margin-bottom: 20px;
+}
+
+.article-deck {
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--t2);
+  line-height: 1.65;
+  margin-bottom: 40px;
+  font-style: italic;
+  border-left: 3px solid var(--purple);
+  padding-left: 20px;
+}
+
+/* BODY */
+.article-body { font-family: var(--serif); font-size: 17px; line-height: 1.75; color: var(--t1); }
+.article-body p { margin-bottom: 24px; }
+.article-body h2 {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--t3);
+  margin: 48px 0 16px;
+  padding-top: 48px;
+  border-top: 1px solid var(--brd);
+}
+.article-body h3 {
+  font-family: var(--sans);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--t0);
+  margin: 32px 0 14px;
+  line-height: 1.3;
+}
+.article-body strong { font-weight: 600; color: var(--t0); }
+.article-body em { font-style: italic; }
+.article-divider { border: none; border-top: 1px solid var(--brd); margin: 40px 0; }
+
+/* PULL QUOTE */
+.pull-quote {
+  border-left: 3px solid var(--purple);
+  padding: 20px 24px;
+  margin: 36px 0;
+  background: rgba(107,79,187,0.04);
+  border-radius: 0 6px 6px 0;
+}
+.pull-quote p { font-family: var(--serif); font-size: 20px; font-style: italic; color: var(--t0); line-height: 1.5; margin-bottom: 0; }
+
+/* SEGMENT CARDS */
+.segment-grid { display: flex; flex-direction: column; gap: 16px; margin: 32px 0; }
+.segment-card { border: 1px solid var(--brd); border-radius: 8px; overflow: hidden; }
+.segment-card.now { border-color: var(--grn-brd); }
+.segment-card.later { border-color: var(--amber-brd); }
+.segment-card.never { border-color: var(--brd-mid); }
+.sc-header { padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; }
+.sc-header.now { background: var(--grn-bg); }
+.sc-header.later { background: var(--amber-bg); }
+.sc-header.never { background: var(--bg-1); }
+.sc-label { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.sc-label.now { color: var(--grn); }
+.sc-label.later { color: var(--amber); }
+.sc-label.never { color: var(--t3); }
+.sc-why { font-family: var(--mono); font-size: 10px; color: var(--t3); }
+.sc-body { padding: 16px 18px; }
+.sc-name { font-family: var(--sans); font-size: 14px; font-weight: 700; color: var(--t0); margin-bottom: 6px; }
+.sc-desc { font-family: var(--sans); font-size: 13.5px; color: var(--t2); line-height: 1.6; margin-bottom: 0; }
+.sc-example { margin-top: 10px; padding: 10px 12px; border-radius: 5px; font-family: var(--mono); font-size: 11.5px; color: var(--t1); line-height: 1.6; background: var(--bg-0); border: 1px solid var(--brd); font-style: italic; }
+
+/* THE KEY QUESTION BOX */
+.key-question { border: 2px solid var(--t0); border-radius: 8px; padding: 28px 32px; margin: 40px 0; text-align: center; }
+.kq-label { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--t3); margin-bottom: 14px; }
+.kq-question { font-family: var(--serif); font-size: 22px; font-weight: 600; color: var(--t0); line-height: 1.35; }
+
+/* THREE-WAY SPLIT */
+.answer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 28px 0; }
+.answer-card { border-radius: 6px; padding: 16px; text-align: center; }
+.answer-card.no { background: var(--bg-0); border: 1px solid var(--brd); }
+.answer-card.maybe { background: var(--amber-bg); border: 1px solid var(--amber-brd); }
+.answer-card.yes { background: var(--grn-bg); border: 1px solid var(--grn-brd); }
+.answer-label { font-family: var(--mono); font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+.answer-label.no { color: var(--t3); }
+.answer-label.maybe { color: var(--amber); }
+.answer-label.yes { color: var(--grn); }
+.answer-desc { font-family: var(--sans); font-size: 12.5px; color: var(--t2); line-height: 1.5; }
+
+/* POSITIONING BOX */
+.positioning-box { border: 1px solid var(--brd); border-radius: 8px; overflow: hidden; margin: 36px 0; }
+.pb-row { display: flex; align-items: flex-start; gap: 0; border-bottom: 1px solid var(--brd); }
+.pb-row:last-child { border-bottom: none; }
+.pb-label { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--t3); width: 90px; flex-shrink: 0; padding: 14px 14px; background: var(--bg-0); border-right: 1px solid var(--brd); display: flex; align-items: flex-start; padding-top: 16px; }
+.pb-content { padding: 14px 18px; font-family: var(--sans); font-size: 14px; color: var(--t1); line-height: 1.6; }
+.pb-content.strike { text-decoration: line-through; color: var(--t3); }
+.pb-content.strong { font-weight: 600; color: var(--t0); font-size: 15px; }
+
+/* CALLOUT */
+.callout { border: 1px solid var(--brd); border-radius: 6px; padding: 20px 22px; margin: 32px 0; background: var(--bg-0); }
+.callout.purple { border-color: rgba(107,79,187,0.25); background: rgba(107,79,187,0.04); }
+.callout-label { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); margin-bottom: 10px; }
+.callout p { font-family: var(--sans); font-size: 14.5px; color: var(--t1); line-height: 1.65; margin-bottom: 0; }
+.callout p + p { margin-top: 10px; }
+.callout strong { color: var(--t0); }
+
+/* FINAL CTA */
+.article-cta { margin-top: 64px; padding: 32px; border: 1px solid var(--brd); border-radius: 8px; background: var(--bg-0); text-align: center; }
+.article-cta h3 { font-family: var(--mono); font-size: 16px; font-weight: 600; letter-spacing: -.02em; color: var(--t0); margin-bottom: 10px; }
+.article-cta p { font-family: var(--sans); font-size: 14px; color: var(--t2); line-height: 1.6; margin-bottom: 20px; }
+.article-cta-actions { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.btn-p { font-family: var(--mono); font-size: 12.5px; font-weight: 600; background: var(--t0); color: var(--bg); padding: 10px 22px; border-radius: 6px; text-decoration: none; transition: opacity .15s; display: inline-block; }
+.btn-p:hover { opacity: .85; }
+.btn-o { font-family: var(--mono); font-size: 12.5px; font-weight: 500; background: transparent; color: var(--t1); padding: 9px 20px; border-radius: 6px; border: 1px solid var(--brd-mid); text-decoration: none; transition: all .15s; display: inline-block; }
+.btn-o:hover { border-color: var(--t2); color: var(--t0); }
+
+@media (max-width: 700px) {
+  nav { padding: 0 20px; }
+  .article-wrap { padding: 48px 24px 80px; }
+  .answer-grid { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo">
+    <svg width="28" height="28" viewBox="0 0 80 80" fill="none">
+      <circle cx="40" cy="40" r="34" stroke="#c4bce8" stroke-width="1.4" stroke-dasharray="4 3"/>
+      <line x1="40" y1="13" x2="16" y2="55" stroke="#b0c8e8" stroke-width="1.8"/>
+      <line x1="40" y1="13" x2="64" y2="55" stroke="#b0c8e8" stroke-width="1.8"/>
+      <line x1="16" y1="55" x2="64" y2="55" stroke="#7edce8" stroke-width="1.8"/>
+      <circle cx="40" cy="13" r="6" fill="#6b4fbb"/>
+      <circle cx="16" cy="55" r="5" fill="#4ab8c8"/>
+      <circle cx="64" cy="55" r="5" fill="#3d6fd4"/>
+    </svg>
+    <span class="logo-wm"><span class="logo-dark">Dark</span><span class="logo-grad">Matter</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="/demo">Demo</a></li>
+    <li><a href="/docs">Docs</a></li>
+    <li><a href="/compare">Compare</a></li>
+    <li><a href="/pricing">Pricing</a></li>
+    <li><a href="/blog" class="active">Blog</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="/login" aria-label="Account">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    </a>
+  </div>
+</nav>
+
+<div class="article-wrap">
+
+  <div class="article-meta">
+    <span class="article-tag">Market Thinking</span>
+    <span class="article-date">April 2026</span>
+    <span class="article-read">7 min read</span>
+  </div>
+
+  <h1 class="article-title">Who actually needs provable AI records? An honest map.</h1>
+
+  <p class="article-deck">Most companies using AI today do not need this. Some urgently do. Knowing which is which is more useful than a pitch.</p>
+
+  <div class="article-body">
+
+    <p>DarkMatter is not for everyone. That is worth saying clearly, because products that try to be for everyone end up being useful to no one.</p>
+
+    <p>So here is an honest breakdown of who needs provable AI records right now, who will need them soon, and who will probably never care. The goal is not to sell you on anything. It is to help you figure out which bucket you are in.</p>
+
+    <h2>The one question that matters</h2>
+    <h3>It is not about industry. It is about this.</h3>
+
+    <div class="key-question">
+      <div class="kq-label">The question that separates buyers from non-buyers</div>
+      <div class="kq-question">Does anyone have an incentive to challenge what your AI did?</div>
+    </div>
+
+    <div class="answer-grid">
+      <div class="answer-card no">
+        <div class="answer-label no">No</div>
+        <div class="answer-desc">You will probably never need this. Logs are fine. Move on.</div>
+      </div>
+      <div class="answer-card maybe">
+        <div class="answer-label maybe">Maybe someday</div>
+        <div class="answer-desc">Not yet. But as AI takes on more weight in your decisions, this becomes relevant.</div>
+      </div>
+      <div class="answer-card yes">
+        <div class="answer-label yes">Yes</div>
+        <div class="answer-desc">You need proof, not logs. This is built for you.</div>
+      </div>
+    </div>
+
+    <p>The market is not divided by industry or company size. It is divided by whether someone, somewhere, has a reason to push back on what an AI decided. That can be a customer, a regulator, a counterparty, or your own leadership team.</p>
+
+    <h2>Who needs it now</h2>
+    <h3>Five types of company where the pain is already real</h3>
+
+    <div class="segment-grid">
+
+      <div class="segment-card now">
+        <div class="sc-header now">
+          <span class="sc-label now">Real demand now</span>
+          <span class="sc-why">Every decision is auditable</span>
+        </div>
+        <div class="sc-body">
+          <div class="sc-name">Financial services</div>
+          <div class="sc-desc">Trading firms, banks, fintech underwriting platforms, credit decisions. Regulators already expect traceability. Disputes carry real financial and legal weight.</div>
+          <div class="sc-example">"Why was this trade flagged?" or "What logic led to this loan rejection?" Without a provable record, the answer is just a story someone tells.</div>
+        </div>
+      </div>
+
+      <div class="segment-card now">
+        <div class="sc-header now">
+          <span class="sc-label now">Real demand now</span>
+          <span class="sc-why">Customers dispute outcomes</span>
+        </div>
+        <div class="sc-body">
+          <div class="sc-name">Enterprise SaaS with customer impact</div>
+          <div class="sc-desc">Any company using AI to make decisions that affect customers directly: support automation, fraud detection, billing, account suspensions. When a customer is on the wrong end of an AI decision, they ask for proof.</div>
+          <div class="sc-example">"Your AI flagged my account incorrectly. Show me exactly how that decision was made." Right now, most companies cannot answer that cleanly.</div>
+        </div>
+      </div>
+
+      <div class="segment-card now">
+        <div class="sc-header now">
+          <span class="sc-label now">Real demand now</span>
+          <span class="sc-why">Actions are sensitive and blame matters</span>
+        </div>
+        <div class="sc-body">
+          <div class="sc-name">Security and incident response</div>
+          <div class="sc-desc">MDR providers, SOC teams, identity platforms. Automated security actions carry consequences. When something goes wrong after an AI-triggered response, the post-incident review needs a clear record of what the system actually did.</div>
+          <div class="sc-example">An AI system revokes access for 200 accounts during an incident. Three were false positives. Whose decision was that, exactly, and what did the system see at the time?</div>
+        </div>
+      </div>
+
+      <div class="segment-card now">
+        <div class="sc-header now">
+          <span class="sc-label now">Real demand now</span>
+          <span class="sc-why">Regulatory pressure is arriving</span>
+        </div>
+        <div class="sc-body">
+          <div class="sc-name">Regulated AI environments</div>
+          <div class="sc-desc">Healthcare AI, insurance underwriting, companies operating under the EU AI Act. Explainability alone is not enough here. These environments need provable records, not just explanations of how a system works in general.</div>
+          <div class="sc-example">A healthcare AI flags a patient risk score. The clinician acts on it. Later, the outcome is questioned. What exactly did the model see, and when?</div>
+        </div>
+      </div>
+
+      <div class="segment-card now">
+        <div class="sc-header now">
+          <span class="sc-label now">Real demand now</span>
+          <span class="sc-why">No single system of record</span>
+        </div>
+        <div class="sc-body">
+          <div class="sc-name">Multi-agent and autonomous pipelines</div>
+          <div class="sc-desc">Companies chaining multiple AI systems together: one model feeds into another, which triggers a third. When something goes wrong, there is no obvious place to look. No single system owns the decision. Debugging and disputing both become very hard.</div>
+          <div class="sc-example">Agent A analyzes data. Agent B approves a vendor. Agent C sends the payment. A mistake is discovered. Which step was wrong, and what did each agent actually see?</div>
+        </div>
+      </div>
+
+    </div>
+
+    <h2>Who will need it later</h2>
+    <h3>Latent demand that becomes real as AI gets more operational</h3>
+
+    <p>These companies are not your customers today. They are using AI in ways where the stakes are still low enough that logs feel adequate. That changes when AI moves from making suggestions to making decisions.</p>
+
+    <div class="segment-grid">
+
+      <div class="segment-card later">
+        <div class="sc-header later">
+          <span class="sc-label later">Latent demand</span>
+          <span class="sc-why">Currently low stakes</span>
+        </div>
+        <div class="sc-body">
+          <div class="sc-name">Mid-market companies with AI-assisted internal workflows</div>
+          <div class="sc-desc">Internal copilots, HR tools, knowledge assistants. Right now a human reviews everything and the AI is advisory. As soon as the AI starts making calls without human review, this changes.</div>
+        </div>
+      </div>
+
+      <div class="segment-card later">
+        <div class="sc-header later">
+          <span class="sc-label later">Latent demand</span>
+          <span class="sc-why">Outputs are non-binding today</span>
+        </div>
+        <div class="sc-body">
+          <div class="sc-name">Product companies adding AI features</div>
+          <div class="sc-desc">AI summaries, recommendations, content generation. Nobody disputes a summary today because it is clearly advisory. That stops being true when the summary drives a real decision.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <h2>Who will probably never care</h2>
+    <h3>Being honest about who this is not for</h3>
+
+    <p>This is equally important to say clearly. Selling to the wrong market is expensive.</p>
+
+    <div class="segment-grid">
+
+      <div class="segment-card never">
+        <div class="sc-header never">
+          <span class="sc-label never">Probably never</span>
+          <span class="sc-why">Output is subjective, no ground truth</span>
+        </div>
+        <div class="sc-body">
+          <div class="sc-name">Pure content generation tools</div>
+          <div class="sc-desc">Marketing copy, image generation, creative writing. Nobody can dispute whether the output was "correct" because there is no correct. The record does not matter.</div>
+        </div>
+      </div>
+
+      <div class="segment-card never">
+        <div class="sc-header never">
+          <span class="sc-label never">Probably never</span>
+          <span class="sc-why">No external dispute, low cost of error</span>
+        </div>
+        <div class="sc-body">
+          <div class="sc-name">Internal productivity tools</div>
+          <div class="sc-desc">Meeting summaries, note-taking, personal assistants. Errors are cheap. Nobody is asking for proof. This is the right tool for a lot of AI use cases and provability adds nothing to them.</div>
+        </div>
+      </div>
+
+      <div class="segment-card never">
+        <div class="sc-header never">
+          <span class="sc-label never">Probably never</span>
+          <span class="sc-why">No audit requirement</span>
+        </div>
+        <div class="sc-body">
+          <div class="sc-name">Consumer apps</div>
+          <div class="sc-desc">Chatbots, entertainment, personal use. No accountability expectation from users. No dispute mechanism. Not the audience.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <h2>What this means for positioning</h2>
+    <h3>Most of the obvious messaging is wrong</h3>
+
+    <p>If you look at this breakdown, a few things become clear about how not to talk about this.</p>
+
+    <div class="positioning-box">
+      <div class="pb-row">
+        <span class="pb-label">Avoid</span>
+        <span class="pb-content strike">AI transparency</span>
+      </div>
+      <div class="pb-row">
+        <span class="pb-label">Avoid</span>
+        <span class="pb-content strike">Better logging</span>
+      </div>
+      <div class="pb-row">
+        <span class="pb-label">Avoid</span>
+        <span class="pb-content strike">Observability</span>
+      </div>
+      <div class="pb-row">
+        <span class="pb-label">Avoid</span>
+        <span class="pb-content strike">AI debugging</span>
+      </div>
+      <div class="pb-row">
+        <span class="pb-label">Use</span>
+        <span class="pb-content strong">When someone challenges what your AI did, this is what you show them.</span>
+      </div>
+    </div>
+
+    <p>Logging, observability, and debugging are crowded spaces that are already "good enough" for most teams. The companies that need DarkMatter are not looking for better logs. They are looking for records they can stand behind when challenged.</p>
+
+    <div class="pull-quote">
+      <p>Logs are what you hope is true. This is what you can prove.</p>
+    </div>
+
+    <h2>The honest summary</h2>
+    <h3>A smaller market than it sounds. A higher-value one than it looks.</h3>
+
+    <p>DarkMatter is not a universal layer that every company using AI will eventually adopt. That is not the right frame.</p>
+
+    <p>It is a critical layer for high-stakes AI systems, where decisions carry real consequences and the people affected by those decisions have the ability and the incentive to push back.</p>
+
+    <p>That market is smaller than "everyone using AI." It is also much more valuable per customer, because the pain is acute and the cost of not solving it is real. A financial services company that cannot prove what its AI decided in a disputed transaction faces a very different problem than a startup with a buggy summary feature.</p>
+
+    <div class="callout purple">
+      <div class="callout-label">The early adopter profile</div>
+      <p>Companies where AI decisions affect money, access, or risk. Where decisions can be disputed by an external party. And where decisions are made across multiple systems with no single owner.</p>
+      <p>If all three are true, the conversation is worth having.</p>
+    </div>
+
+    <p>If you are in one of the "real demand now" categories and you have been papering over this problem with logs and screenshots, that is a reasonable thing to have done until now. The tools did not exist. They do now.</p>
+
+    <hr class="article-divider">
+
+    <p style="font-size:15px;color:var(--t2);font-family:var(--sans);">DarkMatter records AI agent decisions as tamper-evident records stored outside your system. Each record carries a proof level that shows exactly how much you can rely on it. Anyone can verify it independently, without a DarkMatter account.</p>
+
+  </div>
+
+  <div class="article-cta">
+    <h3>See what a provable record looks like.</h3>
+    <p>Run the demo to watch an agent decision become something you can prove, and verify it yourself in under a minute.</p>
+    <div class="article-cta-actions">
+      <a href="/demo" class="btn-p">Run the demo</a>
+      <a href="/verify" class="btn-o">Try the verifier</a>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
