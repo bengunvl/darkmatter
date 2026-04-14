@@ -165,6 +165,7 @@ async function handleLogin(){
     var res=await fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:password})});
     var data=await res.json();
     if(data.error){showError(data.error);btn.disabled=false;btn.textContent='Sign in';return;}
+    localStorage.removeItem('dm_session'); // clear any stale session first
     localStorage.setItem('dm_session',JSON.stringify(data.session));
     var p=new URLSearchParams(location.search);
     window.location.href=p.get('ext')==='1'?'/ext/callback?ext=1':'/dashboard';
