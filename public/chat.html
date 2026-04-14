@@ -897,17 +897,107 @@ let currentModelType = 'claude';
 let isWaiting = false;
 let activeRecord = null;
 
-const threads = [
-  { id: 't1', title: 'Draft client email about taxes', group: 'Today', messages: [] },
-  { id: 't2', title: 'Q1 financial summary review', group: 'Today', messages: [] },
-  { id: 't3', title: 'Capital gains explanation', group: 'Yesterday', messages: [] },
-  { id: 't4', title: 'Client onboarding checklist', group: 'Last week', messages: [] },
-];
+// allThreads is populated from the server on load — no hardcoded data
+let allThreads = [];
 
-let allThreads = [...threads];
+// ── Thread loader ─────────────────────────────────────────────────────────────
+// Fetches real commits from /dashboard/commits, groups by trace_id into threads.
+// Each thread carries its messages so loadThread() can render them.
+
+function relativeDay(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const diffDays = Math.floor((now - d) / 86400000);
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays <= 7)  return 'Last week';
+  return 'Older';
+}
+
+function commitToMessage(c) {
+  const p = c.payload || {};
+  // Extension-captured turns have role + text/output
+  const role    = p.role    || (p.prompt && !p.output ? 'user' : 'assistant');
+  const content = p.output  || p.text || p.prompt
+                || p.summary || JSON.stringify(p).slice(0, 200);
+  return { role, content, record_id: c.id || c.trace_id };
+}
+
+function titleFromCommits(commits) {
+  // Use convTitle if present, else first user-turn content preview
+  for (const c of commits) {
+    const p = c.payload || {};
+    if (p.convTitle) return p.convTitle;
+  }
+  for (const c of commits) {
+    const p = c.payload || {};
+    const text = p.prompt || p.text;
+    if (text && text.length > 3) {
+      const t = text.trim().replace(/\n/g, ' ');
+      return t.length > 60 ? t.slice(0, 60) + '…' : t;
+    }
+  }
+  return 'Conversation';
+}
+
+async function loadThreadsFromServer() {
+  const session = getSession();
+  if (!session?.access_token) {
+    // Not logged in — sidebar stays empty, send will redirect to login
+    renderSidebar();
+    return;
+  }
+
+  try {
+    const res = await fetch('/dashboard/commits', {
+      headers: getAuthHeaders(),
+    });
+    handleNewTokens(res);
+
+    if (res.status === 401) {
+      window.location.href = '/login?next=/chat';
+      return;
+    }
+    if (!res.ok) { renderSidebar(); return; }
+
+    const commits = await res.json();
+    if (!Array.isArray(commits) || commits.length === 0) {
+      renderSidebar();
+      return;
+    }
+
+    // Group by trace_id; fall back to commit id if no trace_id
+    const groups = {};
+    const order  = [];
+    commits.forEach(c => {
+      const key = c.trace_id || c.id;
+      if (!groups[key]) { groups[key] = []; order.push(key); }
+      groups[key].push(c);
+    });
+
+    // Each group becomes a thread; commits already arrive newest-first
+    allThreads = order.map(key => {
+      const cs     = groups[key];
+      // Sort ascending within thread so messages render in order
+      cs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      const latest = cs[cs.length - 1];
+      return {
+        id:       key,
+        title:    titleFromCommits(cs),
+        group:    relativeDay(latest.timestamp || latest.client_timestamp),
+        messages: cs.map(commitToMessage).filter(m => m.content),
+      };
+    });
+
+    renderSidebar();
+  } catch(e) {
+    console.warn('[chat] thread load failed:', e.message);
+    renderSidebar();
+  }
+}
 
 // ── Boot ──
-renderSidebar();
+loadThreadsFromServer();
 
 // ── Sidebar ──
 function renderSidebar(filter = '') {
@@ -957,11 +1047,32 @@ function filterThreads(val) {
   renderSidebar(val);
 }
 
-function loadThread(id) {
+async function loadThread(id) {
   currentThread = allThreads.find(t => t.id === id);
+  if (!currentThread) return;
   document.getElementById('topbar-title').textContent = currentThread.title;
   renderMessages();
   renderSidebar();
+
+  // Refresh this thread's messages from server in the background
+  // (catches any commits made since the sidebar loaded)
+  try {
+    const res = await fetch('/api/workspace/conversation/' + encodeURIComponent(id), {
+      headers: getAuthHeaders(),
+    });
+    handleNewTokens(res);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.transcript?.length) {
+        currentThread.messages = data.transcript.map(t => ({
+          role:      t.role,
+          content:   t.content,
+          record_id: t.id,
+        }));
+        renderMessages();
+      }
+    }
+  } catch(e) { /* silent — local messages already rendered */ }
 }
 
 function newChat() {
@@ -1210,8 +1321,10 @@ async function sendMessage() {
         isWaiting = false;
         updateSendBtn();
         showNoKeyBanner(data.provider || provider);
-        // Remove the user message we just added since we can't complete it
+        // Remove the user message from both state AND the DOM so they stay in sync
         currentThread.messages.pop();
+        const inner = document.getElementById('messages-inner');
+        if (inner?.lastElementChild) inner.lastElementChild.remove();
         return;
       }
       throw new Error(data.error || 'Request failed');

@@ -1297,9 +1297,9 @@ async function openDrawer(record) {
   overlay.classList.add('active');
   document.body.style.overflow = 'hidden';
 
-  // Load real transcript if we have a traceId
+  // Load real transcript — prefer traceId (backend conv ID), fall back to record id
   const traceId = record.traceId || record.record;
-  if (traceId && !traceId.startsWith('rec_')) {
+  if (traceId) {
     try {
       const res = await fetch('/api/workspace/conversation/' + encodeURIComponent(traceId), {
         headers: getAuthHeaders(),
@@ -1412,8 +1412,15 @@ function getAvatarColor(name) {
   return colors[Math.abs(hash) % colors.length];
 }
 
+// _activityIndex: stores full activity objects keyed by sequential index
+// Rows use data-idx to look up the object — no inline JSON serialization
+const _activityIndex = {};
+
 function renderActivity(data) {
   const feed = document.getElementById('activity-feed');
+  // Clear old index
+  Object.keys(_activityIndex).forEach(k => delete _activityIndex[k]);
+
   if (!data.length) {
     feed.innerHTML = `
       <div style="padding:40px 24px;text-align:center;color:var(--t3);">
@@ -1422,22 +1429,13 @@ function renderActivity(data) {
       </div>`;
     return;
   }
-  feed.innerHTML = data.map(a => {
+  feed.innerHTML = data.map((a, idx) => {
+    _activityIndex[idx] = a;
     const modelType  = (a.provider === 'openai') ? 'gpt' : 'claude';
     const modelLabel = (a.provider === 'openai') ? 'GPT-4o' : 'Claude 4.6';
-    const drawerObj  = JSON.stringify({
-      user:    a.agentName,
-      initials: getInitials(a.agentName),
-      color:   getAvatarColor(a.agentName),
-      title:   a.title,
-      model:   modelType,
-      time:    timeAgo(a.timestamp),
-      record:  a.id,
-      traceId: a.traceId,
-      preview: a.title,
-    });
+    const utc        = new Date(a.timestamp).toISOString();
     return `
-    <div class="activity-row" onclick="openDrawer(${escAttr(drawerObj)})">
+    <div class="activity-row" data-idx="${idx}" data-utc="${utc}" onclick="openDrawerByIdx(this)">
       <div class="activity-avatar" style="background:${getAvatarColor(a.agentName)}">${getInitials(a.agentName)}</div>
       <div class="activity-body">
         <div class="activity-title">${escHtml(a.title)}</div>
@@ -1446,9 +1444,28 @@ function renderActivity(data) {
           <span class="activity-model ${modelType}">${modelLabel}</span>
         </div>
       </div>
-      <span class="activity-time">${timeAgo(a.timestamp)}</span>
+      <span class="activity-time" data-utc="${utc}">${timeAgo(a.timestamp)}</span>
     </div>`;
   }).join('');
+}
+
+// openDrawerByIdx — reads the stored object by index, no inline JSON
+function openDrawerByIdx(el) {
+  const idx = parseInt(el.dataset.idx, 10);
+  const a   = _activityIndex[idx];
+  if (!a) return;
+  const modelType = (a.provider === 'openai') ? 'gpt' : 'claude';
+  openDrawer({
+    user:    a.agentName,
+    initials: getInitials(a.agentName),
+    color:   getAvatarColor(a.agentName),
+    title:   a.title,
+    model:   modelType,
+    time:    timeAgo(a.timestamp),
+    record:  a.id,
+    traceId: a.traceId,   // backend conversation ID — used for transcript fetch
+    preview: a.title,
+  });
 }
 
 function escHtml(s) {
@@ -1482,9 +1499,9 @@ async function loadStats() {
     handleNewTokens(res);
     const d = await res.json();
     const els = {
-      conversations: document.querySelector('.stat-card:nth-child(1) .stat-number'),
-      people:        document.querySelector('.stat-card:nth-child(2) .stat-number'),
-      services:      document.querySelector('.stat-card:nth-child(3) .stat-number'),
+      conversations: document.querySelector('.stat-card:nth-child(1) .stat-value'),
+      people:        document.querySelector('.stat-card:nth-child(2) .stat-value'),
+      services:      document.querySelector('.stat-card:nth-child(3) .stat-value'),
     };
     if (els.conversations) els.conversations.textContent = d.conversations ?? '--';
     if (els.people)        els.people.textContent        = d.peopleActive ?? '--';
@@ -1844,79 +1861,5 @@ function getYouLabel() {
 
 // ── UTC pill data attribute helper ──────────────────────────────────────────
 // Timestamps in activity rows get a data-utc attribute for the test
-function renderActivityWithUTC(data) {
-  const feed = document.getElementById('activity-feed');
-  if (!data.length) {
-    feed.innerHTML = `
-      <div style="padding:40px 24px;text-align:center;color:var(--t3);">
-        <div style="font-size:14px;margin-bottom:8px;">No activity yet</div>
-        <div style="font-size:12px;font-family:var(--mono);">Connect Claude or ChatGPT and start a conversation to see records here.</div>
-      </div>`;
-    return;
-  }
-  feed.innerHTML = data.map(a => {
-    const modelType  = (a.provider === 'openai') ? 'gpt' : 'claude';
-    const modelLabel = (a.provider === 'openai') ? 'GPT-4o' : 'Claude 4.6';
-    const utc        = new Date(a.timestamp).toISOString();
-    const drawerObj  = JSON.stringify({
-      user:    a.agentName,
-      initials: getInitials(a.agentName),
-      color:   getAvatarColor(a.agentName),
-      title:   a.title,
-      model:   modelType,
-      time:    timeAgo(a.timestamp),
-      record:  a.id,
-      traceId: a.traceId,
-      preview: a.title,
-    });
-    return `
-    <div class="activity-row" data-utc="${utc}" onclick="openDrawer(${escAttr(drawerObj)})">
-      <div class="activity-avatar" style="background:${getAvatarColor(a.agentName)}">${getInitials(a.agentName)}</div>
-      <div class="activity-body">
-        <div class="activity-title">${escHtml(a.title)}</div>
-        <div class="activity-meta">
-          <span class="activity-user">${escHtml(a.agentName)}</span>
-          <span class="activity-model ${modelType}">${modelLabel}</span>
-        </div>
-      </div>
-      <span class="activity-time" data-utc="${utc}">${timeAgo(a.timestamp)}</span>
-    </div>`;
-  }).join('');
-}
-
-// ── view-records panel ───────────────────────────────────────────────────────
-// The test checks for a .view-records element with display:flex
-// It's the activity feed section wrapper — ensure it has the right class/style
-(function ensureViewRecords() {
-  const feed = document.getElementById('activity-feed');
-  if (feed && !feed.closest('.view-records')) {
-    feed.classList.add('view-records');
-    feed.style.display = feed.style.display || 'flex';
-    feed.style.flexDirection = 'column';
-  }
-})();
-
-// ── tpanel scroll ────────────────────────────────────────────────────────────
-// The drawer transcript body should scroll; add overflow-y:auto
-(function ensureTpanelScroll() {
-  const tp = document.querySelector('.drawer-transcript-body, .conv-transcript');
-  if (tp) {
-    tp.classList.add('tpanel');
-    tp.style.overflowY = tp.style.overflowY || 'auto';
-    tp.style.maxHeight = tp.style.maxHeight || '320px';
-  }
-})();
-
-// ── Init ─────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  loadUserProfile();
-  startAutoPoll(30000);
-  // Override renderActivity to use UTC variant
-  window._renderActivityOriginal = renderActivity;
-  window.renderActivity = renderActivityWithUTC;
-  // Reload with UTC renderer
-  loadActivity();
-  loadStats();
-  loadConnectedServices();
-});
+// renderActivityWithUTC merged into renderActivity above
 </script>
