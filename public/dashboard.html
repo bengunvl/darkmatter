@@ -142,36 +142,6 @@ body { font-family: var(--sans); background: var(--bg-0); color: var(--t0); disp
 .nav-user-info { flex: 1; min-width: 0; }
 .nav-user-name { font-size: 13px; font-weight: 500; color: var(--t0); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nav-user-role { font-family: var(--mono); font-size: 9.5px; color: var(--t3); }
-.account-menu {
-  position: absolute;
-  bottom: 56px;
-  left: 12px;
-  right: 12px;
-  background: var(--bg);
-  border: 1px solid var(--brd);
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-  overflow: hidden;
-  display: none;
-  z-index: 50;
-}
-.account-menu.open { display: block; }
-.account-menu button {
-  display: block;
-  width: 100%;
-  padding: 10px 14px;
-  text-align: left;
-  background: none;
-  border: none;
-  border-bottom: 1px solid var(--brd);
-  font-family: var(--sans);
-  font-size: 13px;
-  color: var(--t1);
-  cursor: pointer;
-  transition: background .1s;
-}
-.account-menu button:last-child { border-bottom: none; }
-.account-menu button:hover { background: var(--bg-0); }
 
 /* ── MAIN CONTENT ── */
 .main {
@@ -691,6 +661,10 @@ body { font-family: var(--sans); background: var(--bg-0); color: var(--t0); disp
   .stats-row { grid-template-columns: repeat(2, 1fr); }
   .topbar { padding: 0 16px; }
 }
+
+/* spinner for connect button */
+.spinner{display:inline-block;width:11px;height:11px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:4px;}
+@keyframes spin{to{transform:rotate(360deg);}}
 /* ── smoke-test canonical tokens ── */
 body.dm-shell{background:var(--bg);}
 .leftnav{background:#fff;display:flex;flex-direction:column;}
@@ -718,37 +692,36 @@ body.dm-shell{background:var(--bg);}
         <span class="logo-name">Dark<span class="logo-grad">Matter</span></span>
       </a>
       <div class="nav-links">
-        <a class="nav-link active" data-section="activity" onclick="showSection('activity')">
+        <a class="nav-link active" onclick="showSection('activity')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           Overview
         </a>
-
+        <a class="nav-link" onclick="showSection('activity')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          All activity
+          <span class="nav-badge">24</span>
+        </a>
         <a class="nav-link" href="/chat">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           Open chat
         </a>
         <div class="nav-section-label">Workspace</div>
-        <a class="nav-link" data-section="team" onclick="showSection('team')">
+        <a class="nav-link" onclick="showSection('team')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Team members
         </a>
-        <a class="nav-link" data-section="services" onclick="showSection('services')">
+        <a class="nav-link" onclick="showSection('services')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
           AI services
         </a>
-        <a class="nav-link" data-section="exports" onclick="showSection('exports')">
+        <a class="nav-link" onclick="showSection('exports')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Exports
         </a>
       </div>
     </div>
     <div class="leftnav-bottom">
-      <div class="account-menu" id="account-menu">
-        <button onclick="window.location.href='/account'">Account settings</button>
-        <button onclick="window.location.href='/billing'">Billing</button>
-        <button onclick="logout()">Sign out</button>
-      </div>
-      <div class="nav-user" onclick="toggleAccountMenu()">
+      <div class="nav-user">
         <div class="nav-avatar" id="nav-avatar">?</div>
         <div class="nav-user-info">
           <div class="nav-user-name" id="nav-user-name">Loading&hellip;</div>
@@ -765,10 +738,10 @@ body.dm-shell{background:var(--bg);}
     <div class="topbar">
       <span class="topbar-title" id="topbar-title">Overview</span>
       <div class="topbar-spacer"></div>
-      <div class="topbar-search">
-        <svg class="topbar-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" placeholder="Search conversations...">
-      </div>
+
+      <button class="topbar-btn" onclick="openServiceModal('gpt')" style="background:transparent;color:var(--t2);border:1px solid var(--brd);">
+        Connect ChatGPT
+      </button>
       <button class="topbar-btn" onclick="openInviteModal()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Invite your team
@@ -785,12 +758,11 @@ body.dm-shell{background:var(--bg);}
           <div class="setup-banner-title">Finish setting up your workspace</div>
           <div class="setup-banner-sub">Two quick steps and your team can start using AI with automatic record keeping.</div>
           <div class="setup-steps">
-            <div class="setup-step todo" id="setup-step-connect" onclick="openServiceModal('claude')"
->
-              <div class="setup-step-num">1</div>
+            <div class="setup-step done" onclick="showSection('services')">
+              <div class="setup-step-num">✓</div>
               Connect Claude
             </div>
-            <div class="setup-step todo" id="setup-step-invite" onclick="openInviteModal()">
+            <div class="setup-step todo" onclick="openInviteModal()">
               <div class="setup-step-num">2</div>
               Invite your team
             </div>
@@ -874,21 +846,22 @@ body.dm-shell{background:var(--bg);}
             <div class="service-top">
               <div class="service-logo">✦</div>
               <span class="service-name">Claude (Anthropic)</span>
-              <span class="service-badge" id="badge-claude">&#8203;</span>
+              <span class="service-badge connected">Connected</span>
             </div>
             <div class="service-desc">Your team's default AI for writing, analysis, and documents. Usage billed by Anthropic directly to your account.</div>
-            <div class="service-actions" id="actions-claude">
-              <button class="service-btn primary" onclick="openServiceModal('claude')">Connect</button>
+            <div class="service-actions">
+              <button class="service-btn secondary" onclick="openServiceModal('claude')">Settings</button>
+              <button class="service-btn danger" onclick="disconnectService('claude')">Disconnect</button>
             </div>
           </div>
           <div class="service-row">
             <div class="service-top">
               <div class="service-logo">⬡</div>
               <span class="service-name">ChatGPT (OpenAI)</span>
-              <span class="service-badge" id="badge-gpt">&#8203;</span>
+              <span class="service-badge disconnected">Not connected</span>
             </div>
             <div class="service-desc">Fast and versatile. Connect to give your team access. Usage billed by OpenAI directly to your account.</div>
-            <div class="service-actions" id="actions-gpt">
+            <div class="service-actions">
               <button class="service-btn primary" onclick="openServiceModal('gpt')">Connect</button>
             </div>
           </div>
@@ -938,7 +911,7 @@ body.dm-shell{background:var(--bg);}
 
     <div class="modal-actions">
       <button class="modal-btn-cancel" onclick="closeModal('modal-claude')">Cancel</button>
-      <button class="modal-btn-primary" onclick="connectService('claude')">Connect Claude</button>
+      <button class="modal-btn-primary" id="btn-connect-claude" onclick="connectService('claude')">Connect Claude</button>
     </div>
   </div>
 </div>
@@ -956,7 +929,7 @@ body.dm-shell{background:var(--bg);}
       </div>
       <div class="modal-step">
         <div class="modal-step-num">2</div>
-        <div class="modal-step-text">Click your profile at the top right, then go to <strong>API Keys</strong>.</div>
+        <div class="modal-step-text">On the home screen, click <strong>Create API key</strong> (or go to <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--purple);">platform.openai.com/api-keys</a>).</div>
       </div>
       <div class="modal-step">
         <div class="modal-step-num">3</div>
@@ -979,7 +952,7 @@ body.dm-shell{background:var(--bg);}
 
     <div class="modal-actions">
       <button class="modal-btn-cancel" onclick="closeModal('modal-gpt')">Cancel</button>
-      <button class="modal-btn-primary" onclick="connectService('gpt')">Connect ChatGPT</button>
+      <button class="modal-btn-primary" id="btn-connect-gpt" onclick="connectService('gpt')">Connect ChatGPT</button>
     </div>
   </div>
 </div>
@@ -1299,7 +1272,7 @@ async function openDrawer(record) {
       handleNewTokens(res);
       if (res.ok) {
         const data = await res.json();
-        const transcriptEl = document.querySelector('.drawer-transcript');
+        const transcriptEl = document.querySelector('.drawer-transcript-body');
         if (transcriptEl && data.transcript?.length) {
           const firstAssistant = data.transcript.find(t => t.role === 'assistant');
           if (firstAssistant?.content) {
@@ -1478,7 +1451,7 @@ async function loadActivity() {
     const data = await res.json();
     activityData = data.activity || [];
     renderActivity(activityData);
-    populatePersonFilter(activityData);
+    updateStats(data);
   } catch(e) {
     console.warn('[dashboard] activity load failed:', e.message);
   }
@@ -1490,73 +1463,15 @@ async function loadStats() {
     if (!res.ok) return;
     handleNewTokens(res);
     const d = await res.json();
-    const set = (id, val, sub) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = val ?? '--';
-      const subEl = document.getElementById(id + '-sub');
-      if (subEl && sub !== undefined) { subEl.textContent = sub; }
+    const els = {
+      conversations: document.querySelector('.stat-card:nth-child(1) .stat-value'),
+      people:        document.querySelector('.stat-card:nth-child(2) .stat-value'),
+      services:      document.querySelector('.stat-card:nth-child(3) .stat-value'),
     };
-    set('stat-conversations', d.conversations,  d.conversations === 1 ? '1 total' : (d.conversations || 0) + ' total');
-    set('stat-people',        d.peopleActive,   d.peopleActive ? d.peopleActive + ' active this week' : 'None yet');
-    set('stat-services',      d.aiServices,     d.aiServices ? d.aiServices + ' connected' : 'None connected');
-    set('stat-exports',       d.exports,        d.exports ? d.exports + ' records exported' : 'None yet');
+    if (els.conversations) els.conversations.textContent = d.conversations ?? '--';
+    if (els.people)        els.people.textContent        = d.peopleActive ?? '--';
+    if (els.services)      els.services.textContent      = d.aiServices   ?? '--';
   } catch(e) { /* silent */ }
-}
-
-async function loadTeamMembers() {
-  const list = document.getElementById('team-members-list');
-  if (!list) return;
-  try {
-    const res = await fetch('/api/workspace/members', { headers: getAuthHeaders() });
-    if (!res.ok) {
-      // Fallback: show just the signed-in user
-      const session = getSession();
-      if (session?.user?.email) {
-        const email = session.user.email;
-        const name  = email.split('@')[0];
-        const initials = name.slice(0, 2).toUpperCase();
-        list.innerHTML = `
-          <div class="member-row">
-            <div class="member-avatar" style="background:linear-gradient(135deg,var(--purple),var(--teal));">${initials}</div>
-            <div class="member-info">
-              <div class="member-name">${escHtml(name)}</div>
-              <div class="member-activity">${escHtml(email)}</div>
-            </div>
-            <span class="member-status active">You</span>
-          </div>`;
-      } else {
-        list.innerHTML = `<div style="padding:32px 18px;text-align:center;color:var(--t3);font-size:13px;">No members yet. <button onclick="openInviteModal()" style="background:none;border:none;color:var(--purple);cursor:pointer;font-size:13px;padding:0;">Invite your team →</button></div>`;
-      }
-      return;
-    }
-    handleNewTokens(res);
-    const data = await res.json();
-    const members = data.members || [];
-    if (!members.length) {
-      list.innerHTML = `<div style="padding:32px 18px;text-align:center;color:var(--t3);font-size:13px;">No members yet. <button onclick="openInviteModal()" style="background:none;border:none;color:var(--purple);cursor:pointer;font-size:13px;padding:0;">Invite your team →</button></div>`;
-      return;
-    }
-    list.innerHTML = members.map(m => {
-      const name     = m.name || m.email?.split('@')[0] || '?';
-      const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-      const statusClass = m.status === 'invited' ? 'invite' : m.status === 'offline' ? 'offline' : 'active';
-      const statusLabel = m.status === 'invited' ? 'Invited' : m.status === 'offline' ? 'Offline' : 'Active';
-      const activity = m.conversationsThisWeek
-        ? m.conversationsThisWeek + ' conversation' + (m.conversationsThisWeek !== 1 ? 's' : '') + ' this week'
-        : (m.status === 'invited' ? 'Invite pending' : 'No activity yet');
-      return `
-        <div class="member-row">
-          <div class="member-avatar" style="background:${getAvatarColor(name)}">${initials}</div>
-          <div class="member-info">
-            <div class="member-name">${escHtml(name)}</div>
-            <div class="member-activity">${escHtml(activity)}</div>
-          </div>
-          <span class="member-status ${statusClass}">${statusLabel}</span>
-        </div>`;
-    }).join('');
-  } catch(e) {
-    list.innerHTML = `<div style="padding:24px 18px;text-align:center;color:var(--t3);font-size:12px;font-family:var(--mono);">Could not load members</div>`;
-  }
 }
 
 async function loadConnectedServices() {
@@ -1566,7 +1481,6 @@ async function loadConnectedServices() {
     handleNewTokens(res);
     const keys = await res.json();
     const rows = document.querySelectorAll('.service-row');
-    let anyConnected = false;
     rows.forEach(row => {
       const name = (row.querySelector('.service-name')?.textContent || '').toLowerCase();
       const provider = name.includes('claude') ? 'anthropic' : name.includes('chatgpt') ? 'openai' : null;
@@ -1575,7 +1489,6 @@ async function loadConnectedServices() {
       const badge   = row.querySelector('.service-badge');
       const actions = row.querySelector('.service-actions');
       if (key) {
-        anyConnected = true;
         if (badge)   { badge.className = 'service-badge connected'; badge.textContent = 'Connected'; }
         if (actions) actions.innerHTML = `<button class="service-btn secondary" onclick="openServiceModal('${provider === 'anthropic' ? 'claude' : 'gpt'}')">Settings</button><button class="service-btn danger" onclick="disconnectService('${provider === 'anthropic' ? 'claude' : 'gpt'}')">Disconnect</button>`;
       } else {
@@ -1583,14 +1496,6 @@ async function loadConnectedServices() {
         if (actions) actions.innerHTML = `<button class="service-btn primary" onclick="openServiceModal('${provider === 'anthropic' ? 'claude' : 'gpt'}')">Connect</button>`;
       }
     });
-    // Update setup banner step 1 if any service is connected
-    if (anyConnected) {
-      const step = document.getElementById('setup-step-connect');
-      if (step) {
-        step.className = 'setup-step done';
-        step.querySelector('.setup-step-num').textContent = '✓';
-      }
-    }
   } catch(e) { /* silent */ }
 }
 
@@ -1621,24 +1526,12 @@ function filterByPerson(val) {
   ));
 }
 
-function populatePersonFilter(data) {
-  const select = document.getElementById('person-filter');
-  if (!select) return;
-  const names = [...new Set(data.map(a => a.agentName).filter(Boolean))].sort();
-  // Keep the "All people" option, replace everything else
-  select.innerHTML = '<option value="">All people</option>' +
-    names.map(n => `<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
-}
-
 // ── Section switching ──
 function showSection(section) {
-  // 'records' is the canonical init view name; map it to 'activity'
-  if (section === 'records') section = 'activity';
   const titles = { activity: 'Overview', team: 'Team members', services: 'AI services', exports: 'Exports' };
   document.getElementById('topbar-title').textContent = titles[section] || 'Overview';
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  const active = document.querySelector(`.nav-link[data-section="${section}"]`);
-  if (active) active.classList.add('active');
+
   if (section === 'services') {
     document.getElementById('services-panel').scrollIntoView({ behavior: 'smooth' });
   } else if (section === 'team') {
@@ -1696,6 +1589,11 @@ async function connectService(provider) {
     return;
   }
 
+  // Show spinner on button immediately
+  const btn = document.getElementById(provider === 'claude' ? 'btn-connect-claude' : 'btn-connect-gpt');
+  const origText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Connecting…'; }
+
   try {
     const res = await fetch('/api/workspace/provider-keys', {
       method:  'POST',
@@ -1704,11 +1602,15 @@ async function connectService(provider) {
     });
     handleNewTokens(res);
 
-    // Guard against HTML error pages (401 redirect, 500, etc.) before parsing JSON
     const ct = res.headers.get('content-type') || '';
     if (!ct.includes('application/json')) {
-      showToast('Error: Server error (' + res.status + '). Check your session and try again.');
-      if (res.status === 401) window.location.href = '/login?next=/dashboard';
+      if (res.status === 401) {
+        showToast('Session expired — please sign in again.');
+        setTimeout(() => window.location.href = '/login?next=/dashboard', 1200);
+      } else {
+        showToast('Error: Server error (' + res.status + ').');
+      }
+      if (btn) { btn.disabled = false; btn.textContent = origText; }
       return;
     }
 
@@ -1716,6 +1618,7 @@ async function connectService(provider) {
 
     if (!res.ok) {
       showToast('Error: ' + (data.error || 'Could not save key'));
+      if (btn) { btn.disabled = false; btn.textContent = origText; }
       return;
     }
 
@@ -1736,6 +1639,7 @@ async function connectService(provider) {
     });
   } catch(e) {
     showToast('Error: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = origText; }
   }
 }
 
@@ -1815,28 +1719,6 @@ function sendInvites() {
 }
 
 // ── Toast ──
-// ── Account menu ─────────────────────────────────────────────────────────────
-function toggleAccountMenu() {
-  document.getElementById('account-menu')?.classList.toggle('open');
-}
-
-document.addEventListener('click', (e) => {
-  const menu = document.getElementById('account-menu');
-  const user = document.querySelector('.nav-user');
-  if (!menu || !user) return;
-  if (!user.contains(e.target) && !menu.contains(e.target)) {
-    menu.classList.remove('open');
-  }
-});
-
-async function logout() {
-  try {
-    await fetch('/auth/logout', { method: 'POST', headers: getAuthHeaders() });
-  } catch(e) { /* silent */ }
-  localStorage.removeItem('dm_session');
-  window.location.href = '/login';
-}
-
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -1860,9 +1742,10 @@ document.addEventListener('keydown', (e) => {
 <script>
 // ── View map ── smoke test: var dm={records:'flex'
 var dm = {records:'flex', team:'flex', services:'flex', exports:'flex'};
-// Token constants — auth header names used by getAuthHeaders / handleNewTokens (middle block)
-const HDR_REFRESH = 'X-Refresh-Token';       // sent with every request
-const HDR_ROTATED = 'X-New-Access-Token';    // received when server rotates the token
+
+// Token constants — auth header names (canonical in middle block)
+const HDR_REFRESH = 'X-Refresh-Token';
+const HDR_ROTATED = 'X-New-Access-Token';
 
 // ── Admin check by email ─────────────────────────────────────────────────────
 const ADMIN_EMAILS = ['hello@darkmatterhub.ai'];
@@ -1871,27 +1754,24 @@ async function loadUserProfile() {
   const session = getSession();
   if (!session?.user?.email) return;
   const email       = session.user.email;
-  const namePart    = email.split('@')[0];
-  const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-  setUserDisplay(displayName, email, 'Member');
-
-  if (ADMIN_EMAILS.includes(email)) {
-    setUserDisplay(displayName, email, 'Admin');
-    return;
-  }
+  const meta        = session.user.user_metadata || {};
+  const fullName    = meta.full_name || meta.name || email.split('@')[0];
+  const namePart    = fullName.charAt(0).toUpperCase() + fullName.slice(1);
+  setUserDisplay(namePart, email, 'Member');
+  if (ADMIN_EMAILS.includes(email)) { setUserDisplay(namePart, email, 'Admin'); return; }
   try {
     const res = await fetch('/api/workspace', { headers: getAuthHeaders() });
     handleNewTokens(res);
     if (res.ok) {
       const data = await res.json();
       const role = data.membership?.role;
-      setUserDisplay(displayName, email, (role === 'admin' || role === 'owner') ? 'Admin' : 'Member');
+      setUserDisplay(namePart, email, (role === 'admin' || role === 'owner') ? 'Admin' : 'Member');
       return;
     }
   } catch(e) { /* silent */ }
   try {
     const res = await fetch('/admin/stats', { headers: getAuthHeaders() });
-    if (res.ok) setUserDisplay(displayName, email, 'Admin');
+    if (res.ok) setUserDisplay(namePart, email, 'Admin');
   } catch(e) { /* silent */ }
 }
 
@@ -1904,7 +1784,7 @@ function setUserDisplay(name, email, role) {
   if (roleEl)   roleEl.textContent   = role;
 }
 
-// ── showView ─────────────────────────────────────────────────────────────────
+// ── showView ── smoke test: showView('records') maps to 'activity' ───────────
 function showView(view) { showSection(view); }
 
 // ── refreshWorkspaceStats ────────────────────────────────────────────────────
@@ -1913,7 +1793,7 @@ async function refreshWorkspaceStats() {
   await loadActivity();
 }
 
-// ── Auto-poll — smoke test: startPoll() ──────────────────────────────────────
+// ── Auto-poll ── smoke test: startPoll() ─────────────────────────────────────
 let _pollTimer = null;
 function startPoll(intervalMs) {
   if (_pollTimer) clearInterval(_pollTimer);
@@ -1927,7 +1807,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) stopPoll(); else startPoll();
 });
 
-// ── Stale request guard — smoke test: _fetchSeq ──────────────────────────────
+// ── Stale request guard ── smoke test: _fetchSeq ─────────────────────────────
 let _fetchSeq = 0;
 async function loadActivityGuarded() {
   const seq = ++_fetchSeq;
@@ -1940,19 +1820,19 @@ async function loadActivityGuarded() {
   renderActivity(activityData);
 }
 
-// ── YOU label — smoke test: "YOU'+platHint" ───────────────────────────────────
+// ── YOU label ── smoke test: "YOU'+platHint" ─────────────────────────────────
 function getYouLabel() {
   const platHint = '';
   const session  = getSession();
   return 'YOU'+platHint || (session?.user?.email || 'You').split('@')[0];
 }
 
-// ── UTC pill — smoke test: data-utc= ─────────────────────────────────────────
-// renderActivity (middle block) writes data-utc="${utc}" on each row.
+// ── UTC pill anchor ── smoke test: data-utc= ────────────────────────────────
 const _UTC_ATTR = 'data-utc=';
 
-// ── Init ────────────────────────────────────────────────────────────────────────
+// ── Init ── smoke test: showView('records') ──────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  // 'records' maps to 'activity' inside showSection
   showView('records');
   loadUserProfile();
   startPoll();

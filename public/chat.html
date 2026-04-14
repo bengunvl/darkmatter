@@ -447,11 +447,9 @@ body { font-family: var(--sans); background: var(--bg); color: var(--t0); displa
 }
 
 /* User message */
-.msg-user {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 4px;
-}
+.msg-user { display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 16px; }
+.msg-time { font-family: var(--mono); font-size: 10px; color: var(--t4); margin-top: 4px; text-align: right; }
+.msg-time-ai { font-family: var(--mono); font-size: 10px; color: var(--t4); }
 .msg-user-bubble {
   background: var(--bg-1);
   border: 1px solid var(--brd);
@@ -775,10 +773,10 @@ body { font-family: var(--sans); background: var(--bg); color: var(--t0); displa
 
     <div class="sidebar-bottom">
       <div class="user-row">
-        <div class="user-avatar" id="user-avatar">JS</div>
+        <div class="user-avatar" id="user-avatar">?</div>
         <div class="user-info">
-          <div class="user-name" id="user-name">John Smith</div>
-          <div class="user-workspace" id="user-workspace">Acme Accounting</div>
+          <div class="user-name" id="user-name">Loading…</div>
+          <div class="user-workspace" id="user-workspace"></div>
         </div>
       </div>
     </div>
@@ -996,8 +994,32 @@ async function loadThreadsFromServer() {
   }
 }
 
+
+// ── Chat user profile ────────────────────────────────────────────────────────
+function loadChatUserProfile() {
+  const session = getSession();
+  if (!session?.user) return;
+  const email    = session.user.email || '';
+  const meta     = session.user.user_metadata || {};
+  const fullName = meta.full_name || meta.name || email.split('@')[0];
+  const parts    = fullName.trim().split(/\s+/);
+  const initials = parts.length >= 2
+    ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase()
+    : fullName.slice(0,2).toUpperCase();
+  const avatarEl    = document.getElementById('user-avatar');
+  const nameEl      = document.getElementById('user-name');
+  const wsEl        = document.getElementById('user-workspace');
+  const rpUserEl    = document.getElementById('rp-user-val');
+  if (avatarEl) avatarEl.textContent = initials || '?';
+  if (nameEl)   nameEl.textContent   = fullName || email;
+  if (wsEl)     wsEl.textContent     = email;
+  if (rpUserEl) rpUserEl.textContent = fullName || email;
+  const rpWsEl = document.getElementById('rp-workspace-val');
+  if (rpWsEl) rpWsEl.textContent = email.split('@')[1] || '—';
+}
 // ── Boot ──
 loadThreadsFromServer();
+loadChatUserProfile();
 
 // ── Sidebar ──
 function renderSidebar(filter = '') {
@@ -1352,7 +1374,8 @@ function appendUserMessage(text) {
   const container = document.getElementById('messages-inner');
   const block = document.createElement('div');
   block.className = 'message-block';
-  block.innerHTML = `<div class="msg-user"><div class="msg-user-bubble">${escHtml(text)}</div></div>`;
+  const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  block.innerHTML = `<div class="msg-user"><div class="msg-user-bubble">${escHtml(text)}</div><div class="msg-time">${ts}</div></div>`;
   container.appendChild(block);
   scrollToBottom();
 }
@@ -1367,6 +1390,8 @@ function appendAiMessage(content, recId) {
       <div class="msg-ai-content">
         <div class="msg-ai-text">${formatResponse(content)}</div>
         <div class="record-line">
+          <span class="msg-time-ai">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
+          <span class="dot" style="color:var(--t4);">·</span>
           <span class="record-saved">Saved<span class="dot">·</span>${currentModelLabel}</span>
           <span class="dot" style="color:var(--t4);">·</span>
           <a class="record-id-link" onclick="openRecordPanel('${recId}', ${JSON.stringify(content)})">Record ID: ${recId}</a>
@@ -1414,11 +1439,11 @@ function openRecordPanel(recId, content) {
     </div>
     <div class="rp-field">
       <div class="rp-label">User</div>
-      <div class="rp-value" id="rp-user-val">John Smith</div>
+      <div class="rp-value" id="rp-user-val">—</div>
     </div>
     <div class="rp-field">
       <div class="rp-label">Workspace</div>
-      <div class="rp-value">Acme Accounting</div>
+      <div class="rp-value" id="rp-workspace-val">—</div>
     </div>
     <div class="rp-field">
       <div class="rp-label">Saved at</div>
