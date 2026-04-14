@@ -1480,7 +1480,7 @@ async function loadActivity() {
     });
     if (res.status === 401) return; // not logged in — keep placeholder
     handleNewTokens(res);
-    if (res.status === 401) { window.location.replace(\'/login?next=/dashboard\'); return; }
+    if (res.status === 401) { window.location.replace('/login?next=/dashboard'); return; }
     if (!res.ok) return;
     const data = await res.json();
     activityData = data.activity || [];
@@ -1538,14 +1538,14 @@ async function loadTeamMembers() {
       const activity  = m.conversations_this_week
         ? m.conversations_this_week + ' conversation' + (m.conversations_this_week !== 1 ? 's' : '') + ' this week'
         : m.status === 'invited' ? 'Invite pending' : 'No activity yet';
-      return \`<div class="member-row">
-        <div class="member-avatar" style="background:\${bg}">\${initials}</div>
+      return `<div class="member-row">
+        <div class="member-avatar" style="background:${bg}">${initials}</div>
         <div class="member-info">
-          <div class="member-name">\${escHtml(name)}</div>
-          <div class="member-activity">\${escHtml(activity)}</div>
+          <div class="member-name">${escHtml(name)}</div>
+          <div class="member-activity">${escHtml(activity)}</div>
         </div>
-        <span class="member-status \${statusCls}">\${statusLbl}</span>
-      </div>\`;
+        <span class="member-status ${statusCls}">${statusLbl}</span>
+      </div>`;
     }).join('');
   } catch(e) {
     if (list) list.innerHTML = '<div style="padding:24px 18px;text-align:center;color:var(--t3);font-size:12px;font-family:var(--mono);">Could not load members</div>';
@@ -1688,18 +1688,6 @@ async function connectService(provider) {
       body: JSON.stringify({ provider: apiProvider, apiKey: val }),
     });
     handleNewTokens(res);
-
-    const ct = res.headers.get('content-type') || '';
-    if (!ct.includes('application/json')) {
-      if (res.status === 401) {
-        showToast('Session expired — please sign in again.');
-        setTimeout(() => window.location.href = '/login?next=/dashboard', 1200);
-      } else {
-        showToast('Error: Server error (' + res.status + ').');
-      }
-      if (btn) { btn.disabled = false; btn.textContent = origText; }
-      return;
-    }
 
     const ct = res.headers.get('content-type') || '';
     if (!ct.includes('application/json')) {
