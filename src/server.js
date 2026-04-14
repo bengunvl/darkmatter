@@ -254,7 +254,7 @@ async function flexAuth(req, res, next) {
   // Supabase JWT path (dashboard users)
   if (!auth.startsWith('dm_sk_') && !auth.startsWith('dmp_')) {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser(auth);
+      const { data: { user }, error } = await supabaseService.auth.getUser(auth);
       if (!error && user) {
         req.user = user;
         req.authType = 'supabase';
@@ -265,7 +265,7 @@ async function flexAuth(req, res, next) {
       if (rt) {
         const { data: rd } = await supabaseService.auth.refreshSession({ refresh_token: rt });
         if (rd && rd.session) {
-          const { data: { user: ru } } = await supabase.auth.getUser(rd.session.access_token);
+          const { data: { user: ru } } = await supabaseService.auth.getUser(rd.session.access_token);
           if (ru) {
             req.user = ru;
             req.authType = 'supabase';
@@ -4450,7 +4450,7 @@ async function wsAuth(req, res, next) {
     if (!token) return res.status(401).json({ error: 'No token' });
 
     // Try the token directly first
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const { data: { user }, error } = await supabaseService.auth.getUser(token);
     if (!error && user) { req.user = user; return next(); }
 
     // Token expired — attempt server-side refresh using X-Refresh-Token header
@@ -4459,7 +4459,7 @@ async function wsAuth(req, res, next) {
       try {
         const { data: rd } = await supabaseService.auth.refreshSession({ refresh_token: rt });
         if (rd && rd.session && rd.session.access_token) {
-          const { data: { user: ru } } = await supabase.auth.getUser(rd.session.access_token);
+          const { data: { user: ru } } = await supabaseService.auth.getUser(rd.session.access_token);
           if (ru) {
             req.user = ru;
             res.setHeader('X-New-Access-Token', rd.session.access_token);
@@ -4495,11 +4495,11 @@ app.post('/api/workspace', wsAuth, async (req, res) => {
     // Create an agent for this member
     const agentId = 'dm_' + require('crypto').randomBytes(8).toString('hex');
     const apiKey  = 'dm_sk_' + require('crypto').randomBytes(20).toString('hex');
-    const { data: agent } = await supabase.from('agents')
+    const { data: agent } = await supabaseService.from('agents')
       .insert({ agent_id: agentId, agent_name: agentName, api_key_hash: require('crypto').createHash('sha256').update(apiKey).digest('hex'), user_id: req.user.id })
       .select().single();
 
-    await supabase.from('workspace_members').insert({
+    await supabaseService.from('workspace_members').insert({
       workspace_id: ws.id,
       user_id: req.user.id,
       email: req.user.email,
@@ -4518,23 +4518,23 @@ app.post('/api/workspace', wsAuth, async (req, res) => {
 app.get('/api/workspace', wsAuth, async (req, res) => {
   try {
     // Find workspace where user is a member
-    const { data: membership } = await supabase.from('workspace_members')
+    const { data: membership } = await supabaseService.from('workspace_members')
       .select('workspace_id, role, agent_id, email, display_name, status')
       .eq('user_id', req.user.id).single();
 
     if (!membership) return res.json({ workspace: null });
 
-    const { data: ws } = await supabase.from('workspaces')
+    const { data: ws } = await supabaseService.from('workspaces')
       .select('*').eq('id', membership.workspace_id).single();
 
     // Member count
-    const { count: memberCount } = await supabase.from('workspace_members')
+    const { count: memberCount } = await supabaseService.from('workspace_members')
       .select('*', { count: 'exact', head: true })
       .eq('workspace_id', ws.id).eq('status', 'active');
 
     // Stats for this week
     const weekAgo = new Date(Date.now() - 7*86400000).toISOString().slice(0,10);
-    const { data: stats } = await supabase.from('workspace_daily_stats')
+    const { data: stats } = await supabaseService.from('workspace_daily_stats')
       .select('*').eq('workspace_id', ws.id).gte('stat_date', weekAgo);
 
     const weekStats = (stats || []).reduce((acc, s) => ({
@@ -4554,11 +4554,11 @@ app.get('/api/workspace', wsAuth, async (req, res) => {
 // ── Get workspace members (admin only) ────────────────────────────────
 app.get('/api/workspace/members', wsAuth, async (req, res) => {
   try {
-    const { data: me } = await supabase.from('workspace_members')
+    const { data: me } = await supabaseService.from('workspace_members')
       .select('workspace_id, role').eq('user_id', req.user.id).single();
     if (!me) return res.status(404).json({ error: 'Not in a workspace' });
 
-    const { data: members } = await supabase.from('workspace_members')
+    const { data: members } = await supabaseService.from('workspace_members')
       .select('*').eq('workspace_id', me.workspace_id)
       .order('joined_at', { ascending: true });
 
@@ -4593,16 +4593,16 @@ app.post('/api/workspace/invite', wsAuth, async (req, res) => {
     const { email, role = 'member' } = req.body;
     if (!email) return res.status(400).json({ error: 'Email required' });
 
-    const { data: me } = await supabase.from('workspace_members')
+    const { data: me } = await supabaseService.from('workspace_members')
       .select('workspace_id, role').eq('user_id', req.user.id).single();
     if (!me || me.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
 
-    const { data: inv, error } = await supabase.from('workspace_invitations')
+    const { data: inv, error } = await supabaseService.from('workspace_invitations')
       .insert({ workspace_id: me.workspace_id, email, role, invited_by: req.user.id })
       .select().single();
     if (error) throw error;
 
-    const { data: ws } = await supabase.from('workspaces')
+    const { data: ws } = await supabaseService.from('workspaces')
       .select('name, join_code').eq('id', me.workspace_id).single();
 
     const acceptUrl = `${process.env.APP_URL || 'https://darkmatterhub.ai'}/join?token=${inv.token}`;
@@ -4637,13 +4637,13 @@ app.post('/api/workspace/join', wsAuth, async (req, res) => {
 
     let invitation;
     if (token) {
-      const { data } = await supabase.from('workspace_invitations')
+      const { data } = await supabaseService.from('workspace_invitations')
         .select('*, workspaces(*)').eq('token', token)
         .gt('expires_at', new Date().toISOString())
         .is('accepted_at', null).single();
       invitation = data;
     } else if (joinCode) {
-      const { data: ws } = await supabase.from('workspaces')
+      const { data: ws } = await supabaseService.from('workspaces')
         .select('*').eq('join_code', joinCode.toUpperCase()).single();
       if (ws) invitation = { workspace_id: ws.id, role: 'member', workspaces: ws };
     }
@@ -4651,7 +4651,7 @@ app.post('/api/workspace/join', wsAuth, async (req, res) => {
     if (!invitation) return res.status(404).json({ error: 'Invalid or expired invitation' });
 
     // Check not already a member
-    const { data: existing } = await supabase.from('workspace_members')
+    const { data: existing } = await supabaseService.from('workspace_members')
       .select('id').eq('workspace_id', invitation.workspace_id)
       .eq('user_id', req.user.id).single();
     if (existing) return res.status(409).json({ error: 'Already a member' });
@@ -4661,14 +4661,14 @@ app.post('/api/workspace/join', wsAuth, async (req, res) => {
     const apiKey  = 'dm_sk_' + require('crypto').randomBytes(20).toString('hex');
     const displayName = req.user.email.split('@')[0];
 
-    await supabase.from('agents').insert({
+    await supabaseService.from('agents').insert({
       agent_id: agentId,
       agent_name: `${displayName}-member`,
       api_key_hash: require('crypto').createHash('sha256').update(apiKey).digest('hex'),
       user_id: req.user.id,
     });
 
-    await supabase.from('workspace_members').insert({
+    await supabaseService.from('workspace_members').insert({
       workspace_id: invitation.workspace_id,
       user_id: req.user.id,
       email: req.user.email,
@@ -4678,11 +4678,11 @@ app.post('/api/workspace/join', wsAuth, async (req, res) => {
     });
 
     if (token) {
-      await supabase.from('workspace_invitations')
+      await supabaseService.from('workspace_invitations')
         .update({ accepted_at: new Date().toISOString() }).eq('token', token);
     }
 
-    const { data: ws } = await supabase.from('workspaces')
+    const { data: ws } = await supabaseService.from('workspaces')
       .select('*').eq('id', invitation.workspace_id).single();
 
     res.json({ workspace: ws, agentId, apiKey });
@@ -4694,7 +4694,7 @@ app.post('/api/workspace/join', wsAuth, async (req, res) => {
 // ── Update workspace policy (admin) ───────────────────────────────────
 app.patch('/api/workspace/policy', wsAuth, async (req, res) => {
   try {
-    const { data: me } = await supabase.from('workspace_members')
+    const { data: me } = await supabaseService.from('workspace_members')
       .select('workspace_id, role').eq('user_id', req.user.id).single();
     if (!me || me.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
 
@@ -4703,7 +4703,7 @@ app.patch('/api/workspace/policy', wsAuth, async (req, res) => {
     allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
     updates.updated_at = new Date().toISOString();
 
-    const { data: ws } = await supabase.from('workspaces')
+    const { data: ws } = await supabaseService.from('workspaces')
       .update(updates).eq('id', me.workspace_id).select().single();
 
     res.json({ workspace: ws });
@@ -4715,7 +4715,7 @@ app.patch('/api/workspace/policy', wsAuth, async (req, res) => {
 // ── Update member role/status (admin) ────────────────────────────────
 app.patch('/api/workspace/members/:memberId', wsAuth, async (req, res) => {
   try {
-    const { data: me } = await supabase.from('workspace_members')
+    const { data: me } = await supabaseService.from('workspace_members')
       .select('workspace_id, role').eq('user_id', req.user.id).single();
     if (!me || me.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
 
@@ -4724,7 +4724,7 @@ app.patch('/api/workspace/members/:memberId', wsAuth, async (req, res) => {
     if (role)   updates.role   = role;
     if (status) updates.status = status;
 
-    const { data: member } = await supabase.from('workspace_members')
+    const { data: member } = await supabaseService.from('workspace_members')
       .update(updates)
       .eq('id', req.params.memberId)
       .eq('workspace_id', me.workspace_id)
@@ -4739,11 +4739,11 @@ app.patch('/api/workspace/members/:memberId', wsAuth, async (req, res) => {
 // ── Get workspace commits (all members, for admin) ────────────────────
 app.get('/api/workspace/commits', wsAuth, async (req, res) => {
   try {
-    const { data: me } = await supabase.from('workspace_members')
+    const { data: me } = await supabaseService.from('workspace_members')
       .select('workspace_id, role, agent_id').eq('user_id', req.user.id).single();
     if (!me) return res.status(404).json({ error: 'Not in a workspace' });
 
-    const { data: members } = await supabase.from('workspace_members')
+    const { data: members } = await supabaseService.from('workspace_members')
       .select('agent_id, email, display_name').eq('workspace_id', me.workspace_id);
 
     // Admin sees all, member sees own
@@ -4753,7 +4753,7 @@ app.get('/api/workspace/commits', wsAuth, async (req, res) => {
 
     if (!agentIds.length) return res.json([]);
 
-    const { data: commits } = await supabase.from('commits')
+    const { data: commits } = await supabaseService.from('commits')
       .select('id, trace_id, from_agent, agent_id, agent_info, payload, timestamp, event_type, verified, integrity_hash, payload_hash')
       .or(agentIds.map(id => `from_agent.eq."${id}",agent_id.eq."${id}"`).join(','))
       .order('timestamp', { ascending: false })
@@ -4780,11 +4780,11 @@ app.get('/api/workspace/commits', wsAuth, async (req, res) => {
 app.post('/api/workspace/proxy-keys', wsAuth, async (req, res) => {
   try {
     const { provider, label } = req.body;
-    const { data: me } = await supabase.from('workspace_members')
+    const { data: me } = await supabaseService.from('workspace_members')
       .select('id, workspace_id').eq('user_id', req.user.id).single();
     if (!me) return res.status(404).json({ error: 'Not in a workspace' });
 
-    const { data: pk, error } = await supabase.from('proxy_keys')
+    const { data: pk, error } = await supabaseService.from('proxy_keys')
       .insert({ workspace_id: me.workspace_id, member_id: me.id, target_provider: provider || 'openai', label: label || provider })
       .select().single();
     if (error) throw error;
@@ -4797,11 +4797,11 @@ app.post('/api/workspace/proxy-keys', wsAuth, async (req, res) => {
 
 app.get('/api/workspace/proxy-keys', wsAuth, async (req, res) => {
   try {
-    const { data: me } = await supabase.from('workspace_members')
+    const { data: me } = await supabaseService.from('workspace_members')
       .select('id, workspace_id, role').eq('user_id', req.user.id).single();
     if (!me) return res.status(404).json({ error: 'Not in a workspace' });
 
-    const query = supabase.from('proxy_keys').select('id, proxy_key, target_provider, label, is_active, last_used_at, real_key_hint');
+    const query = supabaseService.from('proxy_keys').select('id, proxy_key, target_provider, label, is_active, last_used_at, real_key_hint');
     if (me.role === 'admin') {
       query.eq('workspace_id', me.workspace_id);
     } else {
@@ -4839,7 +4839,7 @@ async function proxyAuth(req, res, next) {
       return res.status(401).json({ error: 'Invalid proxy key. Use your DarkMatter proxy key in Authorization header or X-DM-Key header.' });
     }
 
-    const { data: pk } = await supabase.from('proxy_keys')
+    const { data: pk } = await supabaseService.from('proxy_keys')
       .select('*, workspace_members(*, workspaces(*))')
       .eq('proxy_key', proxyKey).eq('is_active', true).single();
 
@@ -4850,7 +4850,7 @@ async function proxyAuth(req, res, next) {
     req.workspace  = pk.workspace_members?.workspaces;
 
     // Update last used
-    await supabase.from('proxy_keys').update({ last_used_at: new Date().toISOString() }).eq('id', pk.id);
+    await supabaseService.from('proxy_keys').update({ last_used_at: new Date().toISOString() }).eq('id', pk.id);
     next();
   } catch(e) {
     res.status(500).json({ error: 'Proxy auth error: ' + e.message });
@@ -5012,13 +5012,13 @@ async function commitProxyInteraction({ provider, upstreamPath, requestBody, res
     if (!agentId) return;
 
     // Get agent API key for this member
-    const { data: agent } = await supabase.from('agents')
+    const { data: agent } = await supabaseService.from('agents')
       .select('api_key_hash, agent_name').eq('agent_id', agentId).single();
     if (!agent) return;
 
     // Build the commit directly (internal commit path)
     const { createCommit } = require('./integrity');
-    const parentRes = await supabase.from('commits')
+    const parentRes = await supabaseService.from('commits')
       .select('id, integrity_hash')
       .or(`from_agent.eq."${agentId}",agent_id.eq."${agentId}"`)
       .order('timestamp', { ascending: false }).limit(1).single();
@@ -5027,7 +5027,7 @@ async function commitProxyInteraction({ provider, upstreamPath, requestBody, res
     const payloadHash = require('crypto').createHash('sha256')
       .update(JSON.stringify(payload)).digest('hex');
 
-    await supabase.from('commits').insert({
+    await supabaseService.from('commits').insert({
       id:               'ctx_' + Date.now() + '_' + require('crypto').randomBytes(4).toString('hex'),
       trace_id:         'proxy_' + Date.now(),
       from_agent:       agentId,
@@ -5197,11 +5197,792 @@ app.get('/api/debug/me', requireAuth, async (req, res) => {
   }
 });
 
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// DARKMATTER SERVER ADDITIONS
+// Append this block to the END of server.js, BEFORE the PORT listen call.
+//
+// Implements:
+//   1. /api/workspace/chat          — send message, get response, auto-record
+//   2. /api/workspace/activity      — real dashboard feed from Supabase
+//   3. /api/workspace/provider-keys — connect Claude/ChatGPT modals
+//
+// Also fixes: bare `supabase` variable in workspace routes — replace with supabaseService
+// ═══════════════════════════════════════════════════════════════════════
+
+// NOTE: The workspace routes added earlier use `supabase` (not defined).
+// That variable should be `supabaseService`. Until those routes are fixed,
+// they will throw. The new routes below use supabaseService directly.
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPER: resolve the workspace for a logged-in user
+// Returns { workspace_id, role, agent_id } or null
+// ─────────────────────────────────────────────────────────────────────────────
+async function getMembership(userId) {
+  const { data } = await supabaseService
+    .from('workspace_members')
+    .select('workspace_id, role, agent_id, display_name, email')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .single();
+  return data || null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPER: get a stored provider key for a user (decrypted for use)
+// provider: 'anthropic' | 'openai'
+// ─────────────────────────────────────────────────────────────────────────────
+async function getStoredProviderKey(userId, provider) {
+  // Try workspace_provider_keys first (workspace-scoped)
+  const { data: wsKey } = await supabaseService
+    .from('workspace_provider_keys')
+    .select('encrypted_key, recording_enabled')
+    .eq('user_id', userId)
+    .eq('provider', provider)
+    .eq('recording_enabled', true)
+    .single();
+  if (wsKey?.encrypted_key) return wsKey.encrypted_key;
+
+  // Fallback: user_recording_keys (older table)
+  const { data: rk } = await supabaseService
+    .from('user_recording_keys')
+    .select('encrypted_key, recording_enabled')
+    .eq('user_id', userId)
+    .eq('provider', provider)
+    .eq('recording_enabled', true)
+    .single();
+  return rk?.encrypted_key || null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPER: save a DarkMatter commit for a workspace chat message
+// ─────────────────────────────────────────────────────────────────────────────
+async function commitWorkspaceChat({ userId, agentId, provider, model, messages, response, traceId }) {
+  try {
+    const commitId = 'ctx_' + Date.now() + '_' + require('crypto').randomBytes(6).toString('hex');
+    const ts       = new Date().toISOString();
+    const lastMsg  = messages[messages.length - 1];
+    const inputText = typeof lastMsg?.content === 'string'
+      ? lastMsg.content
+      : JSON.stringify(lastMsg?.content || '');
+
+    const payload = {
+      _source:   'workspace_chat',
+      _provider: provider,
+      _model:    model,
+      role:      'assistant',
+      prompt:    inputText.slice(0, 2000),
+      output:    response.slice(0, 10000),
+      input_messages: messages.length,
+    };
+
+    const normalizedPayload = JSON.stringify(payload, Object.keys(payload).sort());
+    const payloadHash       = require('crypto').createHash('sha256').update(normalizedPayload).digest('hex');
+
+    // Get parent hash for chain
+    const { data: parentCommit } = await supabaseService
+      .from('commits')
+      .select('integrity_hash')
+      .or(`from_agent.eq."${agentId}",agent_id.eq."${agentId}"`)
+      .order('timestamp', { ascending: false })
+      .limit(1)
+      .single();
+
+    const parentHash    = parentCommit?.integrity_hash || 'root';
+    const integrityHash = require('crypto')
+      .createHash('sha256')
+      .update(payloadHash + parentHash)
+      .digest('hex');
+
+    await supabaseService.from('commits').insert({
+      id:               commitId,
+      trace_id:         traceId || commitId,
+      from_agent:       agentId,
+      agent_id:         agentId,
+      agent_info:       { name: 'workspace-chat', source: 'workspace_chat', provider, model },
+      payload,
+      payload_hash:     payloadHash,
+      parent_hash:      parentHash,
+      integrity_hash:   integrityHash,
+      timestamp:        ts,
+      event_type:       'commit',
+      branch_key:       'main',
+      verified:         true,
+      verification_reason: 'Workspace chat capture',
+      capture_mode:     'workspace_chat',
+    });
+
+    return { commitId, integrityHash };
+  } catch(e) {
+    console.error('[commitWorkspaceChat]', e.message);
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. POST /api/workspace/chat
+//    Send a message through DarkMatter to Claude or GPT-4o.
+//    Uses the user's stored provider API key.
+//    Returns: { message, model, provider, recordId, traceId }
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/api/workspace/chat', requireAuth, async (req, res) => {
+  try {
+    const { messages, model, provider: reqProvider, traceId, conversationId } = req.body;
+
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ error: 'messages array required' });
+    }
+
+    // Determine provider from model name
+    const provider = reqProvider || (
+      model?.startsWith('gpt')    ? 'openai'    :
+      model?.startsWith('claude') ? 'anthropic' :
+      'anthropic'
+    );
+
+    const resolvedModel = model || (provider === 'anthropic' ? 'claude-sonnet-4-6' : 'gpt-4o');
+
+    // Get API key
+    const apiKey = await getStoredProviderKey(req.user.id, provider);
+    if (!apiKey) {
+      return res.status(402).json({
+        error: `No ${provider} API key connected. Connect your key in Settings.`,
+        code:  'NO_API_KEY',
+        provider,
+      });
+    }
+
+    // Get user's agent ID for recording
+    const membership = await getMembership(req.user.id);
+    let agentId = membership?.agent_id;
+
+    // Fallback: user's first agent
+    if (!agentId) {
+      const { data: agents } = await supabaseService
+        .from('agents')
+        .select('agent_id')
+        .eq('user_id', req.user.id)
+        .limit(1)
+        .single();
+      agentId = agents?.agent_id;
+    }
+
+    // ── Call the LLM ──────────────────────────────────────────
+    let responseText = '';
+    let upstreamStatus = 200;
+
+    if (provider === 'anthropic') {
+      // Anthropic Messages API
+      const systemMessage = messages.find(m => m.role === 'system');
+      const chatMessages  = messages.filter(m => m.role !== 'system');
+
+      const body = {
+        model: resolvedModel,
+        max_tokens: 4096,
+        messages: chatMessages,
+        ...(systemMessage ? { system: systemMessage.content } : {}),
+      };
+
+      const upstreamRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method:  'POST',
+        headers: {
+          'Content-Type':    'application/json',
+          'x-api-key':       apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify(body),
+      });
+
+      upstreamStatus = upstreamRes.status;
+      const data = await upstreamRes.json();
+
+      if (!upstreamRes.ok) {
+        return res.status(upstreamStatus).json({
+          error: data?.error?.message || 'Anthropic API error',
+          code:  data?.error?.type    || 'upstream_error',
+        });
+      }
+
+      responseText = data?.content?.[0]?.text || '';
+
+    } else if (provider === 'openai') {
+      // OpenAI Chat Completions API
+      const upstreamRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model:      resolvedModel,
+          messages,
+          max_tokens: 4096,
+        }),
+      });
+
+      upstreamStatus = upstreamRes.status;
+      const data = await upstreamRes.json();
+
+      if (!upstreamRes.ok) {
+        return res.status(upstreamStatus).json({
+          error: data?.error?.message || 'OpenAI API error',
+          code:  data?.error?.type    || 'upstream_error',
+        });
+      }
+
+      responseText = data?.choices?.[0]?.message?.content || '';
+
+    } else {
+      return res.status(400).json({ error: `Unsupported provider: ${provider}` });
+    }
+
+    // ── Record to DarkMatter ──────────────────────────────────
+    const commitResult = agentId
+      ? await commitWorkspaceChat({
+          userId:   req.user.id,
+          agentId,
+          provider,
+          model:    resolvedModel,
+          messages,
+          response: responseText,
+          traceId:  traceId || conversationId,
+        })
+      : null;
+
+    res.json({
+      message:    responseText,
+      model:      resolvedModel,
+      provider,
+      recordId:   commitResult?.commitId || null,
+      traceId:    traceId || commitResult?.commitId || null,
+      recorded:   !!commitResult,
+    });
+
+  } catch(err) {
+    console.error('[workspace/chat]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. GET /api/workspace/activity
+//    Dashboard activity feed — real commits for this user's workspace.
+//    Returns recent commits formatted for the dashboard UI.
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/api/workspace/activity', requireAuth, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+
+    // Get membership
+    const membership = await getMembership(req.user.id);
+
+    // Collect all agent IDs we should show
+    let agentIds = [];
+
+    if (membership) {
+      // Workspace member — show all workspace members' activity (admin) or own (member)
+      if (membership.role === 'admin') {
+        const { data: members } = await supabaseService
+          .from('workspace_members')
+          .select('agent_id')
+          .eq('workspace_id', membership.workspace_id)
+          .not('agent_id', 'is', null);
+        agentIds = (members || []).map(m => m.agent_id).filter(Boolean);
+      } else {
+        if (membership.agent_id) agentIds = [membership.agent_id];
+      }
+    }
+
+    // Always include user's own agents
+    const { data: userAgents } = await supabaseService
+      .from('agents')
+      .select('agent_id, agent_name')
+      .eq('user_id', req.user.id);
+
+    const userAgentIds = (userAgents || []).map(a => a.agent_id);
+    const allAgentIds  = [...new Set([...agentIds, ...userAgentIds])];
+
+    if (allAgentIds.length === 0) {
+      return res.json({ activity: [], total: 0 });
+    }
+
+    const idList = allAgentIds.map(id => `"${id}"`).join(',');
+    const { data: commits, error } = await supabaseService
+      .from('commits')
+      .select('id, trace_id, from_agent, agent_id, agent_info, payload, timestamp, event_type, verified, capture_mode')
+      .or(`from_agent.in.(${idList}),agent_id.in.(${idList})`)
+      .order('timestamp', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    // Build an agent name map
+    const agentNameMap = {};
+    (userAgents || []).forEach(a => { agentNameMap[a.agent_id] = a.agent_name; });
+
+    // If workspace, also pull member names
+    if (membership) {
+      const { data: members } = await supabaseService
+        .from('workspace_members')
+        .select('agent_id, display_name, email')
+        .eq('workspace_id', membership.workspace_id);
+      (members || []).forEach(m => {
+        if (m.agent_id) agentNameMap[m.agent_id] = m.display_name || m.email;
+      });
+    }
+
+    // Format for dashboard
+    const activity = (commits || []).map(c => {
+      const agentKey  = c.agent_id || c.from_agent;
+      const agentName = agentNameMap[agentKey] || c.agent_info?.name || agentKey || 'Agent';
+      const provider  = c.agent_info?.provider || c.payload?._provider || null;
+      const model     = c.agent_info?.model     || c.payload?._model    || null;
+      const source    = c.capture_mode || c.payload?._source || 'api';
+
+      // Build a human-readable title from payload
+      const p = c.payload || {};
+      let title = 'AI conversation recorded';
+      if (p.prompt || p.output) {
+        const preview = (p.prompt || p.output || '').slice(0, 80);
+        title = preview ? `"${preview}${preview.length >= 80 ? '…' : ''}"` : title;
+      } else if (p.convTitle) {
+        title = p.convTitle;
+      }
+
+      return {
+        id:         c.id,
+        traceId:    c.trace_id || c.id,
+        agentId:    agentKey,
+        agentName,
+        provider:   provider || 'unknown',
+        model:      model    || 'unknown',
+        eventType:  c.event_type || 'commit',
+        title,
+        timestamp:  c.timestamp,
+        verified:   c.verified || false,
+        source,
+      };
+    });
+
+    res.json({ activity, total: activity.length });
+
+  } catch(err) {
+    console.error('[workspace/activity]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. Provider Key Management — /api/workspace/provider-keys
+//    Backs the Connect Claude / Connect ChatGPT modals in dashboard.html
+//    Keys are stored in `workspace_provider_keys` table.
+//    If that table doesn't exist yet, falls back to `user_recording_keys`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// POST /api/workspace/provider-keys — save a provider API key
+app.post('/api/workspace/provider-keys', requireAuth, async (req, res) => {
+  try {
+    const { provider, apiKey, label } = req.body;
+
+    if (!provider || !apiKey) {
+      return res.status(400).json({ error: 'provider and apiKey required' });
+    }
+
+    const VALID_PROVIDERS = ['anthropic', 'openai'];
+    if (!VALID_PROVIDERS.includes(provider)) {
+      return res.status(400).json({ error: `provider must be one of: ${VALID_PROVIDERS.join(', ')}` });
+    }
+
+    // Basic format validation — never expose full key
+    const isValidFormat =
+      (provider === 'anthropic' && apiKey.startsWith('sk-ant-')) ||
+      (provider === 'openai'    && apiKey.startsWith('sk-'));
+
+    if (!isValidFormat) {
+      return res.status(400).json({
+        error: provider === 'anthropic'
+          ? 'Anthropic API keys start with sk-ant-'
+          : 'OpenAI API keys start with sk-',
+      });
+    }
+
+    // Key hint for display (never expose full key)
+    const keyHint = apiKey.slice(0, 10).replace(/./g, (c, i) => i < 7 ? c : '•') + '...' + apiKey.slice(-4);
+
+    // Try workspace_provider_keys table first
+    try {
+      // Remove existing key for this provider
+      await supabaseService
+        .from('workspace_provider_keys')
+        .delete()
+        .eq('user_id', req.user.id)
+        .eq('provider', provider);
+
+      const { data, error } = await supabaseService
+        .from('workspace_provider_keys')
+        .insert({
+          user_id:           req.user.id,
+          provider,
+          encrypted_key:     apiKey,  // TODO: encrypt with server-side key in production
+          key_hint:          keyHint,
+          recording_enabled: true,
+          label:             label || provider,
+        })
+        .select('id, provider, key_hint, recording_enabled, label, created_at')
+        .single();
+
+      if (!error) {
+        return res.json({
+          success:  true,
+          id:       data.id,
+          provider: data.provider,
+          keyHint:  data.key_hint,
+          label:    data.label,
+          message:  `${provider === 'anthropic' ? 'Claude' : 'ChatGPT'} connected. All conversations through DarkMatter chat will be recorded.`,
+        });
+      }
+
+      // Table doesn't exist — fall through to user_recording_keys
+    } catch(tableErr) {
+      // workspace_provider_keys table may not exist — fall through
+    }
+
+    // Fallback: user_recording_keys (existing table)
+    await supabaseService
+      .from('user_recording_keys')
+      .delete()
+      .eq('user_id', req.user.id)
+      .eq('provider', provider);
+
+    const { data, error } = await supabaseService
+      .from('user_recording_keys')
+      .insert({
+        user_id:           req.user.id,
+        provider,
+        encrypted_key:     apiKey,
+        key_hint:          keyHint,
+        recording_enabled: true,
+        label:             label || provider,
+      })
+      .select('id, provider, key_hint, recording_enabled, label, created_at')
+      .single();
+
+    if (error) throw error;
+
+    res.json({
+      success:  true,
+      id:       data.id,
+      provider: data.provider,
+      keyHint:  data.key_hint,
+      label:    data.label,
+      message:  `${provider === 'anthropic' ? 'Claude' : 'ChatGPT'} connected.`,
+    });
+
+  } catch(err) {
+    console.error('[provider-keys POST]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/workspace/provider-keys — list connected providers (no keys, just status)
+app.get('/api/workspace/provider-keys', requireAuth, async (req, res) => {
+  try {
+    // Try workspace_provider_keys first
+    let keys = [];
+    try {
+      const { data } = await supabaseService
+        .from('workspace_provider_keys')
+        .select('id, provider, key_hint, recording_enabled, label, created_at, last_used_at')
+        .eq('user_id', req.user.id)
+        .order('created_at', { ascending: false });
+      if (data) keys = data;
+    } catch(_) {
+      // Table doesn't exist — try fallback
+    }
+
+    // Fallback to user_recording_keys
+    if (keys.length === 0) {
+      const { data } = await supabaseService
+        .from('user_recording_keys')
+        .select('id, provider, key_hint, recording_enabled, label, created_at, last_used_at')
+        .eq('user_id', req.user.id)
+        .order('created_at', { ascending: false });
+      keys = data || [];
+    }
+
+    // Return summary — no actual keys ever exposed
+    res.json(keys.map(k => ({
+      id:               k.id,
+      provider:         k.provider,
+      keyHint:          k.key_hint,
+      recording_enabled: k.recording_enabled,
+      label:            k.label,
+      connected:        true,
+      createdAt:        k.created_at,
+      lastUsedAt:       k.last_used_at || null,
+    })));
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/workspace/provider-keys/:provider — disconnect a provider
+app.delete('/api/workspace/provider-keys/:provider', requireAuth, async (req, res) => {
+  try {
+    const { provider } = req.params;
+
+    // Try both tables
+    try {
+      await supabaseService
+        .from('workspace_provider_keys')
+        .delete()
+        .eq('user_id', req.user.id)
+        .eq('provider', provider);
+    } catch(_) {}
+
+    await supabaseService
+      .from('user_recording_keys')
+      .delete()
+      .eq('user_id', req.user.id)
+      .eq('provider', provider);
+
+    res.json({ success: true, provider, disconnected: true });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/workspace/provider-keys/:id — toggle recording on/off
+app.patch('/api/workspace/provider-keys/:id', requireAuth, async (req, res) => {
+  try {
+    const { recording_enabled } = req.body;
+    const id = req.params.id;
+
+    // Try workspace_provider_keys
+    let updated = false;
+    try {
+      const { data } = await supabaseService
+        .from('workspace_provider_keys')
+        .update({ recording_enabled })
+        .eq('id', id)
+        .eq('user_id', req.user.id)
+        .select('id, recording_enabled')
+        .single();
+      if (data) { updated = true; res.json({ success: true, ...data }); }
+    } catch(_) {}
+
+    if (!updated) {
+      const { data, error } = await supabaseService
+        .from('user_recording_keys')
+        .update({ recording_enabled })
+        .eq('id', id)
+        .eq('user_id', req.user.id)
+        .select('id, recording_enabled')
+        .single();
+      if (error) throw error;
+      res.json({ success: true, ...data });
+    }
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. GET /api/workspace/stats
+//    Dashboard stats cards — conversations, active people, AI services, exports
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/api/workspace/stats', requireAuth, async (req, res) => {
+  try {
+    const membership = await getMembership(req.user.id);
+
+    // Get all agent IDs for scope
+    const { data: userAgents } = await supabaseService
+      .from('agents')
+      .select('agent_id')
+      .eq('user_id', req.user.id);
+
+    let agentIds = (userAgents || []).map(a => a.agent_id);
+
+    if (membership) {
+      const { data: members } = await supabaseService
+        .from('workspace_members')
+        .select('agent_id')
+        .eq('workspace_id', membership.workspace_id)
+        .not('agent_id', 'is', null);
+      agentIds = [...new Set([...agentIds, ...(members || []).map(m => m.agent_id).filter(Boolean)])];
+    }
+
+    const idList = agentIds.map(id => `"${id}"`).join(',');
+    const since  = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days
+
+    const { data: commits } = agentIds.length > 0
+      ? await supabaseService
+          .from('commits')
+          .select('id, from_agent, agent_info, payload, timestamp')
+          .or(`from_agent.in.(${idList}),agent_id.in.(${idList})`)
+          .gte('timestamp', since)
+          .limit(1000)
+      : { data: [] };
+
+    const commitList = commits || [];
+
+    // Count unique conversations (by trace_id or id)
+    const conversations = commitList.length;
+
+    // Count unique active people (by from_agent in last 7 days)
+    const weekAgo      = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const recentAgents = new Set(
+      commitList
+        .filter(c => c.timestamp >= weekAgo)
+        .map(c => c.from_agent)
+        .filter(Boolean)
+    );
+    const peopleActive = membership
+      ? recentAgents.size
+      : (recentAgents.size || (agentIds.length > 0 ? 1 : 0));
+
+    // Count connected AI services
+    const { data: connectedKeys } = await supabaseService
+      .from('user_recording_keys')
+      .select('provider')
+      .eq('user_id', req.user.id)
+      .eq('recording_enabled', true);
+    const aiServices = (connectedKeys || []).length;
+
+    res.json({
+      conversations,
+      peopleActive,
+      aiServices,
+      exports: 0, // TODO: track export events
+      period: '30d',
+    });
+  } catch(err) {
+    console.error('[workspace/stats]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. GET /api/workspace/conversation/:traceId
+//    Full conversation transcript for the dashboard detail drawer
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/api/workspace/conversation/:traceId', requireAuth, async (req, res) => {
+  try {
+    const { traceId } = req.params;
+
+    const { data: commits, error } = await supabaseService
+      .from('commits')
+      .select('*')
+      .or(`trace_id.eq."${traceId}",id.eq."${traceId}"`)
+      .order('timestamp', { ascending: true });
+
+    if (error) throw error;
+    if (!commits?.length) return res.status(404).json({ error: 'Conversation not found' });
+
+    // Verify the requester owns one of these agents
+    const { data: userAgents } = await supabaseService
+      .from('agents')
+      .select('agent_id')
+      .eq('user_id', req.user.id);
+    const userAgentIds = new Set((userAgents || []).map(a => a.agent_id));
+
+    const hasAccess = commits.some(c =>
+      userAgentIds.has(c.from_agent) || userAgentIds.has(c.agent_id)
+    );
+
+    // Also allow workspace admin access
+    const membership = await getMembership(req.user.id);
+    const isAdmin    = membership?.role === 'admin';
+
+    if (!hasAccess && !isAdmin) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Build transcript
+    const transcript = commits.map(c => {
+      const p = c.payload || {};
+      return {
+        id:        c.id,
+        role:      p.role || 'assistant',
+        content:   p.output || p.text || p.prompt || JSON.stringify(p).slice(0, 500),
+        timestamp: c.timestamp,
+        model:     c.agent_info?.model || p._model || null,
+        provider:  c.agent_info?.provider || p._provider || null,
+        verified:  c.verified || false,
+        integrityHash: c.integrity_hash,
+      };
+    });
+
+    // Verify chain integrity
+    let chainIntact = true;
+    for (let i = 1; i < commits.length; i++) {
+      if (commits[i].parent_hash && commits[i-1].integrity_hash &&
+          commits[i].parent_hash !== commits[i-1].integrity_hash) {
+        chainIntact = false; break;
+      }
+    }
+
+    res.json({
+      traceId,
+      chainIntact,
+      stepCount: commits.length,
+      transcript,
+      exportUrl: `/r/${traceId}?format=json`,
+      verifyUrl: `/r/${traceId}`,
+    });
+
+  } catch(err) {
+    console.error('[workspace/conversation]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// /chat and /dashboard page routes (if not already declared)
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/chat', (req, res) => {
+  res.sendFile(require('path').join(__dirname, '../public/chat.html'));
+});
+
+// Note: /dashboard is already declared at line ~427 — no duplicate needed.
+// If it's missing, uncomment:
+// app.get('/dashboard', (req, res) => {
+//   res.sendFile(require('path').join(__dirname, '../public/dashboard.html'));
+// });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MIGRATION NOTE: workspace_provider_keys table
+//
+// Run this in Supabase SQL editor if the table doesn't exist:
+//
+// CREATE TABLE IF NOT EXISTS workspace_provider_keys (
+//   id               uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+//   user_id          uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+//   provider         text NOT NULL,
+//   encrypted_key    text NOT NULL,
+//   key_hint         text,
+//   recording_enabled boolean DEFAULT true,
+//   label            text,
+//   created_at       timestamptz DEFAULT now(),
+//   last_used_at     timestamptz,
+//   UNIQUE(user_id, provider)
+// );
+// ALTER TABLE workspace_provider_keys ENABLE ROW LEVEL SECURITY;
+// CREATE POLICY "Users manage own keys" ON workspace_provider_keys
+//   FOR ALL USING (auth.uid() = user_id);
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`DarkMatter server running on port ${PORT}`);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
