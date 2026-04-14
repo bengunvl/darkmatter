@@ -672,34 +672,18 @@ body.dm-shell{background:var(--bg);}
 .tpanel{display:none;}
 
 /* ── Account menu ─────────────────────────────── */
-.account-menu {
-  position:absolute; bottom:calc(100% + 4px); left:8px; right:8px;
-  background:var(--bg); border:1px solid var(--brd);
-  border-radius:9px; box-shadow:0 8px 28px rgba(0,0,0,0.13);
-  overflow:hidden; display:none; z-index:100;
-}
-.account-menu.open { display:block; }
-.account-menu button {
-  display:flex; align-items:center; gap:9px;
-  width:100%; padding:10px 14px; text-align:left;
-  background:none; border:none; border-bottom:1px solid var(--brd);
-  font-family:var(--sans); font-size:13px; color:var(--t1);
-  cursor:pointer; transition:background .1s;
-}
-.account-menu button:last-child { border-bottom:none; }
-.account-menu button:hover { background:var(--bg-0); }
-.account-menu .signout-btn { color:var(--red); }
-#nav-user-btn { cursor:pointer; }
-#nav-user-btn:hover { background:var(--bg-1); border-radius:7px; }
-/* ── Spinner for connect buttons ──────────────── */
-.spinner {
-  display:inline-block; width:11px; height:11px;
-  border:2px solid rgba(255,255,255,0.35); border-top-color:#fff;
-  border-radius:50%; animation:spin .6s linear infinite;
-  vertical-align:middle; margin-right:4px;
-}
-@keyframes spin { to { transform:rotate(360deg); } }
-/* ── Smoke-test canonical tokens ─────────────── */
+.account-menu{position:absolute;bottom:calc(100% + 4px);left:8px;right:8px;background:var(--bg);border:1px solid var(--brd);border-radius:9px;box-shadow:0 8px 28px rgba(0,0,0,0.13);overflow:hidden;display:none;z-index:100;}
+.account-menu.open{display:block;}
+.account-menu button{display:flex;align-items:center;gap:9px;width:100%;padding:10px 14px;text-align:left;background:none;border:none;border-bottom:1px solid var(--brd);font-family:var(--sans);font-size:13px;color:var(--t1);cursor:pointer;transition:background .1s;}
+.account-menu button:last-child{border-bottom:none;}
+.account-menu button:hover{background:var(--bg-0);}
+.account-menu .signout-btn{color:var(--red);}
+#nav-user-btn{cursor:pointer;}
+#nav-user-btn:hover{background:var(--bg-1);border-radius:7px;}
+/* ── Spinner ───────────────────────────────────── */
+.spinner{display:inline-block;width:11px;height:11px;border:2px solid rgba(255,255,255,0.35);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:4px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+/* ── Smoke-test tokens ─────────────────────────── */
 body.dm-shell{background:var(--bg);}
 .leftnav{background:#fff;display:flex;flex-direction:column;}
 #view-records{display:flex;flex-direction:column;flex:1;}
@@ -787,6 +771,10 @@ body.dm-shell{background:var(--bg);}
     <div class="topbar">
       <span class="topbar-title" id="topbar-title">Overview</span>
       <div class="topbar-spacer"></div>
+      <div class="topbar-search">
+        <svg class="topbar-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="search-input" placeholder="Search activity…" oninput="filterBySearch(this.value)" autocomplete="off">
+      </div>
       <button class="topbar-btn" onclick="openInviteModal()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Invite your team
@@ -1492,6 +1480,7 @@ async function loadActivity() {
     });
     if (res.status === 401) return; // not logged in — keep placeholder
     handleNewTokens(res);
+    if (res.status === 401) { window.location.replace(\'/login?next=/dashboard\'); return; }
     if (!res.ok) return;
     const data = await res.json();
     activityData = data.activity || [];
@@ -1505,8 +1494,9 @@ async function loadActivity() {
 async function loadStats() {
   try {
     const res = await fetch('/api/workspace/stats', { headers: getAuthHeaders() });
-    if (!res.ok) return;
     handleNewTokens(res);
+    if (res.status === 401) { window.location.replace('/login?next=/dashboard'); return; }
+    if (!res.ok) return;
     const d = await res.json();
     const set = (id, val, sub) => {
       const el = document.getElementById(id);
@@ -1514,22 +1504,60 @@ async function loadStats() {
       const se = document.getElementById(id + '-sub');
       if (se && sub != null) se.textContent = sub;
     };
-    set('stat-conversations', d.conversations,
-        d.conversations ? d.conversations + ' total' : 'None yet');
-    set('stat-people',  d.peopleActive,
-        d.peopleActive  ? d.peopleActive + ' active this week' : 'None yet');
-    set('stat-services', d.aiServices,
-        d.aiServices    ? d.aiServices + ' connected' : 'None connected');
-    set('stat-exports',  d.exports,
-        d.exports       ? d.exports + ' exported' : 'None yet');
+    set('stat-conversations', d.conversations,  d.conversations ? d.conversations + ' total' : 'None yet');
+    set('stat-people',  d.peopleActive,  d.peopleActive  ? d.peopleActive  + ' active this week' : 'None yet');
+    set('stat-services', d.aiServices,  d.aiServices    ? d.aiServices    + ' connected'        : 'None connected');
+    set('stat-exports',  d.exports,     d.exports       ? d.exports       + ' exported'          : 'None yet');
   } catch(e) { /* silent */ }
+}
+
+async function loadTeamMembers() {
+  const list = document.getElementById('team-members-list');
+  if (!list) return;
+  try {
+    const res = await fetch('/api/workspace/members', { headers: getAuthHeaders() });
+    handleNewTokens(res);
+    if (res.status === 401) { window.location.replace('/login?next=/dashboard'); return; }
+    if (!res.ok) {
+      list.innerHTML = '<div style="padding:24px 18px;text-align:center;color:var(--t3);font-size:13px;">Could not load team</div>';
+      return;
+    }
+    const data = await res.json();
+    const members = data.members || [];
+    if (!members.length) {
+      list.innerHTML = '<div style="padding:24px 18px;text-align:center;color:var(--t3);font-size:13px;">No members yet. <button onclick="openInviteModal()" style="background:none;border:none;color:var(--purple);cursor:pointer;font-size:13px;padding:0;">Invite your team →</button></div>';
+      return;
+    }
+    list.innerHTML = members.map(m => {
+      const name     = m.display_name || m.email?.split('@')[0] || '?';
+      const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+      const colors   = ['linear-gradient(135deg,#6b4fbb,#4ab8c8)','linear-gradient(135deg,#0f7b4d,#4ab8c8)','linear-gradient(135deg,#b45309,#e57c49)','linear-gradient(135deg,#2563eb,#6b4fbb)'];
+      const bg       = colors[name.charCodeAt(0) % colors.length];
+      const statusCls = m.status === 'invited' ? 'invite' : m.status === 'offline' ? 'offline' : 'active';
+      const statusLbl = m.status === 'invited' ? 'Invited' : m.status === 'offline' ? 'Offline' : 'Active';
+      const activity  = m.conversations_this_week
+        ? m.conversations_this_week + ' conversation' + (m.conversations_this_week !== 1 ? 's' : '') + ' this week'
+        : m.status === 'invited' ? 'Invite pending' : 'No activity yet';
+      return \`<div class="member-row">
+        <div class="member-avatar" style="background:\${bg}">\${initials}</div>
+        <div class="member-info">
+          <div class="member-name">\${escHtml(name)}</div>
+          <div class="member-activity">\${escHtml(activity)}</div>
+        </div>
+        <span class="member-status \${statusCls}">\${statusLbl}</span>
+      </div>\`;
+    }).join('');
+  } catch(e) {
+    if (list) list.innerHTML = '<div style="padding:24px 18px;text-align:center;color:var(--t3);font-size:12px;font-family:var(--mono);">Could not load members</div>';
+  }
 }
 
 async function loadConnectedServices() {
   try {
     const res = await fetch('/api/workspace/provider-keys', { headers: getAuthHeaders() });
-    if (!res.ok) return;
     handleNewTokens(res);
+    if (res.status === 401) { window.location.replace('/login?next=/dashboard'); return; }
+    if (!res.ok) return;
     const keys = await res.json();
     const rows = document.querySelectorAll('.service-row');
     rows.forEach(row => {
@@ -1572,7 +1600,9 @@ function filterBySearch(val) {
     (a.title      || '').toLowerCase().includes(q) ||
     (a.agentName  || '').toLowerCase().includes(q) ||
     (a.provider   || '').toLowerCase().includes(q) ||
-    (a.model      || '').toLowerCase().includes(q)
+    (a.model      || '').toLowerCase().includes(q) ||
+    (a.traceId    || '').toLowerCase().includes(q) ||
+    (a.id         || '').toLowerCase().includes(q)
   ));
 }
 
@@ -1671,6 +1701,13 @@ async function connectService(provider) {
       return;
     }
 
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      if (res.status === 401) { window.location.replace('/login?next=/dashboard'); return; }
+      showToast('Error: Server error (' + res.status + ').');
+      if (btn) { btn.disabled = false; btn.textContent = origText; }
+      return;
+    }
     const data = await res.json();
 
     if (!res.ok) {
@@ -1811,25 +1848,24 @@ async function sendInvites() {
   }
 }
 
+// ── Toast ──
+
 // ── Account menu ────────────────────────────────────────────────────────────
 function toggleAccountMenu() {
   document.getElementById('account-menu')?.classList.toggle('open');
 }
-document.addEventListener('click', (e) => {
-  const menu = document.getElementById('account-menu');
-  const btn  = document.getElementById('nav-user-btn');
+document.addEventListener('click', function(e) {
+  var menu = document.getElementById('account-menu');
+  var btn  = document.getElementById('nav-user-btn');
   if (!menu || !btn) return;
-  if (!btn.contains(e.target) && !menu.contains(e.target)) {
-    menu.classList.remove('open');
-  }
+  if (!btn.contains(e.target) && !menu.contains(e.target)) menu.classList.remove('open');
 });
 async function signOut() {
-  try { await fetch('/auth/logout', { method:'POST', headers:getAuthHeaders() }); } catch(e) {}
+  try { await fetch('/auth/logout', { method: 'POST', headers: getAuthHeaders() }); } catch(e) {}
   localStorage.removeItem('dm_session');
   window.location.href = '/login';
 }
 
-// ── Toast ────────────────────────────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -1943,9 +1979,9 @@ const _UTC_ATTR = 'data-utc=';
 
 // ── Init ── smoke test: showView('records') ──────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // ── Auth gate ────────────────────────────────────────────────────────────
-  let _sess;
-  try { _sess = JSON.parse(localStorage.getItem('dm_session') || 'null'); } catch(e) { _sess = null; }
+  // ── Hard auth gate ────────────────────────────────────────────────────────
+  let _sess = null;
+  try { _sess = JSON.parse(localStorage.getItem('dm_session') || 'null'); } catch(e) {}
   if (!_sess?.access_token) {
     window.location.replace('/login?next=/dashboard');
     return;
@@ -1954,35 +1990,32 @@ document.addEventListener('DOMContentLoaded', () => {
   showView('records');
   loadUserProfile();
   startPoll();
-
-  // ── Primary data load ────────────────────────────────────────────────────
   loadConnectedServices();
 
-  // ── Workspace bootstrap ──────────────────────────────────────────────────
-  // Check if user has a workspace; if not, create one automatically
+  // ── Workspace bootstrap then data load ────────────────────────────────────
   (async () => {
     try {
       const res = await fetch('/api/workspace', { headers: getAuthHeaders() });
       handleNewTokens(res);
+      if (res.status === 401) { window.location.replace('/login?next=/dashboard'); return; }
       if (res.ok) {
         const data = await res.json();
         if (!data.workspace) {
-          // New user — create a default workspace
-          const email = _sess.user?.email || 'user';
-          const name  = email.split('@')[0].charAt(0).toUpperCase() +
-                        email.split('@')[0].slice(1) + "'s workspace";
-          await fetch('/api/workspace', {
-            method:  'POST',
+          // First-time user — create a default workspace
+          const email = _sess.user?.email || '';
+          const name  = (email.split('@')[0] || 'My') + "'s workspace";
+          const cr = await fetch('/api/workspace', {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-            body:    JSON.stringify({ name }),
+            body: JSON.stringify({ name }),
           });
+          handleNewTokens(cr);
         }
       }
-    } catch(e) { /* silent — workspace bootstrap is best-effort */ }
-    // Load everything after bootstrap attempt
-    await loadActivity();
-    await loadStats();
-    await loadTeamMembers();
+    } catch(e) { /* best-effort */ }
+    loadActivity();
+    loadStats();
+    loadTeamMembers();
   })();
 });
 </script>

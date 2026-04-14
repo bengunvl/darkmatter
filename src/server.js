@@ -4492,7 +4492,7 @@ app.post('/api/workspace', wsAuth, async (req, res) => {
     const { name } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'Name required' });
 
-    const { data: ws, error } = await supabaseService
+    const { data: ws, error } = await supabase
       .from('workspaces')
       .insert({ name: name.trim(), owner_user_id: req.user.id })
       .select().single();
@@ -4654,6 +4654,26 @@ app.post('/api/workspace/invite', wsAuth, async (req, res) => {
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+
+// ── Alias: /api/workspace/invitations → /api/workspace/invite ───────────────
+// Compatibility for clients that call the plural form
+app.post('/api/workspace/invitations', wsAuth, async (req, res) => {
+  req.url = '/api/workspace/invite';
+  // Re-route by calling the invite handler logic directly
+  const { email, role = 'member' } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required' });
+  try {
+    const { data: me } = await supabaseService.from('workspace_members')
+      .select('workspace_id, role').eq('user_id', req.user.id).single();
+    if (!me || !['admin','owner'].includes(me.role)) return res.status(403).json({ error: 'Admin only' });
+    const { data: inv, error } = await supabaseService.from('workspace_invitations')
+      .insert({ workspace_id: me.workspace_id, email, role, invited_by: req.user.id })
+      .select().single();
+    if (error) throw error;
+    res.json({ invitation: inv });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ── Accept invitation ─────────────────────────────────────────────────

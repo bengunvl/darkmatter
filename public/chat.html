@@ -452,8 +452,8 @@ body { font-family: var(--sans); background: var(--bg); color: var(--t0); displa
   justify-content: flex-end;
   margin-bottom: 4px;
 }
-.msg-time { font-family:var(--mono); font-size:10px; color:var(--t4); margin-top:3px; }
-.msg-time-user { text-align:right; }
+.msg-time { font-family: var(--mono); font-size: 10px; color: var(--t4); margin-top: 3px; }
+.msg-time-user { text-align: right; margin-right: 2px; }
 .msg-user-bubble {
   background: var(--bg-1);
   border: 1px solid var(--brd);
@@ -999,28 +999,29 @@ async function loadThreadsFromServer() {
 }
 
 // ── Boot ──
-// Auth gate — redirect to login if no session
 (function() {
-  let _s;
-  try { _s = JSON.parse(localStorage.getItem('dm_session') || 'null'); } catch(e) { _s = null; }
-  if (!_s?.access_token) {
+  var _s = null;
+  try { _s = JSON.parse(localStorage.getItem('dm_session') || 'null'); } catch(e) {}
+  if (!_s || !_s.access_token) {
     window.location.replace('/login?next=/chat');
     return;
   }
-  // Populate sidebar user from session
-  const email    = _s.user?.email || '';
-  const meta     = _s.user?.user_metadata || {};
-  const fullName = meta.full_name || meta.name || email.split('@')[0] || 'User';
-  const parts    = fullName.trim().split(/\s+/);
-  const initials = parts.length >= 2
+  // Populate sidebar user from session immediately — no server call needed
+  var email    = (_s.user && _s.user.email) || '';
+  var meta     = (_s.user && _s.user.user_metadata) || {};
+  var fullName = meta.full_name || meta.name || email.split('@')[0] || 'User';
+  var parts    = fullName.trim().split(/\s+/);
+  var initials = parts.length >= 2
     ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase()
     : fullName.slice(0,2).toUpperCase();
-  const avatarEl = document.getElementById('user-avatar');
-  const nameEl   = document.getElementById('user-name');
-  const wsEl     = document.getElementById('user-workspace');
-  if (avatarEl) avatarEl.textContent = initials;
+  var avatarEl = document.getElementById('user-avatar');
+  var nameEl   = document.getElementById('user-name');
+  var wsEl     = document.getElementById('user-workspace');
+  if (avatarEl) avatarEl.textContent = initials || '?';
   if (nameEl)   nameEl.textContent   = fullName;
   if (wsEl)     wsEl.textContent     = email;
+  var rpUserEl = document.getElementById('rp-user-val');
+  if (rpUserEl) rpUserEl.textContent = fullName;
 })();
 loadThreadsFromServer();
 
@@ -1377,11 +1378,8 @@ function appendUserMessage(text) {
   const container = document.getElementById('messages-inner');
   const block = document.createElement('div');
   block.className = 'message-block';
-  const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-  block.innerHTML = `<div class="msg-user">
-    <div class="msg-user-bubble">${escHtml(text)}</div>
-    <div class="msg-time msg-time-user">${ts}</div>
-  </div>`;
+  const ts = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+  block.innerHTML = `<div class="msg-user"><div class="msg-user-bubble">${escHtml(text)}</div><div class="msg-time msg-time-user">${ts}</div></div>`;
   container.appendChild(block);
   scrollToBottom();
 }
@@ -1396,8 +1394,8 @@ function appendAiMessage(content, recId) {
       <div class="msg-ai-content">
         <div class="msg-ai-text">${formatResponse(content)}</div>
         <div class="record-line">
-          <span class="msg-time" style="margin-right:6px;">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
-          <span class="dot" style="color:var(--t4);margin-right:6px;">·</span>
+          <span class="msg-time" style="margin-right:4px;">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
+          <span class="dot" style="color:var(--t4);margin-right:4px;">·</span>
           <span class="record-saved">Saved<span class="dot">·</span>${currentModelLabel}</span>
           <span class="dot" style="color:var(--t4);">·</span>
           <a class="record-id-link" onclick="openRecordPanel('${recId}', ${JSON.stringify(content)})">Record ID: ${recId}</a>
