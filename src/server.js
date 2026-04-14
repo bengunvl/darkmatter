@@ -214,44 +214,40 @@ async function requireApiKey(req, res, next) {
 
 // ── Middleware: validate Supabase JWT (dashboard calls) ──
 async function requireAuth(req, res, next) {
-  const auth = req.headers['authorization'];
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
+  try {
+    const auth = req.headers['authorization'];
+    if (!auth || !auth.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    const token = auth.replace('Bearer ', '').trim();
 
-  const token = auth.replace('Bearer ', '').trim();
-  let { data: { user }, error } = await supabaseAnon.auth.getUser(token);
+    // Use service client — reliable regardless of anon key config
+    const { data: { user }, error } = await supabaseService.auth.getUser(token);
+    if (!error && user) { req.user = user; return next(); }
 
-  // Fallback: try service client (handles tokens issued by supabaseService)
-  if (error || !user) {
-    try {
-      const { data: sd } = await supabaseService.auth.getUser(token);
-      if (sd?.user) { user = sd.user; error = null; }
-    } catch(_) {}
-  }
-
-  // If token is expired, try server-side refresh
-  if ((error || !user) && req.headers['x-refresh-token']) {
-    try {
-      const { data: rd } = await supabaseService.auth.refreshSession({ refresh_token: req.headers['x-refresh-token'] });
-      if (rd && rd.user) {
-        user = rd.user;
-        error = null;
-        if (rd.session) {
-          res.setHeader('X-New-Access-Token', rd.session.access_token);
-          res.setHeader('X-New-Refresh-Token', rd.session.refresh_token);
-          res.setHeader('X-New-Expires-At', rd.session.expires_at);
+    // Token expired — try refresh
+    const rt = req.headers['x-refresh-token'];
+    if (rt) {
+      try {
+        const { data: rd } = await supabaseService.auth.refreshSession({ refresh_token: rt });
+        if (rd && rd.session && rd.session.access_token) {
+          const { data: { user: ru } } = await supabaseService.auth.getUser(rd.session.access_token);
+          if (ru) {
+            req.user = ru;
+            res.setHeader('X-New-Access-Token', rd.session.access_token);
+            res.setHeader('X-New-Refresh-Token', rd.session.refresh_token || '');
+            res.setHeader('X-New-Expires-At', String(rd.session.expires_at || ''));
+            return next();
+          }
         }
-      }
-    } catch (refreshErr) {}
-  }
+      } catch(_) {}
+    }
 
-  if (error || !user) {
-    return res.status(401).json({ error: 'Invalid session' });
+    return res.status(401).json({ error: 'Session expired. Please sign in again.' });
+  } catch(e) {
+    console.error('[requireAuth]', e.message);
+    return res.status(401).json({ error: 'Authentication error. Please sign in again.' });
   }
-
-  req.user = user;
-  next();
 }
 
 // ── flexAuth — accepts Supabase JWT (dashboard) OR dm_sk_ API key (SDK/CLI) ──
