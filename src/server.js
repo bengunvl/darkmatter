@@ -1,4 +1,3 @@
-// DarkMatter server v7 — routes fixed
 require('dotenv').config();
 const express   = require('express');
 const path      = require('path');
@@ -5144,10 +5143,10 @@ app.get('/chat', (req, res) => {
 });
 
 
-app.get('*', (req, res) => {
-  // API routes should 404
+app.get('*', (req, res, next) => {
+  // API routes: pass through to registered handlers (or Express default 404)
   if (req.path.startsWith('/api/') || req.path.startsWith('/proxy/')) {
-    return res.status(404).json({ error: 'Not found' });
+    return next();
   }
   // Serve the requested HTML file if it exists, else 404
   let filePath = path.join(publicDir, req.path === '/' ? 'index.html' : req.path);
