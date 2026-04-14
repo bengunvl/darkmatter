@@ -1480,7 +1480,6 @@ async function loadActivity() {
     });
     if (res.status === 401) return; // not logged in — keep placeholder
     handleNewTokens(res);
-    if (res.status === 401) { window.location.replace('/login?next=/dashboard'); return; }
     if (!res.ok) return;
     const data = await res.json();
     activityData = data.activity || [];
@@ -1495,7 +1494,6 @@ async function loadStats() {
   try {
     const res = await fetch('/api/workspace/stats', { headers: getAuthHeaders() });
     handleNewTokens(res);
-    if (res.status === 401) { window.location.replace('/login?next=/dashboard'); return; }
     if (!res.ok) return;
     const d = await res.json();
     const set = (id, val, sub) => {
@@ -1517,7 +1515,6 @@ async function loadTeamMembers() {
   try {
     const res = await fetch('/api/workspace/members', { headers: getAuthHeaders() });
     handleNewTokens(res);
-    if (res.status === 401) { window.location.replace('/login?next=/dashboard'); return; }
     if (!res.ok) {
       list.innerHTML = '<div style="padding:24px 18px;text-align:center;color:var(--t3);font-size:13px;">Could not load team</div>';
       return;
@@ -1556,7 +1553,6 @@ async function loadConnectedServices() {
   try {
     const res = await fetch('/api/workspace/provider-keys', { headers: getAuthHeaders() });
     handleNewTokens(res);
-    if (res.status === 401) { window.location.replace('/login?next=/dashboard'); return; }
     if (!res.ok) return;
     const keys = await res.json();
     const rows = document.querySelectorAll('.service-row');
@@ -1986,7 +1982,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch('/api/workspace', { headers: getAuthHeaders() });
       handleNewTokens(res);
-      if (res.status === 401) { window.location.replace('/login?next=/dashboard'); return; }
       if (res.ok) {
         const data = await res.json();
         if (!data.workspace) {
