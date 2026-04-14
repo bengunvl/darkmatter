@@ -142,6 +142,36 @@ body { font-family: var(--sans); background: var(--bg-0); color: var(--t0); disp
 .nav-user-info { flex: 1; min-width: 0; }
 .nav-user-name { font-size: 13px; font-weight: 500; color: var(--t0); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nav-user-role { font-family: var(--mono); font-size: 9.5px; color: var(--t3); }
+.account-menu {
+  position: absolute;
+  bottom: 56px;
+  left: 12px;
+  right: 12px;
+  background: var(--bg);
+  border: 1px solid var(--brd);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  overflow: hidden;
+  display: none;
+  z-index: 50;
+}
+.account-menu.open { display: block; }
+.account-menu button {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--brd);
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--t1);
+  cursor: pointer;
+  transition: background .1s;
+}
+.account-menu button:last-child { border-bottom: none; }
+.account-menu button:hover { background: var(--bg-0); }
 
 /* ── MAIN CONTENT ── */
 .main {
@@ -713,7 +743,12 @@ body.dm-shell{background:var(--bg);}
       </div>
     </div>
     <div class="leftnav-bottom">
-      <div class="nav-user">
+      <div class="account-menu" id="account-menu">
+        <button onclick="window.location.href='/account'">Account settings</button>
+        <button onclick="window.location.href='/billing'">Billing</button>
+        <button onclick="logout()">Sign out</button>
+      </div>
+      <div class="nav-user" onclick="toggleAccountMenu()">
         <div class="nav-avatar" id="nav-avatar">?</div>
         <div class="nav-user-info">
           <div class="nav-user-name" id="nav-user-name">Loading&hellip;</div>
@@ -734,9 +769,6 @@ body.dm-shell{background:var(--bg);}
         <svg class="topbar-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" placeholder="Search conversations...">
       </div>
-      <button class="topbar-btn" onclick="openServiceModal('gpt')" style="background:transparent;color:var(--t2);border:1px solid var(--brd);">
-        Connect ChatGPT
-      </button>
       <button class="topbar-btn" onclick="openInviteModal()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Invite your team
@@ -753,7 +785,8 @@ body.dm-shell{background:var(--bg);}
           <div class="setup-banner-title">Finish setting up your workspace</div>
           <div class="setup-banner-sub">Two quick steps and your team can start using AI with automatic record keeping.</div>
           <div class="setup-steps">
-            <div class="setup-step todo" id="setup-step-connect" data-section="services" onclick="showSection('services')">
+            <div class="setup-step todo" id="setup-step-connect" onclick="openServiceModal('claude')"
+>
               <div class="setup-step-num">1</div>
               Connect Claude
             </div>
@@ -835,7 +868,7 @@ body.dm-shell{background:var(--bg);}
         <div class="panel" id="services-panel">
           <div class="panel-header">
             <span class="panel-title">AI services</span>
-            <button class="panel-action" data-section="services" onclick="showSection('services')">Manage</button>
+            <button class="panel-action" onclick="openServiceModal('claude')">Manage</button>
           </div>
           <div class="service-row">
             <div class="service-top">
@@ -1773,6 +1806,28 @@ function sendInvites() {
 }
 
 // ── Toast ──
+// ── Account menu ─────────────────────────────────────────────────────────────
+function toggleAccountMenu() {
+  document.getElementById('account-menu')?.classList.toggle('open');
+}
+
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('account-menu');
+  const user = document.querySelector('.nav-user');
+  if (!menu || !user) return;
+  if (!user.contains(e.target) && !menu.contains(e.target)) {
+    menu.classList.remove('open');
+  }
+});
+
+async function logout() {
+  try {
+    await fetch('/auth/logout', { method: 'POST', headers: getAuthHeaders() });
+  } catch(e) { /* silent */ }
+  localStorage.removeItem('dm_session');
+  window.location.href = '/login';
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
