@@ -5132,7 +5132,7 @@ app.post('/api/auth/refresh', async (req, res) => {
   }
 });
 
-// ── Static file serving ────────────────────────────────────────────────
+// ── Static file serving ──────────────────────────────────────────────── v2
 const publicDir = path.join(__dirname, '../public');
 app.use(express.static(publicDir));
 

@@ -1372,6 +1372,8 @@ function handleNewTokens(res) {
     s.access_token = t;
     const r = res.headers.get('X-New-Refresh-Token');
     if (r) s.refresh_token = r;
+    const exp = res.headers.get('X-New-Expires-At');
+    if (exp) s.expires_at = exp;
     localStorage.setItem('dm_session', JSON.stringify(s));
   }
 }
@@ -1687,7 +1689,17 @@ async function connectService(provider) {
 
     const ct = res.headers.get('content-type') || '';
     if (!ct.includes('application/json')) {
-      if (res.status === 401) { window.location.replace('/login?next=/dashboard'); return; }
+      if (res.status === 401) {
+        // Try client-side token refresh before giving up
+        const refreshed = await tryRefreshSession();
+        if (refreshed) {
+          // Retry the original request with new token
+          btn.disabled = false; btn.textContent = origText;
+          connectService(provider);
+          return;
+        }
+        window.location.replace('/login?next=/dashboard'); return;
+      }
       showToast('Error: Server error (' + res.status + ').');
       if (btn) { btn.disabled = false; btn.textContent = origText; }
       return;
@@ -1848,6 +1860,30 @@ async function signOut() {
   try { await fetch('/auth/logout', { method: 'POST', headers: getAuthHeaders() }); } catch(e) {}
   localStorage.removeItem('dm_session');
   window.location.href = '/login';
+}
+
+
+// ── Token refresh helper ─────────────────────────────────────────────────────
+async function tryRefreshSession() {
+  const s = getSession();
+  if (!s?.refresh_token) return false;
+  try {
+    const res = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: s.refresh_token }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    if (data.access_token) {
+      s.access_token  = data.access_token;
+      s.refresh_token = data.refresh_token || s.refresh_token;
+      if (data.user) s.user = data.user;
+      localStorage.setItem('dm_session', JSON.stringify(s));
+      return true;
+    }
+    return false;
+  } catch(e) { return false; }
 }
 
 function showToast(msg) {
