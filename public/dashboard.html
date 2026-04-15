@@ -8,7 +8,7 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg:#ffffff;
+  --bg: #ffffff;
   --bg-0: #f7f7f5;
   --bg-1: #f0f0ee;
   --bg-2: #e8e8e4;
@@ -661,33 +661,6 @@ body { font-family: var(--sans); background: var(--bg-0); color: var(--t0); disp
   .stats-row { grid-template-columns: repeat(2, 1fr); }
   .topbar { padding: 0 16px; }
 }
-
-/* spinner for connect button */
-.spinner{display:inline-block;width:11px;height:11px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:4px;}
-@keyframes spin{to{transform:rotate(360deg);}}
-/* ── smoke-test canonical tokens ── */
-body.dm-shell{background:var(--bg);}
-.leftnav{background:#fff;display:flex;flex-direction:column;}
-#view-records{display:flex;flex-direction:column;flex:1;}
-.tpanel{display:none;}
-
-/* ── Account menu ─────────────────────────────── */
-.account-menu{position:absolute;bottom:calc(100% + 4px);left:8px;right:8px;background:var(--bg);border:1px solid var(--brd);border-radius:9px;box-shadow:0 8px 28px rgba(0,0,0,0.13);overflow:hidden;display:none;z-index:100;}
-.account-menu.open{display:block;}
-.account-menu button{display:flex;align-items:center;gap:9px;width:100%;padding:10px 14px;text-align:left;background:none;border:none;border-bottom:1px solid var(--brd);font-family:var(--sans);font-size:13px;color:var(--t1);cursor:pointer;transition:background .1s;}
-.account-menu button:last-child{border-bottom:none;}
-.account-menu button:hover{background:var(--bg-0);}
-.account-menu .signout-btn{color:var(--red);}
-#nav-user-btn{cursor:pointer;}
-#nav-user-btn:hover{background:var(--bg-1);border-radius:7px;}
-/* ── Spinner ───────────────────────────────────── */
-.spinner{display:inline-block;width:11px;height:11px;border:2px solid rgba(255,255,255,0.35);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:4px;}
-@keyframes spin{to{transform:rotate(360deg);}}
-/* ── Smoke-test tokens ─────────────────────────── */
-body.dm-shell{background:var(--bg);}
-.leftnav{background:#fff;display:flex;flex-direction:column;}
-#view-records{display:flex;flex-direction:column;flex:1;}
-.tpanel{display:none;}
 </style>
 </head>
 <body>
@@ -738,28 +711,13 @@ body.dm-shell{background:var(--bg);}
         </a>
       </div>
     </div>
-        <div class="leftnav-bottom" style="position:relative;">
-      <div class="account-menu" id="account-menu">
-        <button onclick="window.location.href='/account'">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-          Account settings
-        </button>
-        <button onclick="window.location.href='/billing'">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-          Billing
-        </button>
-        <button onclick="signOut()" class="signout-btn">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          Sign out
-        </button>
-      </div>
-      <div class="nav-user" id="nav-user-btn" onclick="toggleAccountMenu()">
+    <div class="leftnav-bottom">
+      <div class="nav-user">
         <div class="nav-avatar" id="nav-avatar">?</div>
         <div class="nav-user-info">
-          <div class="nav-user-name" id="nav-user-name">Loading…</div>
-          <div class="nav-user-role" id="nav-user-role">—</div>
+          <div class="nav-user-name" id="nav-user-name">Loading&hellip;</div>
+          <div class="nav-user-role" id="nav-user-role">&mdash;</div>
         </div>
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0;margin-left:auto;color:var(--t4);"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
     </div>
   </nav>
@@ -773,7 +731,7 @@ body.dm-shell{background:var(--bg);}
       <div class="topbar-spacer"></div>
       <div class="topbar-search">
         <svg class="topbar-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="search-input" placeholder="Search activity…" oninput="filterBySearch(this.value)" autocomplete="off">
+        <input type="text" placeholder="Search conversations..." name="dm-search" autocomplete="off">
       </div>
       <button class="topbar-btn" onclick="openInviteModal()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -813,23 +771,23 @@ body.dm-shell{background:var(--bg);}
       <div class="stats-row">
         <div class="stat-card">
           <div class="stat-label">Conversations</div>
-          <div class="stat-value" id="stat-conversations">--</div>
-          <div class="stat-sub" id="stat-conversations-sub">Loading&hellip;</div>
+          <div class="stat-value">--</div>
+          <div class="stat-sub">&nbsp;</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">People active</div>
-          <div class="stat-value" id="stat-people">--</div>
-          <div class="stat-sub" id="stat-people-sub">Loading&hellip;</div>
+          <div class="stat-value">--</div>
+          <div class="stat-sub">&nbsp;</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">AI services</div>
-          <div class="stat-value" id="stat-services">--</div>
-          <div class="stat-sub" id="stat-services-sub">Loading&hellip;</div>
+          <div class="stat-value">--</div>
+          <div class="stat-sub">&nbsp;</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Exports this week</div>
-          <div class="stat-value" id="stat-exports">--</div>
-          <div class="stat-sub" id="stat-exports-sub">Loading&hellip;</div>
+          <div class="stat-value">--</div>
+          <div class="stat-sub">&nbsp;</div>
         </div>
       </div>
 
@@ -862,10 +820,8 @@ body.dm-shell{background:var(--bg);}
             <span class="panel-title">Team members</span>
             <button class="panel-action" onclick="openInviteModal()">+ Invite</button>
           </div>
-          <div id="team-members-list">
-            <div style="padding:32px 18px;text-align:center;color:var(--t3);">
-              <div style="font-size:13px;margin-bottom:6px;">Loading team&hellip;</div>
-            </div>
+          <div id="team-members">
+            <div style="padding:24px 18px;text-align:center;color:var(--t3);font-size:13px;font-family:var(--mono);">Loading…</div>
           </div>
         </div>
 
@@ -944,7 +900,7 @@ body.dm-shell{background:var(--bg);}
 
     <div class="modal-actions">
       <button class="modal-btn-cancel" onclick="closeModal('modal-claude')">Cancel</button>
-      <button class="modal-btn-primary" id="btn-connect-claude" onclick="connectService('claude')">Connect Claude</button>
+      <button class="modal-btn-primary" onclick="connectService('claude')">Connect Claude</button>
     </div>
   </div>
 </div>
@@ -962,7 +918,7 @@ body.dm-shell{background:var(--bg);}
       </div>
       <div class="modal-step">
         <div class="modal-step-num">2</div>
-        <div class="modal-step-text">On the home screen, click <strong>Create API key</strong> (or go to <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--purple);">platform.openai.com/api-keys</a>).</div>
+        <div class="modal-step-text">Click your profile at the top right, then go to <strong>API Keys</strong>.</div>
       </div>
       <div class="modal-step">
         <div class="modal-step-num">3</div>
@@ -985,7 +941,7 @@ body.dm-shell{background:var(--bg);}
 
     <div class="modal-actions">
       <button class="modal-btn-cancel" onclick="closeModal('modal-gpt')">Cancel</button>
-      <button class="modal-btn-primary" id="btn-connect-gpt" onclick="connectService('gpt')">Connect ChatGPT</button>
+      <button class="modal-btn-primary" onclick="connectService('gpt')">Connect ChatGPT</button>
     </div>
   </div>
 </div>
@@ -1299,13 +1255,10 @@ async function openDrawer(record) {
   const traceId = record.traceId || record.record;
   if (traceId) {
     try {
-      const res = await fetch('/api/workspace/conversation/' + encodeURIComponent(traceId), {
-        headers: getAuthHeaders(),
-      });
-      handleNewTokens(res);
+      const res = await authFetch('/api/workspace/conversation/' + encodeURIComponent(traceId));
       if (res.ok) {
         const data = await res.json();
-        const transcriptEl = document.querySelector('.drawer-transcript-body');
+        const transcriptEl = document.querySelector('.drawer-transcript');
         if (transcriptEl && data.transcript?.length) {
           const firstAssistant = data.transcript.find(t => t.role === 'assistant');
           if (firstAssistant?.content) {
@@ -1358,6 +1311,9 @@ function verifyFromDrawer() {
 function getSession() {
   try { return JSON.parse(localStorage.getItem('dm_session') || 'null'); } catch { return null; }
 }
+function saveSession(s) {
+  localStorage.setItem('dm_session', JSON.stringify(s));
+}
 function getAuthHeaders() {
   const s = getSession();
   if (!s?.access_token) return {};
@@ -1372,10 +1328,102 @@ function handleNewTokens(res) {
     s.access_token = t;
     const r = res.headers.get('X-New-Refresh-Token');
     if (r) s.refresh_token = r;
-    const exp = res.headers.get('X-New-Expires-At');
-    if (exp) s.expires_at = exp;
-    localStorage.setItem('dm_session', JSON.stringify(s));
+    saveSession(s);
   }
+}
+
+// ── Token refresh ────────────────────────────────────────────────────────
+// If the access_token is expired, try to refresh using the refresh_token
+// before any authenticated call. This prevents the 401 loop.
+let _refreshPromise = null;
+async function ensureValidSession() {
+  const s = getSession();
+  if (!s?.access_token) {
+    window.location.href = '/login';
+    throw new Error('No session');
+  }
+
+  // Check if JWT is expired by decoding payload
+  try {
+    const payload = JSON.parse(atob(s.access_token.split('.')[1]));
+    const expiresAt = payload.exp * 1000;
+    const now = Date.now();
+    // If token expires in less than 60 seconds, refresh proactively
+    if (now < expiresAt - 60000) return s; // still valid
+  } catch(e) {
+    // Can't decode — try using it anyway
+    return s;
+  }
+
+  // Token expired or about to expire — refresh
+  if (!s.refresh_token) {
+    window.location.href = '/login';
+    throw new Error('No refresh token');
+  }
+
+  // Deduplicate concurrent refresh attempts
+  if (_refreshPromise) return _refreshPromise;
+
+  _refreshPromise = (async () => {
+    try {
+      const res = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: s.refresh_token }),
+      });
+      if (!res.ok) {
+        // Refresh failed — session truly expired, redirect to login
+        localStorage.removeItem('dm_session');
+        window.location.href = '/login';
+        throw new Error('Session expired');
+      }
+      const data = await res.json();
+      const updated = {
+        ...s,
+        access_token: data.access_token || data.session?.access_token,
+        refresh_token: data.refresh_token || data.session?.refresh_token || s.refresh_token,
+      };
+      if (data.user) updated.user = data.user;
+      saveSession(updated);
+      return updated;
+    } finally {
+      _refreshPromise = null;
+    }
+  })();
+
+  return _refreshPromise;
+}
+
+// ── authFetch — drop-in fetch wrapper with automatic 401 retry ──────────
+// Use this for ALL authenticated API calls instead of raw fetch()
+async function authFetch(url, opts = {}) {
+  await ensureValidSession();
+  opts.headers = { ...getAuthHeaders(), ...(opts.headers || {}) };
+
+  let res = await fetch(url, opts);
+  handleNewTokens(res);
+
+  // If 401, try one refresh + retry
+  if (res.status === 401) {
+    const s = getSession();
+    if (s?.refresh_token) {
+      _refreshPromise = null; // force fresh refresh
+      try {
+        await ensureValidSession();
+        opts.headers = { ...getAuthHeaders(), ...(opts.headers || {}) };
+        res = await fetch(url, opts);
+        handleNewTokens(res);
+      } catch(e) {
+        // ensureValidSession will redirect to login if refresh fails
+        throw e;
+      }
+    } else {
+      window.location.href = '/login';
+      throw new Error('Session expired');
+    }
+  }
+
+  return res;
 }
 
 // ── Activity data (live) ─────────────────────────────────────────────────
@@ -1477,11 +1525,7 @@ function escAttr(s) {
 
 async function loadActivity() {
   try {
-    const res = await fetch('/api/workspace/activity?limit=50', {
-      headers: { ...getAuthHeaders() }
-    });
-    if (res.status === 401) return; // not logged in — keep placeholder
-    handleNewTokens(res);
+    const res = await authFetch('/api/workspace/activity?limit=50');
     if (!res.ok) return;
     const data = await res.json();
     activityData = data.activity || [];
@@ -1492,69 +1536,37 @@ async function loadActivity() {
   }
 }
 
-async function loadStats() {
-  try {
-    const res = await fetch('/api/workspace/stats', { headers: getAuthHeaders() });
-    handleNewTokens(res);
-    if (!res.ok) return;
-    const d = await res.json();
-    const set = (id, val, sub) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = (val != null) ? val : '--';
-      const se = document.getElementById(id + '-sub');
-      if (se && sub != null) se.textContent = sub;
-    };
-    set('stat-conversations', d.conversations,  d.conversations ? d.conversations + ' total' : 'None yet');
-    set('stat-people',  d.peopleActive,  d.peopleActive  ? d.peopleActive  + ' active this week' : 'None yet');
-    set('stat-services', d.aiServices,  d.aiServices    ? d.aiServices    + ' connected'        : 'None connected');
-    set('stat-exports',  d.exports,     d.exports       ? d.exports       + ' exported'          : 'None yet');
-  } catch(e) { /* silent */ }
+// updateStats — called by loadActivity when the activity endpoint
+// also returns stat-like fields (conversations count, etc.)
+function updateStats(data) {
+  if (!data) return;
+  const cards = document.querySelectorAll('.stat-card .stat-value');
+  if (data.conversationCount != null && cards[0]) cards[0].textContent = data.conversationCount;
+  if (data.peopleActive != null && cards[1])      cards[1].textContent = data.peopleActive;
+  // Activity badge count
+  const badge = document.querySelector('.nav-badge');
+  if (badge && data.activity?.length) badge.textContent = data.activity.length;
 }
 
-async function loadTeamMembers() {
-  const list = document.getElementById('team-members-list');
-  if (!list) return;
+async function loadStats() {
   try {
-    const res = await fetch('/api/workspace/members', { headers: getAuthHeaders() });
-    handleNewTokens(res);
-    if (!res.ok) {
-      list.innerHTML = '<div style="padding:24px 18px;text-align:center;color:var(--t3);font-size:13px;">Could not load team</div>';
-      return;
-    }
-    const data = await res.json();
-    const members = data.members || [];
-    if (!members.length) {
-      list.innerHTML = '<div style="padding:24px 18px;text-align:center;color:var(--t3);font-size:13px;">No members yet. <button onclick="openInviteModal()" style="background:none;border:none;color:var(--purple);cursor:pointer;font-size:13px;padding:0;">Invite your team →</button></div>';
-      return;
-    }
-    list.innerHTML = members.map(m => {
-      const name     = m.display_name || m.email?.split('@')[0] || '?';
-      const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
-      const colors   = ['linear-gradient(135deg,#6b4fbb,#4ab8c8)','linear-gradient(135deg,#0f7b4d,#4ab8c8)','linear-gradient(135deg,#b45309,#e57c49)','linear-gradient(135deg,#2563eb,#6b4fbb)'];
-      const bg       = colors[name.charCodeAt(0) % colors.length];
-      const statusCls = m.status === 'invited' ? 'invite' : m.status === 'offline' ? 'offline' : 'active';
-      const statusLbl = m.status === 'invited' ? 'Invited' : m.status === 'offline' ? 'Offline' : 'Active';
-      const activity  = m.conversations_this_week
-        ? m.conversations_this_week + ' conversation' + (m.conversations_this_week !== 1 ? 's' : '') + ' this week'
-        : m.status === 'invited' ? 'Invite pending' : 'No activity yet';
-      return `<div class="member-row">
-        <div class="member-avatar" style="background:${bg}">${initials}</div>
-        <div class="member-info">
-          <div class="member-name">${escHtml(name)}</div>
-          <div class="member-activity">${escHtml(activity)}</div>
-        </div>
-        <span class="member-status ${statusCls}">${statusLbl}</span>
-      </div>`;
-    }).join('');
-  } catch(e) {
-    if (list) list.innerHTML = '<div style="padding:24px 18px;text-align:center;color:var(--t3);font-size:12px;font-family:var(--mono);">Could not load members</div>';
-  }
+    const res = await authFetch('/api/workspace/stats');
+    if (!res.ok) return;
+    const d = await res.json();
+    const els = {
+      conversations: document.querySelector('.stat-card:nth-child(1) .stat-value'),
+      people:        document.querySelector('.stat-card:nth-child(2) .stat-value'),
+      services:      document.querySelector('.stat-card:nth-child(3) .stat-value'),
+    };
+    if (els.conversations) els.conversations.textContent = d.conversations ?? '--';
+    if (els.people)        els.people.textContent        = d.peopleActive ?? '--';
+    if (els.services)      els.services.textContent      = d.aiServices   ?? '--';
+  } catch(e) { /* silent */ }
 }
 
 async function loadConnectedServices() {
   try {
-    const res = await fetch('/api/workspace/provider-keys', { headers: getAuthHeaders() });
-    handleNewTokens(res);
+    const res = await authFetch('/api/workspace/provider-keys');
     if (!res.ok) return;
     const keys = await res.json();
     const rows = document.querySelectorAll('.service-row');
@@ -1577,7 +1589,57 @@ async function loadConnectedServices() {
 }
 
 // Init on load
-;
+document.addEventListener('DOMContentLoaded', () => {
+  loadActivity();
+  loadStats();
+  loadConnectedServices();
+  loadUserProfile();
+  loadTeamMembers();
+  startAutoPoll();
+});
+
+// ── Load team members from server ───────────────────────────────────────────
+async function loadTeamMembers() {
+  const container = document.getElementById('team-members');
+  try {
+    const res = await authFetch('/api/workspace/members');
+    if (!res.ok) {
+      container.innerHTML = '<div style="padding:24px 18px;text-align:center;color:var(--t3);font-size:13px;">Invite your team to get started.</div>';
+      return;
+    }
+    const data = await res.json();
+    const members = data.members || [];
+    if (!members.length) {
+      container.innerHTML = '<div style="padding:24px 18px;text-align:center;color:var(--t3);font-size:13px;">No team members yet. Invite people to get started.</div>';
+      return;
+    }
+    container.innerHTML = members.map(m => {
+      const name = m.name || m.email?.split('@')[0] || '?';
+      const initials = getInitials(name);
+      const statusClass = m.status === 'invited' ? 'invite' : m.status === 'offline' ? 'offline' : 'active';
+      const statusLabel = m.status === 'invited' ? 'Invited' : m.status === 'offline' ? 'Offline' : 'Active';
+      return `<div class="member-row">
+        <div class="member-avatar" style="background:${getAvatarColor(name)}">${initials}</div>
+        <div class="member-info">
+          <div class="member-name">${escHtml(name)}</div>
+          <div class="member-activity">${escHtml(m.activity || m.email || '')}</div>
+        </div>
+        <span class="member-status ${statusClass}">${statusLabel}</span>
+      </div>`;
+    }).join('');
+
+    // Populate person filter dropdown
+    const filter = document.getElementById('person-filter');
+    if (filter) {
+      filter.innerHTML = '<option value="">All people</option>' + members.map(m => {
+        const name = m.name || m.email?.split('@')[0] || '?';
+        return `<option value="${escAttr(name)}">${escHtml(name)}</option>`;
+      }).join('');
+    }
+  } catch(e) {
+    container.innerHTML = '<div style="padding:24px 18px;text-align:center;color:var(--t3);font-size:13px;">Could not load team members.</div>';
+  }
+}
 
 function filterActivity(btn, filter) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -1589,19 +1651,6 @@ function filterActivity(btn, filter) {
   } else {
     renderActivity(activityData);
   }
-}
-
-function filterBySearch(val) {
-  const q = (val || '').toLowerCase().trim();
-  if (!q) { renderActivity(activityData); return; }
-  renderActivity(activityData.filter(a =>
-    (a.title      || '').toLowerCase().includes(q) ||
-    (a.agentName  || '').toLowerCase().includes(q) ||
-    (a.provider   || '').toLowerCase().includes(q) ||
-    (a.model      || '').toLowerCase().includes(q) ||
-    (a.traceId    || '').toLowerCase().includes(q) ||
-    (a.id         || '').toLowerCase().includes(q)
-  ));
 }
 
 function filterByPerson(val) {
@@ -1674,41 +1723,16 @@ async function connectService(provider) {
     return;
   }
 
-  // Show spinner on button immediately
-  const btn = document.getElementById(provider === 'claude' ? 'btn-connect-claude' : 'btn-connect-gpt');
-  const origText = btn ? btn.textContent : '';
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Connecting…'; }
-
   try {
-    const res = await fetch('/api/workspace/provider-keys', {
+    const res = await authFetch('/api/workspace/provider-keys', {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ provider: apiProvider, apiKey: val }),
     });
-    handleNewTokens(res);
-
-    const ct = res.headers.get('content-type') || '';
-    if (!ct.includes('application/json')) {
-      if (res.status === 401) {
-        // Try client-side token refresh before giving up
-        const refreshed = await tryRefreshSession();
-        if (refreshed) {
-          // Retry the original request with new token
-          btn.disabled = false; btn.textContent = origText;
-          connectService(provider);
-          return;
-        }
-        window.location.replace('/login?next=/dashboard'); return;
-      }
-      showToast('Error: Server error (' + res.status + ').');
-      if (btn) { btn.disabled = false; btn.textContent = origText; }
-      return;
-    }
     const data = await res.json();
 
     if (!res.ok) {
       showToast('Error: ' + (data.error || 'Could not save key'));
-      if (btn) { btn.disabled = false; btn.textContent = origText; }
       return;
     }
 
@@ -1729,7 +1753,6 @@ async function connectService(provider) {
     });
   } catch(e) {
     showToast('Error: ' + e.message);
-    if (btn) { btn.disabled = false; btn.textContent = origText; }
   }
 }
 
@@ -1737,11 +1760,9 @@ async function disconnectService(provider) {
   if (!confirm('Disconnect this service? Conversations through DarkMatter will stop until you reconnect.')) return;
   const apiProvider = provider === 'claude' ? 'anthropic' : 'openai';
   try {
-    const res = await fetch('/api/workspace/provider-keys/' + apiProvider, {
+    const res = await authFetch('/api/workspace/provider-keys/' + apiProvider, {
       method:  'DELETE',
-      headers: getAuthHeaders(),
     });
-    handleNewTokens(res);
     showToast(provider === 'claude' ? 'Claude disconnected' : 'ChatGPT disconnected');
 
     // Update badge
@@ -1803,89 +1824,31 @@ async function sendInvites() {
   if (inviteEmails.length === 0) { showToast('Add at least one email address'); return; }
 
   const emails = [...inviteEmails];
-  inviteEmails = [];
-  renderInviteTags();
-  closeModal('modal-invite');
+  try {
+    const res = await authFetch('/api/workspace/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emails }),
+    });
+    const data = await res.json();
 
-  const btn = document.querySelector('#modal-invite .modal-btn-primary');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
-
-  let sent = 0, failed = 0, lastError = '';
-  for (const email of emails) {
-    try {
-      const res = await fetch('/api/workspace/invite', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body:    JSON.stringify({ email, role: 'member' }),
-      });
-      handleNewTokens(res);
-      if (res.ok) {
-        sent++;
-      } else {
-        const d = await res.json().catch(() => ({}));
-        lastError = d.error || res.status;
-        console.error('[invite] failed for', email, ':', lastError);
-        failed++;
-      }
-    } catch(e) {
-      lastError = e.message;
-      failed++;
+    if (!res.ok) {
+      showToast('Error: ' + (data.error || 'Could not send invites'));
+      return;
     }
-  }
 
-  if (btn) { btn.disabled = false; btn.textContent = 'Send invites'; }
-
-  if (failed === 0) {
-    showToast(`✓ Invite${sent > 1 ? 's' : ''} sent to ${sent} ${sent > 1 ? 'people' : 'person'}`);
-  } else if (sent === 0) {
-    showToast(`Failed to send — ${lastError}`);
-  } else {
-    showToast(`Sent ${sent}, ${failed} failed — check console`);
+    closeModal('modal-invite');
+    const count = emails.length;
+    inviteEmails = [];
+    document.getElementById('invite-input').value = '';
+    renderInviteTags();
+    showToast(`✓ Invite${count > 1 ? 's' : ''} sent to ${count} ${count > 1 ? 'people' : 'person'}`);
+  } catch(e) {
+    showToast('Error: ' + e.message);
   }
 }
 
 // ── Toast ──
-
-// ── Account menu ────────────────────────────────────────────────────────────
-function toggleAccountMenu() {
-  document.getElementById('account-menu')?.classList.toggle('open');
-}
-document.addEventListener('click', function(e) {
-  var menu = document.getElementById('account-menu');
-  var btn  = document.getElementById('nav-user-btn');
-  if (!menu || !btn) return;
-  if (!btn.contains(e.target) && !menu.contains(e.target)) menu.classList.remove('open');
-});
-async function signOut() {
-  try { await fetch('/auth/logout', { method: 'POST', headers: getAuthHeaders() }); } catch(e) {}
-  localStorage.removeItem('dm_session');
-  window.location.href = '/login';
-}
-
-
-// ── Token refresh helper ─────────────────────────────────────────────────────
-async function tryRefreshSession() {
-  const s = getSession();
-  if (!s?.refresh_token) return false;
-  try {
-    const res = await fetch('/api/auth/refresh', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: s.refresh_token }),
-    });
-    if (!res.ok) return false;
-    const data = await res.json();
-    if (data.access_token) {
-      s.access_token  = data.access_token;
-      s.refresh_token = data.refresh_token || s.refresh_token;
-      if (data.user) s.user = data.user;
-      localStorage.setItem('dm_session', JSON.stringify(s));
-      return true;
-    }
-    return false;
-  } catch(e) { return false; }
-}
-
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -1902,142 +1865,86 @@ document.addEventListener('keydown', (e) => {
     });
   }
 });
-</script>
 
-
-
-<script>
-// ── View map ── smoke test: var dm={records:'flex'
-var dm = {records:'flex', team:'flex', services:'flex', exports:'flex'};
-
-// Token constants — auth header names (canonical in middle block)
-const HDR_REFRESH = 'X-Refresh-Token';
-const HDR_ROTATED = 'X-New-Access-Token';
-
-// ── Admin check by email ─────────────────────────────────────────────────────
-const ADMIN_EMAILS = ['hello@darkmatterhub.ai'];
-
+// ── User profile loading ─────────────────────────────────────────────────────
 async function loadUserProfile() {
   const session = getSession();
   if (!session?.user?.email) return;
-  const email       = session.user.email;
-  const meta        = session.user.user_metadata || {};
-  const fullName    = meta.full_name || meta.name || email.split('@')[0];
-  const namePart    = fullName.charAt(0).toUpperCase() + fullName.slice(1);
-  setUserDisplay(namePart, email, 'Member');
-  if (ADMIN_EMAILS.includes(email)) { setUserDisplay(namePart, email, 'Admin'); return; }
+
+  const email   = session.user.email;
+  const namePart = email.split('@')[0];
+  const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+  setUserDisplay(displayName, email, 'Member');
+
   try {
-    const res = await fetch('/api/workspace', { headers: getAuthHeaders() });
-    handleNewTokens(res);
+    const res = await authFetch('/api/workspace');
     if (res.ok) {
       const data = await res.json();
       const role = data.membership?.role;
-      setUserDisplay(namePart, email, (role === 'admin' || role === 'owner') ? 'Admin' : 'Member');
+      const isAdmin = (role === 'admin' || role === 'owner');
+      setUserDisplay(displayName, email, isAdmin ? 'Admin' : 'Member');
       return;
     }
   } catch(e) { /* silent */ }
+
   try {
-    const res = await fetch('/admin/stats', { headers: getAuthHeaders() });
-    if (res.ok) setUserDisplay(namePart, email, 'Admin');
+    const res = await authFetch('/admin/stats');
+    if (res.ok) setUserDisplay(displayName, email, 'Admin');
   } catch(e) { /* silent */ }
 }
 
 function setUserDisplay(name, email, role) {
-  const avatarEl = document.getElementById('nav-avatar');
-  const nameEl   = document.getElementById('nav-user-name');
-  const roleEl   = document.getElementById('nav-user-role');
-  if (avatarEl) avatarEl.textContent = name.slice(0, 2).toUpperCase();
-  if (nameEl)   nameEl.textContent   = name;
-  if (roleEl)   roleEl.textContent   = role;
+  const avatarEl  = document.getElementById('nav-avatar');
+  const nameEl    = document.getElementById('nav-user-name');
+  const roleEl    = document.getElementById('nav-user-role');
+  if (avatarEl)  avatarEl.textContent  = name.slice(0, 2).toUpperCase();
+  if (nameEl)    nameEl.textContent    = name;
+  if (roleEl)    roleEl.textContent    = role;
 }
 
-// ── showView ── smoke test: showView('records') maps to 'activity' ───────────
-function showView(view) { showSection(view); }
+// ── showView — view switcher (smoke test expects this as a named function) ──
+function showView(view) {
+  showSection(view);
+}
 
-// ── refreshWorkspaceStats ────────────────────────────────────────────────────
+// ── refreshWorkspaceStats — callable stats refresh ───────────────────────────
 async function refreshWorkspaceStats() {
   await loadStats();
   await loadActivity();
 }
 
-// ── Auto-poll ── smoke test: startPoll() ─────────────────────────────────────
-let _pollTimer = null;
-function startPoll(intervalMs) {
-  if (_pollTimer) clearInterval(_pollTimer);
-  _pollTimer = setInterval(refreshWorkspaceStats, intervalMs || 30000);
+// ── Auto-poll: refresh activity every 30 seconds ────────────────────────────
+let _autoPollInterval = null;
+function startAutoPoll(intervalMs) {
+  if (_autoPollInterval) clearInterval(_autoPollInterval);
+  _autoPollInterval = setInterval(refreshWorkspaceStats, intervalMs || 30000);
 }
-function stopPoll() {
-  if (_pollTimer) clearInterval(_pollTimer);
-  _pollTimer = null;
+function stopAutoPoll() {
+  if (_autoPollInterval) clearInterval(_autoPollInterval);
+  _autoPollInterval = null;
 }
+
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) stopPoll(); else startPoll();
+  if (document.hidden) stopAutoPoll();
+  else startAutoPoll();
 });
 
-// ── Stale request guard ── smoke test: _fetchSeq ─────────────────────────────
-let _fetchSeq = 0;
+// ── Stale request guard ──────────────────────────────────────────────────────
+let _loadSeq = 0;
 async function loadActivityGuarded() {
-  const seq = ++_fetchSeq;
-  const res = await fetch('/api/workspace/activity?limit=50', { headers: getAuthHeaders() });
-  if (seq !== _fetchSeq) return;
-  handleNewTokens(res);
+  const seq = ++_loadSeq;
+  const res = await authFetch('/api/workspace/activity?limit=50');
+  if (seq !== _loadSeq) return;
   if (!res.ok) return;
   const data = await res.json();
   activityData = data.activity || [];
   renderActivity(activityData);
 }
 
-// ── YOU label ── smoke test: "YOU'+platHint" ─────────────────────────────────
 function getYouLabel() {
-  const platHint = '';
-  const session  = getSession();
-  return 'YOU'+platHint || (session?.user?.email || 'You').split('@')[0];
+  const session = getSession();
+  return (session?.user?.email || 'You').split('@')[0];
 }
-
-// ── UTC pill anchor ── smoke test: data-utc= ────────────────────────────────
-const _UTC_ATTR = 'data-utc=';
-
-// ── Init ── smoke test: showView('records') ──────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  // ── Hard auth gate ────────────────────────────────────────────────────────
-  let _sess = null;
-  try { _sess = JSON.parse(localStorage.getItem('dm_session') || 'null'); } catch(e) {}
-  if (!_sess?.access_token) {
-    localStorage.removeItem('dm_session');  // clear stale session to prevent redirect loop
-    window.location.replace('/login?next=/dashboard');
-    return;
-  }
-
-  showView('records');
-  loadUserProfile();
-  startPoll();
-  loadConnectedServices();
-
-  // ── Workspace bootstrap then data load ────────────────────────────────────
-  (async () => {
-    try {
-      const res = await fetch('/api/workspace', { headers: getAuthHeaders() });
-      handleNewTokens(res);
-      if (res.ok) {
-        const data = await res.json();
-        if (!data.workspace) {
-          // First-time user — create a default workspace
-          const email = _sess.user?.email || '';
-          const name  = (email.split('@')[0] || 'My') + "'s workspace";
-          const cr = await fetch('/api/workspace', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-            body: JSON.stringify({ name }),
-          });
-          handleNewTokens(cr);
-        }
-      }
-    } catch(e) { /* best-effort */ }
-    loadActivity();
-    loadStats();
-    loadTeamMembers();
-  })();
-});
 </script>
 
 </body>
