@@ -3,567 +3,805 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DarkMatter — Execution records for AI systems</title>
+<title>DarkMatter — AI accountability infrastructure</title>
+<meta name="description" content="Your AI agents are making decisions. DarkMatter is the independent record of what they decided. Tamper-evident, independently verifiable, outside your system.">
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #ffffff; --bg-0: #f8f8f7; --bg-1: #f2f2f0; --brd: #e8e8e4; --brd-mid: #d8d8d2;
-  --t0: #0a0a09; --t1: #3a3a35; --t2: #6a6a62; --t3: #9a9a90;
-  --purple: #6b4fbb; --teal: #4ab8c8; --blue-n: #3d6fd4;
-  --grn: #0f7b4d; --grn-bg: rgba(15,123,77,0.07); --grn-brd: rgba(15,123,77,0.18);
-  --red: #c8102e; --red-bg: rgba(200,16,46,0.07); --red-brd: rgba(200,16,46,0.18);
-  --amber: #b45309; --amber-bg: rgba(180,83,9,0.07); --amber-brd: rgba(180,83,9,0.18);
-  --mono: 'IBM Plex Mono', monospace; --sans: 'IBM Plex Sans', sans-serif;
-}
-html { scroll-behavior: smooth; }
-body { font-family: var(--sans); background: var(--bg); color: var(--t0); font-size: 15px; line-height: 1.6; overflow-x: hidden; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* NAV */
-nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--brd); display: flex; align-items: center; justify-content: space-between; padding: 0 40px; height: 56px; }
-.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-.logo-wm { font-family: var(--sans); font-size: 17px; font-weight: 700; letter-spacing: -0.01em; line-height: 1; }
-.logo-dark { color: var(--t0); }
-.logo-grad { background: linear-gradient(90deg, var(--purple) 0%, var(--teal) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-.nav-links { display: flex; align-items: center; gap: 28px; list-style: none; }
-.nav-links a { font-size: 13.5px; font-weight: 500; color: var(--t2); text-decoration: none; transition: color .15s; }
-.nav-links a:hover { color: var(--t0); }
-.nav-cta { font-family: var(--mono); font-size: 12.5px; font-weight: 600; background: var(--t0); color: var(--bg); padding: 7px 16px; border-radius: 5px; text-decoration: none; transition: opacity .15s; }
-.nav-cta:hover { opacity: .82; }
+  :root {
+    --ink: #0e0e0e;
+    --ink-mid: #444;
+    --ink-light: #888;
+    --ink-faint: #bbb;
+    --paper: #ffffff;
+    --paper-off: #f8f7f5;
+    --paper-dim: #f1efeb;
+    --rule: #e2dfd8;
+    --red: #c0392b;
+    --red-light: #fdf0ee;
+    --green-light: #f0faf5;
+    --green-text: #0f6e56;
+    --mono: 'DM Mono', 'Courier New', monospace;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans: 'DM Sans', system-ui, sans-serif;
+  }
 
-/* SHARED */
-.divider { border: none; border-top: 1px solid var(--brd); }
-.wrap { max-width: 1060px; margin: 0 auto; padding: 68px 40px; }
-.wrap.tight { padding-top: 48px; padding-bottom: 48px; }
-.eye { font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--t3); margin-bottom: 12px; }
-.h2 { font-family: var(--mono); font-size: clamp(20px, 2.6vw, 30px); font-weight: 600; letter-spacing: -.04em; color: var(--t0); line-height: 1.15; margin-bottom: 14px; }
-.lead { font-size: 15.5px; color: var(--t2); line-height: 1.65; max-width: 560px; margin-bottom: 32px; }
-.btn-p { font-family: var(--mono); font-size: 13px; font-weight: 600; background: var(--t0); color: var(--bg); padding: 11px 24px; border-radius: 6px; text-decoration: none; letter-spacing: .02em; display: inline-block; transition: opacity .15s, transform .12s ease; }
-.btn-p:hover { opacity: .85; transform: translateY(-1px); }
-.btn-o { font-family: var(--mono); font-size: 13px; font-weight: 500; background: transparent; color: var(--t1); padding: 10px 22px; border-radius: 6px; border: 1px solid var(--brd-mid); text-decoration: none; letter-spacing: .02em; display: inline-block; transition: border-color .15s, color .15s; }
-.btn-o:hover { border-color: var(--t2); color: var(--t0); }
+  html { font-size: 16px; scroll-behavior: smooth; }
 
-/* HERO */
-.hero { max-width: 760px; margin: 0 auto; padding: 92px 40px 68px; text-align: center; }
-.hero h1 { font-family: var(--mono); font-size: clamp(28px, 4.5vw, 52px); font-weight: 600; line-height: 1.08; letter-spacing: -.045em; color: var(--t0); margin-bottom: 22px; }
-.hero-sub { font-size: 17px; color: var(--t1); line-height: 1.65; max-width: 560px; margin: 0 auto 36px; }
-.hero-actions { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
-.hero-ticks { margin-top: 18px; display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap; }
-.hero-ticks span { font-size: 13px; color: var(--t3); }
-.hero-ticks span::before { content: '→ '; font-family: var(--mono); color: var(--t3); font-size: 11px; }
+  body {
+    font-family: var(--sans);
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
 
-/* PROBLEM BAND */
-.problem-band { background: var(--bg-0); border-top: 1px solid var(--brd); border-bottom: 1px solid var(--brd); }
-.problem-inner { max-width: 1060px; margin: 0 auto; padding: 48px 40px; display: grid; grid-template-columns: 1fr 1px 1fr; gap: 40px; align-items: start; }
-.problem-divider { background: var(--brd); align-self: stretch; }
-.problem-label { font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); margin-bottom: 16px; }
-.problem-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
-.problem-list li { font-size: 13.5px; line-height: 1.6; padding-left: 20px; position: relative; }
-.problem-list.bad li { color: var(--t2); }
-.problem-list.bad li::before { content: '✗'; position: absolute; left: 0; font-family: var(--mono); font-size: 11px; color: var(--red); top: 2px; }
-.problem-list.good li { color: var(--t1); }
-.problem-list.good li::before { content: '✓'; position: absolute; left: 0; font-family: var(--mono); font-size: 11px; color: var(--grn); top: 2px; }
-@media (max-width: 720px) {
-  .problem-inner { grid-template-columns: 1fr; gap: 32px; }
-  .problem-divider { display: none; }
-}
+  /* NAV */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--rule);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+  }
 
-/* PROOF LEVEL TABLE — the center of the product */
-.proof-section { background: var(--bg-0); border-top: 1px solid var(--brd); border-bottom: 1px solid var(--brd); }
-.proof-inner { max-width: 1060px; margin: 0 auto; padding: 56px 40px; }
-.proof-intro { margin-bottom: 32px; }
-.proof-intro h2 { font-family: var(--mono); font-size: clamp(18px, 2.4vw, 26px); font-weight: 600; letter-spacing: -.04em; color: var(--t0); line-height: 1.2; margin-bottom: 12px; }
-.proof-intro p { font-size: 15px; color: var(--t2); line-height: 1.65; max-width: 560px; }
-.proof-table { width: 100%; border-collapse: collapse; border: 1px solid var(--brd); border-radius: 8px; overflow: hidden; background: var(--bg); }
-.proof-table thead tr { background: var(--bg-1); border-bottom: 1px solid var(--brd); }
-.proof-table th { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); padding: 10px 18px; text-align: left; }
-.proof-table td { padding: 18px 18px; border-bottom: 1px solid var(--brd); font-size: 14px; color: var(--t2); line-height: 1.55; vertical-align: top; }
-.proof-table tr:last-child td { border-bottom: none; }
-.proof-table tr:hover td { background: var(--bg-0); }
-.proof-badge { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 4px; white-space: nowrap; }
-.pb-recorded { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-brd); }
-.pb-signed   { background: rgba(107,79,187,0.08); color: var(--purple); border: 1px solid rgba(107,79,187,0.2); }
-.pb-sealed   { background: var(--grn-bg); color: var(--grn); border: 1px solid var(--grn-brd); }
-.proof-how { font-family: var(--mono); font-size: 11px; color: var(--t3); margin-top: 4px; }
-.proof-gradient-note { margin-top: 20px; padding: 14px 18px; border: 1px solid var(--brd); border-radius: 6px; font-size: 13px; color: var(--t2); line-height: 1.6; background: var(--bg); }
-.proof-gradient-note strong { color: var(--t1); font-weight: 600; }
+  .nav-logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    text-decoration: none;
+    letter-spacing: 0.04em;
+  }
 
-/* VERIFY CTA STRIP */
-.verify-strip { background: var(--t0); padding: 32px 40px; text-align: center; }
-.verify-strip-inner { max-width: 600px; margin: 0 auto; }
-.verify-strip h3 { font-family: var(--mono); font-size: clamp(16px, 2vw, 22px); font-weight: 600; letter-spacing: -.03em; color: var(--bg); margin-bottom: 10px; }
-.verify-strip p { font-size: 14px; color: rgba(255,255,255,0.55); margin-bottom: 20px; line-height: 1.6; }
-.btn-verify { font-family: var(--mono); font-size: 13px; font-weight: 600; background: var(--bg); color: var(--t0); padding: 11px 28px; border-radius: 6px; text-decoration: none; letter-spacing: .02em; display: inline-block; transition: opacity .15s, transform .12s; }
-.btn-verify:hover { opacity: .88; transform: translateY(-1px); }
+  .nav-logo span { color: var(--red); }
 
-/* DASHBOARD PREVIEW */
-.dash { border: 1px solid var(--brd); border-radius: 8px; overflow: hidden; background: var(--bg); margin-top: 32px; }
-.dash-bar { background: var(--bg-0); border-bottom: 1px solid var(--brd); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
-.db-tabs { display: flex; align-items: center; gap: 4px; }
-.db-tab { font-family: var(--mono); font-size: 11.5px; font-weight: 600; color: var(--t0); padding: 4px 10px; background: var(--bg); border: 1px solid var(--brd); border-radius: 4px; }
-.db-tab-off { font-family: var(--mono); font-size: 11.5px; color: var(--t3); padding: 4px 10px; cursor: pointer; }
-.db-run { font-family: var(--mono); font-size: 10px; color: var(--t3); }
-.dash-body { display: grid; grid-template-columns: 260px 1fr; min-height: 420px; }
-.dash-list { border-right: 1px solid var(--brd); }
-.dl-head { padding: 9px 14px; border-bottom: 1px solid var(--brd); font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); }
-.dl-item { padding: 11px 14px; border-bottom: 1px solid var(--brd); cursor: pointer; }
-.dl-item:last-child { border-bottom: none; }
-.dl-item.active { background: var(--bg-1); border-left: 2px solid var(--purple); padding-left: 12px; }
-.dl-agent { font-size: 12.5px; color: var(--t0); font-weight: 600; margin-bottom: 4px; }
-.dl-meta { font-size: 11px; color: var(--t3); display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
-.dl-time { font-family: var(--mono); font-size: 10px; color: var(--t3); margin-left: auto; }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    list-style: none;
+  }
 
-/* proof badge in sidebar */
-.dl-proof { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 9.5px; font-weight: 600; padding: 2px 7px; border-radius: 3px; }
-.dl-proof.recorded { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-brd); }
-.dl-proof.signed   { background: rgba(107,79,187,0.08); color: var(--purple); border: 1px solid rgba(107,79,187,0.2); }
-.dl-proof.sealed   { background: var(--grn-bg); color: var(--grn); border: 1px solid var(--grn-brd); }
+  .nav-links a {
+    font-size: 13px;
+    color: var(--ink-mid);
+    text-decoration: none;
+    font-weight: 400;
+    transition: color 0.15s;
+  }
 
-/* detail panel */
-.dash-detail { padding: 20px 22px; }
-.dd-proof-header { padding: 14px 16px; border: 1px solid rgba(107,79,187,0.2); border-radius: 6px; background: rgba(107,79,187,0.04); margin-bottom: 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.dd-proof-left { flex: 1; }
-.dd-proof-label { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); margin-bottom: 4px; }
-.dd-proof-level { display: flex; align-items: center; gap: 8px; }
-.dd-proof-badge { font-family: var(--mono); font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 4px; background: rgba(107,79,187,0.08); color: var(--purple); border: 1px solid rgba(107,79,187,0.2); }
-.dd-proof-tip { font-size: 12px; color: var(--t2); line-height: 1.5; margin-top: 4px; }
-.dd-verify-status { font-family: var(--mono); font-size: 10.5px; color: var(--t3); white-space: nowrap; flex-shrink: 0; }
-.dd-verify-status.done { color: var(--grn); }
-.btn-verify-record { font-family: var(--mono); font-size: 11.5px; font-weight: 600; background: var(--t0); color: var(--bg); padding: 7px 14px; border-radius: 5px; border: none; cursor: pointer; white-space: nowrap; transition: opacity .15s; flex-shrink: 0; }
-.btn-verify-record:hover { opacity: .82; }
+  .nav-links a:hover { color: var(--ink); }
 
-.dd-row { display: flex; align-items: baseline; margin-bottom: 10px; gap: 0; }
-.dd-k { font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--t3); width: 120px; flex-shrink: 0; }
-.dd-v { font-family: var(--mono); font-size: 12px; color: var(--t1); word-break: break-all; }
-.dd-v.pur { color: var(--purple); }
-.dd-divider { border: none; border-top: 1px solid var(--brd); margin: 12px 0; }
-.dd-label { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); margin-bottom: 7px; }
-.dd-payload { background: var(--bg-0); border: 1px solid var(--brd); border-radius: 6px; padding: 12px 14px; font-family: var(--mono); font-size: 11.5px; line-height: 1.75; color: var(--t1); white-space: pre; overflow-x: auto; }
-.pk { color: var(--grn); } .pv { color: var(--t1); } .ps { color: #166534; } .pc { color: var(--t3); }
-.dd-actions { display: flex; gap: 7px; margin-top: 14px; flex-wrap: wrap; }
-.dd-btn { font-family: var(--mono); font-size: 11px; font-weight: 600; padding: 5px 11px; border-radius: 4px; border: 1px solid var(--brd-mid); color: var(--t1); background: var(--bg); cursor: pointer; text-decoration: none; transition: background .12s; }
-.dd-btn:hover { background: var(--bg-1); }
-.dd-btn.primary { background: var(--t0); color: var(--bg); border-color: var(--t0); }
-.dd-btn.primary:hover { opacity: .85; }
+  .nav-cta {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.5rem 1.1rem;
+    background: var(--ink);
+    color: var(--paper) !important;
+    border-radius: 2px;
+    text-decoration: none;
+  }
 
-/* PRIMITIVES */
-.prims { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--brd); margin-top: 32px; }
-.prim { background: var(--bg); padding: 26px 26px 30px; }
-.prim-glyph { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--purple); margin-bottom: 12px; display: inline-block; padding: 3px 9px; border: 1px solid rgba(107,79,187,.2); border-radius: 4px; background: rgba(107,79,187,.05); }
-.prim-title { font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--t0); margin-bottom: 8px; letter-spacing: -.02em; }
-.prim-body { font-size: 13.5px; color: var(--t2); line-height: 1.62; }
+  /* LAYOUT */
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
 
-/* HOW IT WORKS */
-.how-steps { display: flex; flex-direction: column; margin-top: 32px; border: 1px solid var(--brd); border-radius: 8px; overflow: hidden; }
-.how-step { display: flex; gap: 20px; padding: 22px 24px; border-bottom: 1px solid var(--brd); background: var(--bg); }
-.how-step:last-child { border-bottom: none; }
-.hs-num { font-family: var(--mono); font-size: 24px; font-weight: 600; color: var(--purple); letter-spacing: -.04em; flex-shrink: 0; line-height: 1.1; width: 32px; }
-.hs-title { font-size: 14px; font-weight: 700; color: var(--t0); margin-bottom: 4px; font-family: var(--sans); }
-.hs-body { font-size: 13px; color: var(--t2); line-height: 1.6; }
-.hs-code { margin-top: 9px; font-family: var(--mono); font-size: 11.5px; color: var(--t2); background: var(--bg-0); border: 1px solid var(--brd); padding: 7px 11px; border-radius: 5px; }
+  .container-wide {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
 
-/* INTEGRATIONS */
-.int-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
-.int-chip { font-family: var(--mono); font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 100px; border: 1px solid var(--brd); color: var(--t2); background: var(--bg-0); white-space: nowrap; display: flex; align-items: center; gap: 6px; }
-.int-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-.int-dot.sdk { background: var(--grn); }
-.int-dot.http { background: var(--brd-mid); }
+  section { padding: 6rem 0; }
+  section + section { border-top: 1px solid var(--rule); }
 
-/* TRUST STRIP */
-.trust-strip { border-top: 1px solid var(--brd); border-bottom: 1px solid var(--brd); background: var(--bg-0); padding: 18px 40px; }
-.trust-inner { max-width: 1060px; margin: 0 auto; display: flex; align-items: center; gap: 32px; flex-wrap: wrap; justify-content: center; }
-.trust-item { display: flex; align-items: center; gap: 7px; }
-.trust-item svg { color: var(--grn); flex-shrink: 0; }
-.trust-lbl { font-size: 12.5px; font-weight: 500; color: var(--t1); }
+  /* EYEBROW */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
-/* CTA */
-.cta-block { max-width: 540px; margin: 0 auto; padding: 80px 40px; text-align: center; }
-.cta-h { font-family: var(--mono); font-size: clamp(20px, 2.4vw, 30px); font-weight: 600; letter-spacing: -.04em; color: var(--t0); line-height: 1.15; margin-bottom: 14px; }
-.cta-s { font-size: 15px; color: var(--t2); line-height: 1.6; margin-bottom: 28px; }
-.cta-note { margin-top: 14px; font-family: var(--mono); font-size: 11.5px; color: var(--t3); }
+  .eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 18px;
+    height: 1px;
+    background: var(--ink-faint);
+    flex-shrink: 0;
+  }
 
-/* FOOTER */
-footer { border-top: 1px solid var(--brd); padding: 24px 40px; }
-.foot { max-width: 1060px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-.foot-links { display: flex; gap: 22px; flex-wrap: wrap; }
-.foot-links a { font-size: 12.5px; color: var(--t3); text-decoration: none; transition: color .15s; }
-.foot-links a:hover { color: var(--t1); }
-.foot-copy { font-family: var(--mono); font-size: 11px; color: var(--t3); }
+  /* HERO */
+  .hero { padding: 7rem 0 6rem; }
 
-/* ANIMS */
-@keyframes up { from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)} }
-.hero h1      { animation: up .4s ease both; }
-.hero-sub     { animation: up .4s .08s ease both; }
-.hero-actions { animation: up .4s .16s ease both; }
-.hero-ticks   { animation: up .4s .22s ease both; }
+  .hero-headline {
+    font-family: var(--serif);
+    font-size: clamp(2.6rem, 5vw, 3.8rem);
+    line-height: 1.1;
+    margin-bottom: 1.75rem;
+    color: var(--ink);
+    max-width: 680px;
+  }
 
-/* RESPONSIVE */
-@media (max-width:860px) {
-  nav{padding:0 20px}
-  .hero{padding:60px 24px 48px}
-  .wrap{padding:48px 24px}
-  .proof-inner{padding:40px 24px}
-  .verify-strip{padding:28px 24px}
-  .prims{grid-template-columns:1fr}
-  .dash-body{grid-template-columns:1fr}
-  .dash-list{border-right:none;border-bottom:1px solid var(--brd);max-height:220px;overflow-y:auto}
-  .proof-table th:last-child, .proof-table td:last-child { display: none; }
-  .trust-inner{gap:16px}
-  .cta-block{padding:56px 24px}
-  footer{padding:22px 20px}
-}
+  .hero-headline em {
+    font-style: italic;
+    color: var(--ink-mid);
+  }
+
+  .hero-sub {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--ink-mid);
+    max-width: 540px;
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+  }
+
+  .cta-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.8rem 1.6rem;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: opacity 0.15s;
+  }
+
+  .btn-primary:hover { opacity: 0.82; }
+
+  .btn-ghost {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.8rem 1.6rem;
+    background: transparent;
+    color: var(--ink-mid);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: border-color 0.15s;
+  }
+
+  .btn-ghost:hover { border-color: var(--ink-light); }
+
+  /* PILLARS */
+  .pillars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--rule);
+    margin-top: 5rem;
+  }
+
+  .pillar {
+    padding: 2.5rem 2rem 2.5rem 0;
+    border-right: 1px solid var(--rule);
+  }
+
+  .pillar:last-child { border-right: none; }
+  .pillar:not(:first-child) { padding-left: 2rem; }
+
+  .pillar-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    margin-bottom: 0.75rem;
+  }
+
+  .pillar-title {
+    font-family: var(--serif);
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    color: var(--ink);
+  }
+
+  .pillar-body {
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: var(--ink-mid);
+    font-weight: 300;
+  }
+
+  /* WITHOUT / WITH */
+  .without-with {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .ww-card {
+    padding: 1.75rem;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+  }
+
+  .ww-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+
+  .ww-label.bad { color: var(--red); }
+  .ww-label.good { color: var(--green-text); }
+
+  .ww-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--ink-mid);
+  }
+
+  .ww-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 6px;
+  }
+
+  .ww-dot.bad { background: #e07070; }
+  .ww-dot.good { background: #5dcaa5; }
+
+  /* MOMENT SECTION */
+  .moment-intro {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.5rem;
+    line-height: 1.5;
+    color: var(--ink-mid);
+    max-width: 600px;
+    margin-bottom: 1.5rem;
+  }
+
+  .moment-body {
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: var(--ink-mid);
+    max-width: 520px;
+    font-weight: 300;
+  }
+
+  /* CODE STRIP */
+  .code-strip {
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 3rem;
+  }
+
+  .code-header {
+    background: var(--paper-dim);
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .code-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--rule);
+  }
+
+  .code-filename {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-light);
+    margin-left: 4px;
+  }
+
+  .code-body {
+    padding: 1.5rem;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 2;
+    color: var(--ink-mid);
+    background: var(--paper);
+  }
+
+  .c-comment { color: var(--ink-faint); }
+  .c-key { color: var(--ink); }
+  .c-val { color: var(--ink-mid); }
+  .c-result { color: var(--ink-light); }
+  .c-highlight { color: var(--ink); font-weight: 500; }
+
+  .code-return {
+    margin-top: 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  /* FEATURES */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
+    margin-top: 3rem;
+  }
+
+  .feature-card { }
+
+  .feature-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 0.75rem;
+  }
+
+  .feature-title {
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+  }
+
+  .feature-body {
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: var(--ink-mid);
+    font-weight: 300;
+  }
+
+  /* PROOF LEVEL TABLE */
+  .proof-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+    font-size: 0.875rem;
+  }
+
+  .proof-table th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    text-align: left;
+    padding: 0.75rem 1rem 0.75rem 0;
+    border-bottom: 1px solid var(--rule);
+    font-weight: 400;
+  }
+
+  .proof-table td {
+    padding: 1.1rem 1rem 1.1rem 0;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink-mid);
+    vertical-align: top;
+    line-height: 1.6;
+  }
+
+  .proof-table tr:last-child td { border-bottom: none; }
+
+  .proof-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  /* INTEGRATIONS */
+  .integrations-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 2rem;
+  }
+
+  .int-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 0.4rem 0.9rem;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    color: var(--ink-mid);
+    background: var(--paper);
+  }
+
+  .int-pill.official {
+    border-color: #5dcaa5;
+    color: var(--green-text);
+  }
+
+  /* QUOTE BLOCK */
+  .quote-block {
+    border-left: 2px solid var(--rule);
+    padding: 1.25rem 0 1.25rem 1.75rem;
+  }
+
+  .quote-text {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.3rem;
+    line-height: 1.55;
+    color: var(--ink);
+    margin-bottom: 0.6rem;
+  }
+
+  .quote-attr {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+  }
+
+  /* SECTION TITLES */
+  .section-title {
+    font-family: var(--serif);
+    font-size: clamp(1.8rem, 3vw, 2.4rem);
+    line-height: 1.2;
+    color: var(--ink);
+    margin-bottom: 1rem;
+    max-width: 560px;
+  }
+
+  .section-sub {
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: var(--ink-mid);
+    max-width: 500px;
+    font-weight: 300;
+    margin-bottom: 2rem;
+  }
+
+  /* CTA SECTION */
+  .cta-section {
+    background: var(--paper-off);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    padding: 5rem 0;
+    text-align: center;
+  }
+
+  .cta-section .section-title { margin: 0 auto 1rem; }
+  .cta-section .section-sub { margin: 0 auto 2.5rem; }
+  .cta-section .cta-row { justify-content: center; }
+
+  /* FOOTER */
+  footer {
+    padding: 3rem 2rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .footer-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .footer-logo {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-mid);
+    text-decoration: none;
+  }
+
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    list-style: none;
+  }
+
+  .footer-links a {
+    font-size: 12px;
+    color: var(--ink-light);
+    text-decoration: none;
+  }
+
+  .footer-links a:hover { color: var(--ink-mid); }
+
+  .footer-copy {
+    font-size: 11px;
+    color: var(--ink-faint);
+    font-family: var(--mono);
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    .pillars { grid-template-columns: 1fr; }
+    .pillar { border-right: none; border-bottom: 1px solid var(--rule); padding: 1.5rem 0; }
+    .pillar:last-child { border-bottom: none; }
+    .pillar:not(:first-child) { padding-left: 0; }
+    .without-with { grid-template-columns: 1fr; }
+    .feature-grid { grid-template-columns: 1fr; }
+    nav .nav-links { display: none; }
+  }
 </style>
 </head>
 <body>
 
-<!-- NAV -->
 <nav>
-  <a href="/" class="logo">
-    <svg width="32" height="32" viewBox="0 0 80 80" fill="none">
-      <circle cx="40" cy="40" r="34" stroke="#c4bce8" stroke-width="1.4" stroke-dasharray="4 3"/>
-      <line x1="40" y1="13" x2="16" y2="55" stroke="#b0c8e8" stroke-width="1.8"/>
-      <line x1="40" y1="13" x2="64" y2="55" stroke="#b0c8e8" stroke-width="1.8"/>
-      <line x1="16" y1="55" x2="64" y2="55" stroke="#7edce8" stroke-width="1.8"/>
-      <circle cx="40" cy="13" r="6" fill="#6b4fbb"/>
-      <circle cx="16" cy="55" r="5" fill="#4ab8c8"/>
-      <circle cx="64" cy="55" r="5" fill="#3d6fd4"/>
-    </svg>
-    <span class="logo-wm"><span class="logo-dark">Dark</span><span class="logo-grad">Matter</span></span>
-  </a>
+  <a class="nav-logo" href="/"><span>◉</span> DarkMatter</a>
   <ul class="nav-links">
     <li><a href="/demo">Demo</a></li>
     <li><a href="/docs">Docs</a></li>
-    <li><a href="/compare">Compare</a></li>
+    <li><a href="/why">Why</a></li>
     <li><a href="/pricing">Pricing</a></li>
-    <li><a href="/integrity">Integrity</a></li>
+    <li><a href="/blog">Blog</a></li>
+    <li><a class="nav-cta" href="/signup">Get API key</a></li>
   </ul>
-  <div style="display:flex;align-items:center;gap:16px">
-    <a href="/login" aria-label="Account" style="display:flex;align-items:center;color:var(--t2);transition:color .15s;" onmouseover="this.style.color='var(--t0)'" onmouseout="this.style.color='var(--t2)'">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-    </a>
-  </div>
 </nav>
 
 <!-- HERO -->
-<div class="hero">
-  <h1>Every AI decision<br>leaves a record.<br>Not every record<br>can be proven.</h1>
-  <p class="hero-sub">DarkMatter shows you how much you can rely on that record — and lets anyone verify it.</p>
-  <div class="hero-actions">
-    <a href="/demo" class="btn-p">Run demo →</a>
-    <a href="/docs" class="btn-o">Read the docs</a>
-  </div>
-  <div class="hero-ticks">
-    <span>Works with any AI agent or model</span>
-    <span>Start with no code changes. Upgrade to stronger proof as needed.</span>
-  </div>
-</div>
-
-<!-- PROBLEM STATEMENT -->
-<div class="problem-band">
-  <div class="problem-inner">
-    <div class="problem-col">
-      <div class="problem-label">Without independent verification</div>
-      <ul class="problem-list bad">
-        <li>You trust the system that ran the agent to also report on it</li>
-        <li>A record can be edited, backdated, or fabricated — and you won't know</li>
-        <li>In a dispute, you have logs. Your counterpart has the same logs. Neither proves anything.</li>
-        <li>Auditors and regulators can only evaluate what you give them — there's no independent reference point</li>
-      </ul>
+<section class="hero">
+  <div class="container">
+    <p class="eyebrow">AI accountability infrastructure</p>
+    <h1 class="hero-headline">
+      Your AI agents are making decisions.<br>
+      <em>Who's keeping the record?</em>
+    </h1>
+    <p class="hero-sub">
+      Every agent action, every decision, every output — recorded outside your system, outside the model provider, and independently verifiable by anyone who needs to know what happened.
+    </p>
+    <div class="cta-row">
+      <a href="/signup" class="btn-primary">Start recording agent activity</a>
+      <a href="/demo" class="btn-ghost">See a live record</a>
     </div>
-    <div class="problem-divider"></div>
-    <div class="problem-col">
-      <div class="problem-label">With DarkMatter</div>
-      <ul class="problem-list good">
-        <li>Records are captured with a clear proof level, so you know exactly how much trust is still required</li>
-        <li>Signed records cannot be altered without detection</li>
-        <li>Records with independent proof can be verified without a DarkMatter account or internet connection</li>
-        <li>Proof level tells you exactly how much you can rely on a record</li>
-      </ul>
+
+    <div class="pillars">
+      <div class="pillar">
+        <p class="pillar-num">01</p>
+        <p class="pillar-title">Independent</p>
+        <p class="pillar-body">Stored outside your infrastructure. Not controlled by your system or the model provider.</p>
+      </div>
+      <div class="pillar">
+        <p class="pillar-num">02</p>
+        <p class="pillar-title">Tamper-evident</p>
+        <p class="pillar-body">Every action is cryptographically sealed at the moment it happens. The record cannot be altered after the fact.</p>
+      </div>
+      <div class="pillar">
+        <p class="pillar-num">03</p>
+        <p class="pillar-title">Verifiable</p>
+        <p class="pillar-body">Anyone — a regulator, an auditor, a client, a court — can confirm what happened without asking you to vouch for it.</p>
+      </div>
     </div>
   </div>
-</div>
+</section>
 
-<hr class="divider">
+<!-- WITHOUT / WITH -->
+<section>
+  <div class="container">
+    <p class="eyebrow">The problem</p>
+    <h2 class="section-title">Your AI system logs itself. That's not an audit trail.</h2>
+    <p class="section-sub">A record stored inside the system it's recording is only as trustworthy as that system. That's not independence — that's a system vouching for itself.</p>
 
-<!-- PROOF LEVEL — center of the product -->
-<div class="proof-section">
-  <div class="proof-inner">
-    <div class="proof-intro">
-      <div class="eye">Proof Level</div>
-      <h2>How provable is your record?</h2>
-      <p>Not every record carries the same weight. DarkMatter makes that visible — and lets you verify it yourself.</p>
+    <div class="without-with">
+      <div class="ww-card">
+        <p class="ww-label bad">Without DarkMatter</p>
+        <div class="ww-item"><div class="ww-dot bad"></div><span>Your AI system logs itself</span></div>
+        <div class="ww-item"><div class="ww-dot bad"></div><span>Logs live inside the system being audited</span></div>
+        <div class="ww-item"><div class="ww-dot bad"></div><span>No independent way to prove what an agent decided</span></div>
+        <div class="ww-item"><div class="ww-dot bad"></div><span>In a dispute, you have logs — so does the other party. Neither proves anything.</span></div>
+      </div>
+      <div class="ww-card">
+        <p class="ww-label good">With DarkMatter</p>
+        <div class="ww-item"><div class="ww-dot good"></div><span>Every action recorded externally at the moment it happens</span></div>
+        <div class="ww-item"><div class="ww-dot good"></div><span>Immutable record no party controls after the fact</span></div>
+        <div class="ww-item"><div class="ww-dot good"></div><span>Full reconstruction of any workflow, any decision</span></div>
+        <div class="ww-item"><div class="ww-dot good"></div><span>Verifiable proof for regulators, clients, and teams — no account needed</span></div>
+      </div>
     </div>
+  </div>
+</section>
+
+<!-- AGENT ERA -->
+<section>
+  <div class="container">
+    <p class="eyebrow">Built for the agent era</p>
+    <p class="moment-intro">Your software assumed a human user. AI agents don't click dashboards. They call APIs. They act. They decide.</p>
+    <p class="moment-body">
+      When a human approved an action in a workflow, they were simultaneously executing it, reviewing it, and accepting responsibility. The human in the loop was the audit function.<br><br>
+      Remove the human. Something has to replace the audit function. DarkMatter records those decisions — automatically, at API level, with zero dashboard interaction required. One endpoint. Any agent. Any language.
+    </p>
+
+    <div class="code-strip">
+      <div class="code-header">
+        <div class="code-dot"></div>
+        <div class="code-dot"></div>
+        <div class="code-dot"></div>
+        <span class="code-filename">agent.py &nbsp;·&nbsp; one call. that's it.</span>
+      </div>
+      <div class="code-body">
+<span class="c-comment"># Your agent just approved an $84,000 invoice in 340ms. Nobody was watching.</span>
+<span class="c-comment"># This is the record.</span>
+
+dm.commit(payload={
+  <span class="c-key">"input"</span>:  <span class="c-val">"Approve invoice #4421 — Acme Corp — $84,000"</span>,
+  <span class="c-key">"output"</span>: <span class="c-val">"Invoice approved. Payment queued for Friday."</span>,
+  <span class="c-key">"model"</span>:  <span class="c-val">"claude-sonnet-4-6"</span>
+})
+
+<div class="code-return"><span class="c-comment"># Returns instantly:</span>
+{
+  <span class="c-highlight">"id"</span>:               <span class="c-val">"ctx_7f3a9b..."</span>,
+  <span class="c-highlight">"integrity"</span>: {
+    <span class="c-key">"payload_hash"</span>:       <span class="c-val">"sha256:a9c4e1..."</span>,
+    <span class="c-key">"verification_status"</span>: <span class="c-val">"valid"</span>
+  },
+  <span class="c-highlight">"verification_url"</span>:  <span class="c-val">"darkmatterhub.ai/r/ctx_7f3a9b"</span>
+}
+<span class="c-comment"># Share that URL with anyone. They verify it themselves. No login. No account.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section>
+  <div class="container">
+    <p class="eyebrow">How it works</p>
+    <h2 class="section-title">Three things. No monitoring, no model lock-in, no workflow replacement.</h2>
+    <p class="section-sub">DarkMatter records what your agents did, lets you inspect and replay it, and lets you prove it to anyone who wasn't there.</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <p class="feature-tag">dm.commit()</p>
+        <p class="feature-title">Record every decision as it happens</p>
+        <p class="feature-body">Every agent action becomes a context commit — input, output, model, tool calls — linked to the action before it, stored outside your system the moment it's made.</p>
+      </div>
+      <div class="feature-card">
+        <p class="feature-tag">dm.replay() / dm.fork()</p>
+        <p class="feature-title">Walk back to any point in the chain</p>
+        <p class="feature-body">Replay the full decision chain step by step. Branch from any checkpoint to try a different model or prompt without touching the original run. The original is always intact.</p>
+      </div>
+      <div class="feature-card">
+        <p class="feature-tag">dm.export() / dm.verify()</p>
+        <p class="feature-title">Prove it to anyone — without asking anyone</p>
+        <p class="feature-body">Export a self-contained proof bundle anyone can verify — no DarkMatter account, no internet connection, no asking you to vouch. The record proves itself.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROOF LEVELS -->
+<section>
+  <div class="container">
+    <p class="eyebrow">Proof levels</p>
+    <h2 class="section-title">Not every record carries the same weight. DarkMatter makes that visible.</h2>
+    <p class="section-sub">Start with Recorded — no code changes. Move to Signed or Sealed as your compliance requirements grow.</p>
 
     <table class="proof-table">
       <thead>
         <tr>
-          <th>Level</th>
+          <th style="width:120px">Level</th>
           <th>What it means</th>
           <th>How you get it</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><span class="proof-badge pb-recorded">Recorded</span></td>
-          <td>DarkMatter captured this record. You can inspect it, but some trust in capture is still required.</td>
+          <td><span class="proof-label">Recorded</span></td>
+          <td>DarkMatter captured this record. You can inspect it, but some trust in the capture method is still required.</td>
           <td>Proxy or browser extension — no code changes needed.</td>
         </tr>
         <tr>
-          <td><span class="proof-badge pb-signed">Signed</span></td>
+          <td><span class="proof-label">Signed</span></td>
           <td>The agent signed this record before it reached DarkMatter. It cannot have been changed in transit without detection.</td>
           <td>SDK — one extra line when your agent commits.</td>
         </tr>
         <tr>
-          <td><span class="proof-badge pb-sealed">Sealed</span></td>
-          <td>The record was signed and encrypted before leaving your system. DarkMatter never saw the content.</td>
-          <td>SDK with your own encryption key.</td>
+          <td><span class="proof-label">Sealed</span></td>
+          <td>Signed and encrypted before leaving your system. DarkMatter never saw the content. Zero-knowledge verification.</td>
+          <td>SDK with your own encryption key (BYOK).</td>
         </tr>
       </tbody>
     </table>
-
-    <div class="proof-gradient-note">
-      <strong>Some records can be verified independently. Others require trust in how they were captured. DarkMatter shows you the difference.</strong>
-      <br>Most teams start with Recorded and move to Signed as their agents mature. Sealed is for situations where the content must never leave your control.
-    </div>
   </div>
-</div>
-
-<!-- VERIFY CTA STRIP -->
-<div class="verify-strip">
-  <div class="verify-strip-inner">
-    <h3>Don't trust the record.<br>Verify it.</h3>
-    <p>Verification only happens when you ask for it. So when it passes, it means something.</p>
-    <a href="/demo" class="btn-verify">See verification in action →</a>
-  </div>
-</div>
-
-<!-- DASHBOARD PREVIEW -->
-<div class="wrap tight">
-  <div class="eye">Dashboard</div>
-  <h2 class="h2">What a record looks like.</h2>
-  <p class="lead">Every action becomes an inspectable record. The Proof Level is the first thing you see. Verify when you need to.</p>
-
-  <div class="dash">
-    <div class="dash-bar">
-      <div class="db-tabs">
-        <span class="db-tab">Chain view</span>
-        <span class="db-tab-off">Diff</span>
-        <span class="db-tab-off">Export</span>
-      </div>
-      <span class="db-run">run_7f3a · 2m ago</span>
-    </div>
-
-    <div class="dash-body">
-      <!-- sidebar — proof level badge on every item -->
-      <div class="dash-list">
-        <div class="dl-head">Records</div>
-
-        <div class="dl-item">
-          <div class="dl-agent">Researcher</div>
-          <div class="dl-meta">
-            <span class="dl-proof signed">Signed</span>
-            <span class="dl-time">2m ago</span>
-          </div>
-        </div>
-
-        <div class="dl-item active">
-          <div class="dl-agent">Writer</div>
-          <div class="dl-meta">
-            <span class="dl-proof signed">Signed</span>
-            <span class="dl-time">1m ago</span>
-          </div>
-        </div>
-
-        <div class="dl-item">
-          <div class="dl-agent">Reviewer</div>
-          <div class="dl-meta">
-            <span class="dl-proof recorded">Recorded</span>
-            <span class="dl-time">58s ago</span>
-          </div>
-        </div>
-
-        <div class="dl-item">
-          <div class="dl-agent">Final Output</div>
-          <div class="dl-meta">
-            <span class="dl-proof sealed">Sealed</span>
-            <span class="dl-time">50s ago</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- detail panel — proof level first, verify as primary action -->
-      <div class="dash-detail">
-
-        <!-- PROOF LEVEL HEADER — first thing you see -->
-        <div class="dd-proof-header">
-          <div class="dd-proof-left">
-            <div class="dd-proof-label">Proof level</div>
-            <div class="dd-proof-level">
-              <span class="dd-proof-badge">Signed</span>
-            </div>
-            <div class="dd-proof-tip">The agent signed this record before it reached DarkMatter. It cannot have been changed in transit.</div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">
-            <div class="dd-verify-status">Not yet verified</div>
-            <button class="btn-verify-record">Verify record →</button>
-          </div>
-        </div>
-
-        <div class="dd-row"><span class="dd-k">Agent</span><span class="dd-v">Writer</span></div>
-        <div class="dd-row"><span class="dd-k">Task</span><span class="dd-v">Summarize Q1 earnings research</span></div>
-        <div class="dd-row"><span class="dd-k">Timestamp</span><span class="dd-v">Apr 5, 2026 · 14:32 UTC</span></div>
-
-        <hr class="dd-divider">
-
-        <div class="dd-label">What the agent did</div>
-        <div class="dd-payload"><span class="pc">{</span>
-  <span class="pk">"input"</span>:   <span class="ps">"Summarize the Q1 earnings research"</span>,
-  <span class="pk">"output"</span>:  <span class="ps">"Revenue grew 34% YoY driven by..."</span>,
-  <span class="pk">"steps"</span>:   <span class="ps">"searched filings, extracted figures, wrote summary"</span>
-<span class="pc">}</span></div>
-
-        <div class="dd-actions">
-          <a href="#" class="dd-btn primary">Replay from here</a>
-          <a href="#" class="dd-btn">Fork</a>
-          <a href="#" class="dd-btn">Export bundle</a>
-          <a href="#" class="dd-btn">Copy ID</a>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<hr class="divider">
-
-<!-- HOW IT WORKS -->
-<div class="wrap tight">
-  <div class="eye">How it works</div>
-  <h2 class="h2">Three steps. Works alongside your existing stack.</h2>
-  <div class="how-steps">
-    <div class="how-step">
-      <div class="hs-num">1</div>
-      <div>
-        <div class="hs-title">Record each action</div>
-        <div class="hs-body">Call <code style="font-family:var(--mono);font-size:12px;background:var(--bg-1);padding:1px 4px;border-radius:3px">dm.commit()</code> after each action. The record is signed and stored outside your system.</div>
-        <div class="hs-code">ctx = dm.commit(payload={"input": x, "output": y, "model": "claude-opus-4-6"}, parent_id=prev_id)</div>
-      </div>
-    </div>
-    <div class="how-step">
-      <div class="hs-num">2</div>
-      <div>
-        <div class="hs-title">Inspect or replay from any point</div>
-        <div class="hs-body">Walk the full chain, branch from any step, or compare two branches. The original record is never changed.</div>
-        <div class="hs-code">chain = dm.replay(ctx_id) &nbsp;&nbsp;fork = dm.fork(ctx_id) &nbsp;&nbsp;diff = dm.diff(a_id, b_id)</div>
-      </div>
-    </div>
-    <div class="how-step">
-      <div class="hs-num">3</div>
-      <div>
-        <div class="hs-title">Export and verify independently</div>
-        <div class="hs-body">Export a self-contained package with all records and a standalone verifier. Anyone can check it — no account, no internet, no DarkMatter.</div>
-        <div class="hs-code">bundle = dm.export(ctx_id) &nbsp;# → proof_bundle.zip + verifier.py</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<hr class="divider">
-
-<!-- PRIMITIVES -->
-<div class="wrap tight">
-  <div class="eye">What DarkMatter does</div>
-  <h2 class="h2">Three things. No monitoring, no model lock-in, no workflow replacement.</h2>
-  <p class="lead">DarkMatter records what your agents did, lets you inspect and replay it, and lets you prove it to anyone. It does not run your agents, manage your prompts, or judge whether the output was good.</p>
-  <div class="prims">
-    <div class="prim">
-      <div class="prim-glyph">dm.commit()</div>
-      <div class="prim-title">Record</div>
-      <div class="prim-body">Every AI action is stored as a record — input, output, model, tool calls. Linked to the action before it. Stored outside your system.</div>
-    </div>
-    <div class="prim">
-      <div class="prim-glyph">dm.replay() &nbsp;dm.fork()</div>
-      <div class="prim-title">Replay / Fork</div>
-      <div class="prim-body">Walk the chain step by step. Branch from any point to try a different model or prompt. The original is always intact.</div>
-    </div>
-    <div class="prim">
-      <div class="prim-glyph">dm.export() &nbsp;dm.verify()</div>
-      <div class="prim-title">Export / Verify</div>
-      <div class="prim-body">Export a self-contained package anyone can check — no DarkMatter account needed, no internet connection required. <a href="/docs#verifier" style="color:var(--purple);text-decoration:none">How verification works →</a></div>
-    </div>
-  </div>
-</div>
-
-<hr class="divider">
+</section>
 
 <!-- INTEGRATIONS -->
-<div class="wrap tight">
-  <div class="eye">Integrations</div>
-  <h2 class="h2">Works with any stack.</h2>
-  <p class="lead">Python, TypeScript, LangGraph, OpenAI, Anthropic, local models, or plain HTTP.</p>
-  <div class="int-chips">
-    <div class="int-chip"><span class="int-dot sdk"></span>Python SDK</div>
-    <div class="int-chip"><span class="int-dot sdk"></span>TypeScript SDK</div>
-    <div class="int-chip"><span class="int-dot sdk"></span>LangGraph</div>
-    <div class="int-chip"><span class="int-dot sdk"></span>Anthropic SDK</div>
-    <div class="int-chip"><span class="int-dot sdk"></span>OpenAI SDK</div>
-    <div class="int-chip"><span class="int-dot http"></span>CrewAI</div>
-    <div class="int-chip"><span class="int-dot http"></span>AWS Bedrock</div>
-    <div class="int-chip"><span class="int-dot http"></span>Local models</div>
-    <div class="int-chip"><span class="int-dot http"></span>REST API</div>
-    <div class="int-chip"><span class="int-dot http"></span>Self-host (MIT)</div>
-  </div>
-  <p style="margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--t3)">Green = official SDK &nbsp;·&nbsp; Gray = plain HTTP</p>
-</div>
+<section>
+  <div class="container">
+    <p class="eyebrow">Integrations</p>
+    <h2 class="section-title">Works with any stack.</h2>
+    <p class="section-sub">Python, TypeScript, LangGraph, OpenAI, Anthropic, local models, or plain HTTP. One API key. Any framework.</p>
 
-<hr class="divider">
-
-<!-- TRUST STRIP -->
-<div class="trust-strip">
-  <div class="trust-inner">
-    <div class="trust-item">
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="7" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.3"/></svg>
-      <span class="trust-lbl">BYOK encryption</span>
-    </div>
-    <div class="trust-item">
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
-      <span class="trust-lbl">Self-host — MIT license</span>
-    </div>
-    <div class="trust-item">
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><polyline points="2,9 6,13 14,4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="trust-lbl">Offline verification</span>
-    </div>
-    <div class="trust-item">
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="trust-lbl">Open source</span>
-    </div>
-    <div class="trust-item">
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2L3 5v4c0 2.8 2.1 5.4 5 6 2.9-.6 5-3.2 5-6V5L8 2z" stroke="currentColor" stroke-width="1.3"/></svg>
-      <span class="trust-lbl">Context Passport — open standard</span>
+    <div class="integrations-grid">
+      <span class="int-pill official">Python SDK</span>
+      <span class="int-pill official">TypeScript SDK</span>
+      <span class="int-pill">LangGraph</span>
+      <span class="int-pill">Anthropic SDK</span>
+      <span class="int-pill">OpenAI SDK</span>
+      <span class="int-pill">CrewAI</span>
+      <span class="int-pill">AWS Bedrock</span>
+      <span class="int-pill">Local models</span>
+      <span class="int-pill">REST API</span>
+      <span class="int-pill">Self-host (MIT)</span>
     </div>
   </div>
-</div>
+</section>
 
-<!-- FINAL CTA -->
-<div class="cta-block">
-  <div class="cta-h">See it before you decide.</div>
-  <div class="cta-s">Run the demo. Commit a record, check the proof level, and verify it yourself — before writing any code.</div>
-  <div class="hero-actions">
-    <a href="/demo" class="btn-p">Run demo →</a>
-    <a href="/docs" class="btn-o">Read the docs</a>
+<!-- CLOSING QUOTE -->
+<section>
+  <div class="container">
+    <div class="quote-block">
+      <p class="quote-text">In a world of autonomous agents, no one can trust their own system. DarkMatter is the independent record of what actually happened.</p>
+      <p class="quote-attr">DarkMatter — AI accountability infrastructure</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section">
+  <div class="container">
+    <h2 class="section-title">See it before you decide.</h2>
+    <p class="section-sub">Run the demo. Commit a record, check the proof level, and verify it yourself — before writing any code.</p>
+    <div class="cta-row">
+      <a href="/demo" class="btn-primary">Run the demo</a>
+      <a href="/docs" class="btn-ghost">Read the docs</a>
+    </div>
   </div>
 </div>
 
 <footer>
-  <div class="foot">
-    <div class="foot-links">
-      <a href="/demo">Demo</a><a href="/docs">Docs</a><a href="/compare">Compare</a>
-      <a href="/pricing">Pricing</a><a href="/integrity">Integrity</a>
-      <a href="/why">Why</a><a href="/blog">Blog</a>
-      <a href="/security">Security</a><a href="/enterprise">Enterprise</a>
-      <a href="https://contextpassport.com">Context Passport</a>
-      <a href="https://github.com/darkmatter-hub/darkmatter">GitHub</a>
-    </div>
-    <div class="foot-copy">© 2026 DarkMatter</div>
+  <div class="footer-inner">
+    <a class="footer-logo" href="/">◉ DarkMatter</a>
+    <ul class="footer-links">
+      <li><a href="/demo">Demo</a></li>
+      <li><a href="/docs">Docs</a></li>
+      <li><a href="/pricing">Pricing</a></li>
+      <li><a href="/why">Why</a></li>
+      <li><a href="/blog">Blog</a></li>
+      <li><a href="/integrity">Integrity</a></li>
+      <li><a href="/enterprise">Enterprise</a></li>
+      <li><a href="/security">Security</a></li>
+      <li><a href="https://contextpassport.com">Context Passport</a></li>
+      <li><a href="https://github.com/darkmatter-hub/darkmatter">GitHub</a></li>
+    </ul>
+    <span class="footer-copy">© 2026 DarkMatter</span>
   </div>
 </footer>
 
