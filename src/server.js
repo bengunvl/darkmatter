@@ -5876,8 +5876,8 @@ app.get('/api/workspace/stats', requireAuth, async (req, res) => {
 
     const commitList = commits || [];
 
-    // Count unique conversations (by trace_id or id)
-    const conversations = commitList.length;
+    // Count unique conversations (by trace_id, falling back to id)
+    const conversations = new Set(commitList.map(c => c.trace_id || c.id)).size;
 
     // Count unique active people (by from_agent in last 7 days)
     const weekAgo      = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -5987,18 +5987,8 @@ app.get('/api/workspace/conversation/:traceId', requireAuth, async (req, res) =>
   }
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// /chat and /dashboard page routes (if not already declared)
-// ─────────────────────────────────────────────────────────────────────────────
-app.get('/chat', (req, res) => {
-  res.sendFile(require('path').join(__dirname, '../public/chat.html'));
-});
-
-// Note: /dashboard is already declared at line ~427 — no duplicate needed.
-// If it's missing, uncomment:
-// app.get('/dashboard', (req, res) => {
-//   res.sendFile(require('path').join(__dirname, '../public/dashboard.html'));
-// });
+// Note: /chat is declared above the static middleware and catch-all (line ~5141).
+// /dashboard is declared at line ~427. No duplicates needed here.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MIGRATION NOTE: workspace_provider_keys table

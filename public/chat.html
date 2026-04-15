@@ -1002,8 +1002,8 @@ async function loadThreadsFromServer() {
           await ensureValidSession();
           _s = getSession(); // re-read after refresh
         } catch(e) {
-          // ensureValidSession redirects to login on failure
-          return;
+          // Refresh failed — proceed anyway; authFetch will redirect on 401
+          // Avoids false redirect when Supabase refresh is temporarily unavailable
         }
       } else {
         window.location.replace('/login?next=/chat');
