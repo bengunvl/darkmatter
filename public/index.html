@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DarkMatter — AI accountability infrastructure</title>
-<meta name="description" content="Your AI agents are making decisions. DarkMatter is the independent record of what they decided. Tamper-evident, independently verifiable, outside your system.">
+<title>DarkMatter — The black box for AI systems</title>
+<meta name="description" content="Your AI agents are making decisions. Who's keeping the record? DarkMatter is the black box for AI systems. Every action recorded outside your system, independently verifiable by anyone.">
 <link rel="icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
@@ -549,6 +549,120 @@
     font-family: var(--mono);
   }
 
+  /* AVIATION NARRATIVE */
+  .aviation-block {
+    background: var(--paper-off);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 2.5rem;
+    margin-top: 3rem;
+  }
+
+  .aviation-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .aviation-label::before {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 1px;
+    background: var(--ink-faint);
+  }
+
+  .aviation-headline {
+    font-family: var(--serif);
+    font-size: clamp(1.5rem, 2.5vw, 1.9rem);
+    line-height: 1.25;
+    color: var(--ink);
+    margin-bottom: 1.25rem;
+    max-width: 580px;
+  }
+
+  .aviation-body {
+    font-size: 0.95rem;
+    line-height: 1.85;
+    color: var(--ink-mid);
+    max-width: 580px;
+    font-weight: 300;
+  }
+
+  .aviation-body p { margin-bottom: 1rem; }
+  .aviation-body p:last-child { margin-bottom: 0; }
+  .aviation-body strong { color: var(--ink); font-weight: 500; }
+
+  .aviation-pillars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--rule);
+    margin-top: 2.5rem;
+  }
+
+  .av-pillar {
+    padding: 1.75rem 1.5rem 1.75rem 0;
+    border-right: 1px solid var(--rule);
+  }
+
+  .av-pillar:last-child { border-right: none; }
+  .av-pillar:not(:first-child) { padding-left: 1.5rem; }
+
+  .av-pillar-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 0.6rem;
+  }
+
+  .av-pillar-title {
+    font-family: var(--serif);
+    font-size: 1rem;
+    color: var(--ink);
+    margin-bottom: 0.4rem;
+    line-height: 1.3;
+  }
+
+  .av-pillar-body {
+    font-size: 0.82rem;
+    line-height: 1.65;
+    color: var(--ink-mid);
+    font-weight: 300;
+  }
+
+  /* FAILURE MOMENT */
+  .failure-section { }
+
+  .failure-scenario {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(1.2rem, 2vw, 1.5rem);
+    line-height: 1.5;
+    color: var(--ink);
+    max-width: 620px;
+    margin-bottom: 1.5rem;
+  }
+
+  .failure-body {
+    font-size: 0.95rem;
+    line-height: 1.85;
+    color: var(--ink-mid);
+    max-width: 580px;
+    font-weight: 300;
+    margin-bottom: 1rem;
+  }
+
+  .failure-body strong { color: var(--ink); font-weight: 500; }
+
   /* RESPONSIVE */
   @media (max-width: 700px) {
     .pillars { grid-template-columns: 1fr; }
@@ -557,6 +671,10 @@
     .pillar:not(:first-child) { padding-left: 0; }
     .without-with { grid-template-columns: 1fr; }
     .feature-grid { grid-template-columns: 1fr; }
+    .aviation-pillars { grid-template-columns: 1fr; }
+    .av-pillar { border-right: none; border-bottom: 1px solid var(--rule); padding: 1.25rem 0; }
+    .av-pillar:last-child { border-bottom: none; }
+    .av-pillar:not(:first-child) { padding-left: 0; }
     nav .nav-links { display: none; }
   }
 </style>
@@ -578,13 +696,13 @@
 <!-- HERO -->
 <section class="hero">
   <div class="container">
-    <p class="eyebrow">AI accountability infrastructure</p>
+    <p class="eyebrow">The black box for AI systems</p>
     <h1 class="hero-headline">
       Your AI agents are making decisions.<br>
       <em>Who's keeping the record?</em>
     </h1>
     <p class="hero-sub">
-      Every agent action, every decision, every output — recorded outside your system, outside the model provider, and independently verifiable by anyone who needs to know what happened.
+      DarkMatter is the independent record of what actually happened. Every agent action, every decision, every output — recorded outside your system, outside the model provider, and independently verifiable by anyone who needs to know what happened.
     </p>
     <div class="cta-row">
       <a href="/signup" class="btn-primary">Start recording agent activity</a>
@@ -594,77 +712,87 @@
     <div class="pillars">
       <div class="pillar">
         <p class="pillar-num">01</p>
-        <p class="pillar-title">Independent</p>
-        <p class="pillar-body">Stored outside your infrastructure. Not controlled by your system or the model provider.</p>
+        <p class="pillar-title">Out of band</p>
+        <p class="pillar-body">Recorded outside the system that produced the decision. Not inside your agent. Not inside the model provider. Outside both.</p>
       </div>
       <div class="pillar">
         <p class="pillar-num">02</p>
         <p class="pillar-title">Tamper-evident</p>
-        <p class="pillar-body">Every action is cryptographically sealed at the moment it happens. The record cannot be altered after the fact.</p>
+        <p class="pillar-body">Every action is cryptographically sealed at the moment it happens. Any modification after the fact is mathematically detectable by anyone.</p>
       </div>
       <div class="pillar">
         <p class="pillar-num">03</p>
-        <p class="pillar-title">Verifiable</p>
-        <p class="pillar-body">Anyone — a regulator, an auditor, a client, a court — can confirm what happened without asking you to vouch for it.</p>
+        <p class="pillar-title">Reconstructable</p>
+        <p class="pillar-body">Replay the full sequence of decisions, step by step, after the fact. Not just what was logged. What actually happened, in order.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- WITHOUT / WITH -->
+<!-- AVIATION NARRATIVE -->
 <section>
   <div class="container">
-    <p class="eyebrow">The problem</p>
-    <h2 class="section-title">Your AI system logs itself. That's not an audit trail.</h2>
-    <p class="section-sub">A record stored inside the system it's recording is only as trustworthy as that system. That's not independence — that's a system vouching for itself.</p>
+    <p class="eyebrow">Why it exists</p>
+    <h2 class="section-title">Every commercial flight has a black box. Every AI agent should too.</h2>
+    <p class="section-sub">Aviation didn't put flight data recorders in planes because pilots were untrustworthy. It put them there because when something goes wrong at altitude, memory is unreliable, incentives are misaligned, and the only thing that matters is what actually happened.</p>
 
-    <div class="without-with">
-      <div class="ww-card">
-        <p class="ww-label bad">Without DarkMatter</p>
-        <div class="ww-item"><div class="ww-dot bad"></div><span>Your AI system logs itself</span></div>
-        <div class="ww-item"><div class="ww-dot bad"></div><span>Logs live inside the system being audited</span></div>
-        <div class="ww-item"><div class="ww-dot bad"></div><span>No independent way to prove what an agent decided</span></div>
-        <div class="ww-item"><div class="ww-dot bad"></div><span>In a dispute, you have logs — so does the other party. Neither proves anything.</span></div>
+    <div class="aviation-block">
+      <p class="aviation-label">The aviation parallel</p>
+      <p class="aviation-headline">The flight data recorder is independent by design. It doesn't live inside the cockpit systems. It doesn't report to the airline. It survives the crash and tells investigators the truth.</p>
+      <div class="aviation-body">
+        <p>Nobody argues the recorder should be optional. Nobody argues the airline should keep its own records and report honestly. <strong>The independence is the point.</strong> Without it, every investigation starts with the question: who do you trust?</p>
+        <p>AI agents are making consequential decisions right now — approving payments, flagging contracts, routing customers, generating outputs that reach real people. When something goes wrong, the record of what happened lives inside the same system that made the decision. That system is controlled by the same team that needs the investigation to go well.</p>
+        <p>That's not a black box. That's a system vouching for itself.</p>
+        <p><strong>DarkMatter is the flight data recorder for AI systems.</strong> Every agent action recorded outside the system that produced it, sealed at the moment it happens, and reconstructable by anyone who needs to know what actually occurred.</p>
       </div>
-      <div class="ww-card">
-        <p class="ww-label good">With DarkMatter</p>
-        <div class="ww-item"><div class="ww-dot good"></div><span>Every action recorded externally at the moment it happens</span></div>
-        <div class="ww-item"><div class="ww-dot good"></div><span>Immutable record no party controls after the fact</span></div>
-        <div class="ww-item"><div class="ww-dot good"></div><span>Full reconstruction of any workflow, any decision</span></div>
-        <div class="ww-item"><div class="ww-dot good"></div><span>Verifiable proof for regulators, clients, and teams — no account needed</span></div>
+
+      <div class="aviation-pillars">
+        <div class="av-pillar">
+          <p class="av-pillar-label">Property 01</p>
+          <p class="av-pillar-title">Recorded outside the system</p>
+          <p class="av-pillar-body">The record does not live inside your agent runtime or inside the model provider. It lives in an independent layer neither party controls.</p>
+        </div>
+        <div class="av-pillar">
+          <p class="av-pillar-label">Property 02</p>
+          <p class="av-pillar-title">Sealed at the moment it happens</p>
+          <p class="av-pillar-body">Each event is cryptographically chained and signed client-side before transmission. Modification after the fact is mathematically detectable by anyone.</p>
+        </div>
+        <div class="av-pillar">
+          <p class="av-pillar-label">Property 03</p>
+          <p class="av-pillar-title">Reconstructable after failure</p>
+          <p class="av-pillar-body">Replay the full sequence of decisions, tool calls, and outputs step by step. Not a summary. The actual chain, in the actual order it happened.</p>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- AGENT ERA -->
+<!-- FAILURE MOMENT -->
 <section>
   <div class="container">
-    <p class="eyebrow">Built for the agent era</p>
-    <p class="moment-intro">Your software assumed a human user. AI agents don't click dashboards. They call APIs. They act. They decide.</p>
-    <p class="moment-body">
-      When a human approved an action in a workflow, they were simultaneously executing it, reviewing it, and accepting responsibility. The human in the loop was the audit function.<br><br>
-      Remove the human. Something has to replace the audit function. DarkMatter records those decisions — automatically, at API level, with zero dashboard interaction required. One endpoint. Any agent. Any language.
-    </p>
+    <p class="eyebrow">When something goes wrong</p>
+    <p class="failure-scenario">"Your agent just approved an $84,000 payment to a vendor you've never heard of. It happened in 340 milliseconds. Nobody was watching. What do you do next?"</p>
+    <p class="failure-body">If your logs live inside your own infrastructure, you're starting from a position of defending yourself with evidence you control. A regulator, an auditor, a counterparty — they have every reason to question it. <strong>Evidence you produced is the weakest kind of evidence.</strong></p>
+    <p class="failure-body">If the record lives in DarkMatter, the answer is a URL. You send it to anyone who needs it. They open it. The chain is there — every step, every input, every output, sealed at the moment it happened. They verify it themselves without asking you to vouch for anything.</p>
+    <p class="failure-body">The record was written before you knew you'd need it. That's what makes it credible.</p>
 
     <div class="code-strip">
       <div class="code-header">
         <div class="code-dot"></div>
         <div class="code-dot"></div>
         <div class="code-dot"></div>
-        <span class="code-filename">agent.py &nbsp;·&nbsp; one call. that's it.</span>
+        <span class="code-filename">agent.py &nbsp;·&nbsp; one call at decision time. that's it.</span>
       </div>
       <div class="code-body">
-<span class="c-comment"># Your agent just approved an $84,000 invoice in 340ms. Nobody was watching.</span>
-<span class="c-comment"># This is the record.</span>
+<span class="c-comment"># At the moment of the decision — before anyone knew it would matter.</span>
 
 dm.commit(payload={
-  <span class="c-key">"input"</span>:  <span class="c-val">"Approve invoice #4421 — Acme Corp — $84,000"</span>,
-  <span class="c-key">"output"</span>: <span class="c-val">"Invoice approved. Payment queued for Friday."</span>,
+  <span class="c-key">"input"</span>:  <span class="c-val">"Approve payment to Acme Corp — $84,000"</span>,
+  <span class="c-key">"output"</span>: <span class="c-val">"Payment approved. Scheduled for Friday."</span>,
   <span class="c-key">"model"</span>:  <span class="c-val">"claude-sonnet-4-6"</span>
 })
 
-<div class="code-return"><span class="c-comment"># Returns instantly:</span>
+<div class="code-return"><span class="c-comment"># Returns instantly. The record exists outside your system from this moment.</span>
 {
   <span class="c-highlight">"id"</span>:               <span class="c-val">"ctx_7f3a9b..."</span>,
   <span class="c-highlight">"integrity"</span>: {
@@ -673,7 +801,8 @@ dm.commit(payload={
   },
   <span class="c-highlight">"verification_url"</span>:  <span class="c-val">"darkmatterhub.ai/r/ctx_7f3a9b"</span>
 }
-<span class="c-comment"># Share that URL with anyone. They verify it themselves. No login. No account.</span></div>
+<span class="c-comment"># Six months later, when the question is asked: send that URL.</span>
+<span class="c-comment"># No login. No account. The record proves itself.</span></div>
       </div>
     </div>
   </div>
@@ -683,24 +812,24 @@ dm.commit(payload={
 <section>
   <div class="container">
     <p class="eyebrow">How it works</p>
-    <h2 class="section-title">Three things. No monitoring, no model lock-in, no workflow replacement.</h2>
-    <p class="section-sub">DarkMatter records what your agents did, lets you inspect and replay it, and lets you prove it to anyone who wasn't there.</p>
+    <h2 class="section-title">Record now. Reconstruct later. Verify without asking anyone.</h2>
+    <p class="section-sub">DarkMatter does three things. It doesn't run your agents, manage your prompts, or judge whether the output was good. It records, replays, and proves.</p>
 
     <div class="feature-grid">
       <div class="feature-card">
         <p class="feature-tag">dm.commit()</p>
-        <p class="feature-title">Record every decision as it happens</p>
-        <p class="feature-body">Every agent action becomes a context commit — input, output, model, tool calls — linked to the action before it, stored outside your system the moment it's made.</p>
+        <p class="feature-title">Record every decision outside your system</p>
+        <p class="feature-body">Every agent action becomes an immutable node — input, output, model, tool calls, timestamp — chained to the action before it, written outside your infrastructure the moment it happens. Not a log. A sealed record.</p>
       </div>
       <div class="feature-card">
         <p class="feature-tag">dm.replay() / dm.fork()</p>
-        <p class="feature-title">Walk back to any point in the chain</p>
-        <p class="feature-body">Replay the full decision chain step by step. Branch from any checkpoint to try a different model or prompt without touching the original run. The original is always intact.</p>
+        <p class="feature-title">Reconstruct exactly what happened</p>
+        <p class="feature-body">Walk the full decision chain step by step, root to tip. Branch from any checkpoint to investigate what would have happened differently. The original is always intact. Nothing is overwritten.</p>
       </div>
       <div class="feature-card">
         <p class="feature-tag">dm.export() / dm.verify()</p>
-        <p class="feature-title">Prove it to anyone — without asking anyone</p>
-        <p class="feature-body">Export a self-contained proof bundle anyone can verify — no DarkMatter account, no internet connection, no asking you to vouch. The record proves itself.</p>
+        <p class="feature-title">Prove it without asking anyone to trust you</p>
+        <p class="feature-body">Export a self-contained proof bundle with an embedded standalone verifier. No DarkMatter account, no internet connection, no asking you to vouch. Anyone can run it. The record proves itself.</p>
       </div>
     </div>
   </div>
@@ -710,8 +839,8 @@ dm.commit(payload={
 <section>
   <div class="container">
     <p class="eyebrow">Proof levels</p>
-    <h2 class="section-title">Not every record carries the same weight. DarkMatter makes that visible.</h2>
-    <p class="section-sub">Start with Recorded — no code changes. Move to Signed or Sealed as your compliance requirements grow.</p>
+    <h2 class="section-title">Not every record carries the same weight. DarkMatter makes that explicit.</h2>
+    <p class="section-sub">Start with Recorded today — no code changes. Move to Signed or Sealed as your compliance requirements grow. The difference is visible in every record.</p>
 
     <table class="proof-table">
       <thead>
@@ -724,17 +853,17 @@ dm.commit(payload={
       <tbody>
         <tr>
           <td><span class="proof-label">Recorded</span></td>
-          <td>DarkMatter captured this record. You can inspect it, but some trust in the capture method is still required.</td>
-          <td>Proxy or browser extension — no code changes needed.</td>
+          <td>DarkMatter captured this record externally. You can inspect and replay it, but some trust in the capture method is still required.</td>
+          <td>Proxy or browser extension. No code changes needed.</td>
         </tr>
         <tr>
           <td><span class="proof-label">Signed</span></td>
-          <td>The agent signed this record before it reached DarkMatter. It cannot have been changed in transit without detection.</td>
-          <td>SDK — one extra line when your agent commits.</td>
+          <td>The agent signed this record client-side before it reached DarkMatter. Any modification in transit is mathematically detectable. This is black-box grade.</td>
+          <td>SDK. One extra line when your agent commits.</td>
         </tr>
         <tr>
           <td><span class="proof-label">Sealed</span></td>
-          <td>Signed and encrypted before leaving your system. DarkMatter never saw the content. Zero-knowledge verification.</td>
+          <td>Signed and encrypted before leaving your system. DarkMatter never saw the content. Verification works without revealing the payload.</td>
           <td>SDK with your own encryption key (BYOK).</td>
         </tr>
       </tbody>
@@ -768,8 +897,8 @@ dm.commit(payload={
 <section>
   <div class="container">
     <div class="quote-block">
-      <p class="quote-text">In a world of autonomous agents, no one can trust their own system. DarkMatter is the independent record of what actually happened.</p>
-      <p class="quote-attr">DarkMatter — AI accountability infrastructure</p>
+      <p class="quote-text">When the system fails, logs are not enough. DarkMatter is the record that exists outside the system that failed — independent, sealed, and reconstructable after the fact.</p>
+      <p class="quote-attr">DarkMatter — the black box for AI systems</p>
     </div>
   </div>
 </section>
@@ -777,11 +906,11 @@ dm.commit(payload={
 <!-- CTA -->
 <div class="cta-section">
   <div class="container">
-    <h2 class="section-title">See it before you decide.</h2>
-    <p class="section-sub">Run the demo. Commit a record, check the proof level, and verify it yourself — before writing any code.</p>
+    <h2 class="section-title">See it before you need it.</h2>
+    <p class="section-sub">Run the demo. Commit a record, replay the chain, export a proof bundle — and verify it yourself with zero DarkMatter dependency. Before writing any production code.</p>
     <div class="cta-row">
       <a href="/demo" class="btn-primary">Run the demo</a>
-      <a href="/docs" class="btn-ghost">Read the docs</a>
+      <a href="/integrity" class="btn-ghost">See the integrity model</a>
     </div>
   </div>
 </div>
