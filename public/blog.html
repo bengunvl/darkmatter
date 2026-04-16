@@ -241,6 +241,28 @@
   <div class="page-title">Blog</div>
   <div class="page-sub">Updates, thinking, and technical writing from the DarkMatter team.</div>
 
+  <!-- POST — Schmidt / pull the plug -->
+  <a class="post featured" href="/blog/when-you-cant-pull-the-plug">
+    <div class="post-meta">
+      <span class="post-date">April 2026</span>
+      <span class="post-tag">analysis</span>
+    </div>
+    <div class="post-title">When You Can't Pull the Plug, You Need to Know What Happened</div>
+    <div class="post-excerpt">Eric Schmidt says someone needs a hand on the plug. That hand is only useful if it has an independent record of what the agents decided. Here's what his warning actually implies for AI accountability infrastructure.</div>
+    <div class="post-read">Read post →</div>
+  </a>
+
+  <!-- POST — SaaSpocalypse -->
+  <a class="post" href="/blog/saaspocalypse-audit-infrastructure">
+    <div class="post-meta">
+      <span class="post-date">April 2026</span>
+      <span class="post-tag">market thinking</span>
+    </div>
+    <div class="post-title">The SaaSpocalypse Is Why Audit Infrastructure Wins</div>
+    <div class="post-excerpt">$2 trillion in software market cap wiped out. Everyone's calling it the SaaSpocalypse. They're misreading the signal. The same force killing per-seat SaaS is the force that makes independent verification non-optional.</div>
+    <div class="post-read">Read post →</div>
+  </a>
+
   <!-- POST — who actually needs this -->
   <a class="post" href="/blog-who-actually-needs-this">
     <div class="post-meta">
@@ -326,6 +348,96 @@
   const slug = window.location.pathname.replace('/blog/', '').replace('/blog', '').replace(/^\//, '');
 
   const posts = {
+    'when-you-cant-pull-the-plug': {
+      date: 'April 2026',
+      tag: 'analysis',
+      title: 'When You Can\'t Pull the Plug, You Need to Know What Happened',
+      content: `
+        <p>I recently watched a video of Eric Schmidt, former CEO of Google, being asked a simple question: what happens when AI gets too powerful?</p>
+        <p>His answer has stayed with me.</p>
+        <p><a href="https://www.youtube.com/watch?v=dSPO_naL1Ts&t=4s" target="_blank">Watch the full interview here.</a></p>
+        <p>Schmidt didn't reach for reassurance. He said that when AI systems can begin to self-improve, "we need to seriously think about unplugging it." He talked about someone needing to have "their hand on the plug." He talked about guardrails, about human dignity, about the fact that these systems don't understand the consequences of their own actions.</p>
+        <p>He's right about the problem. But the solution he's reaching for doesn't quite work. And the gap between his diagnosis and his proposed fix is exactly where DarkMatter lives.</p>
+        <h2>The Real Warning Buried in His Words</h2>
+        <p>Schmidt isn't actually worried about a single dangerous AI. He's worried about something more subtle and more immediate.</p>
+        <p>Within five years, he says, we should expect millions of agents working together, running infinite-context reasoning chains, executing actions autonomously, interacting with each other in ways that produce emergent behavior no single engineer designed or anticipated.</p>
+        <p>The real warning isn't "AI will take over."</p>
+        <p>It's this: <strong>we are about to lose visibility into decision-making systems that are making real decisions.</strong></p>
+        <p>That's a different problem. And it's already here, not five years away. The agents running in production today — approving invoices, routing support tickets, flagging contracts, generating customer-facing outputs — are already making decisions faster than any human can track. The multi-agent future Schmidt is describing is the direction. The visibility problem is the present.</p>
+        <h2>Why "Pull the Plug" Doesn't Solve It</h2>
+        <p>Schmidt's instinct — keep a hand on the plug — assumes that someone knows what the system is doing before they decide whether to intervene. That assumption is exactly what breaks down at scale.</p>
+        <p>You can't pull the plug on a distributed system with any precision. Agents run globally. APIs are everywhere. Infrastructure is decentralized. Even if you could shut everything down at once, you'd have no clean record of what actually happened in the moments before you did. You'd be pulling the plug blind.</p>
+        <p>And then what? You have a system that's off, and no reliable account of what it decided while it was on.</p>
+        <p>Schmidt himself acknowledged this when he said humans won't be able to police AI. He floated the idea that AI systems should police AI. That's a reasonable instinct, but it restates the problem rather than solving it. An AI system watching another AI system inside the same infrastructure has the same credibility issue as a company auditing its own books. The watchdog needs to be independent — outside the system, outside the model provider, controlled by neither.</p>
+        <p>That's the gap. And it's not a gap that "pulling the plug" closes.</p>
+        <h2>The Problem Isn't Danger. It's Opacity.</h2>
+        <p>Here's what I think Schmidt is actually pointing at, even if he doesn't name it this way:</p>
+        <p>The fundamental issue with autonomous agents isn't that they're powerful. It's that as they become more powerful, their decision-making becomes harder to reconstruct after the fact.</p>
+        <p>A human decision-maker leaves traces. They write emails. They have conversations. They explain their reasoning. When something goes wrong, you can usually piece together what they were thinking.</p>
+        <p>An agent leaves whatever it was designed to log — which is typically stored inside the same system it's part of, controlled by the same team that built it, and subject to the same incentive misalignments as any organization that would rather not surface its own errors.</p>
+        <p>That's not an audit trail. That's a system vouching for itself.</p>
+        <p>What the agent era actually requires is something different: a record that exists outside the system making the decisions, that can be reconstructed step by step after the fact, and that no single party controls. A record that lets you answer the question — what did that agent actually decide, and how did it get there — without asking anyone to vouch for it.</p>
+        <h2>The Black Box Recorder Analogy</h2>
+        <p>Aviation figured this out decades ago. When a plane goes down, the investigation doesn't rely on the airline's internal logs. It relies on a flight data recorder: a device that is physically separate from the plane's operating systems, hardened against the forces that destroy everything else, and designed specifically so that an independent party can reconstruct what happened after the fact.</p>
+        <p>Nobody argues that the flight data recorder should be optional. Nobody argues that the airline should be trusted to keep their own records and report on them honestly. The independence is the point.</p>
+        <p>AI agents need the equivalent. Not a dashboard. Not a monitoring tool. A flight data recorder for decisions — every action, every input, every output, recorded outside the system, sealed at the moment it happens, and reconstructable by anyone who needs to know what actually occurred.</p>
+        <p>That's what DarkMatter is.</p>
+        <h2>What This Means Right Now</h2>
+        <p>Schmidt is talking about a future where systems become genuinely unintelligible. We're not there yet. But the accountability infrastructure for that future needs to be built now — in the window where agents are powerful enough that the problem is real, but not so autonomous that there's no longer a clear record to capture.</p>
+        <p>Right now, every agent commit creates a record. Every input and output is attributable. Every decision chain is reconstructable. The moment you wait until systems are fully autonomous to build the independent record layer, you've already lost the thread.</p>
+        <p>DarkMatter records what your agents decided before you need to prove it. Before the regulator asks. Before the audit happens. Before something goes wrong and you're trying to reconstruct a sequence of agent decisions from logs that live inside the system you're already defending.</p>
+        <p>The independent record has to exist before the question is asked. That's the whole point.</p>
+        <h2>The Sentence Schmidt Didn't Say</h2>
+        <p>He said someone needs a hand on the plug.</p>
+        <p>What he didn't say — but what the logic of his argument implies — is that the hand is only useful if it's informed. You can't make a good decision about whether to intervene in an autonomous system if you have no independent account of what it's been doing. Intervention requires evidence. Evidence requires a record that wasn't produced by the system you're deciding whether to shut down.</p>
+        <p>In a world where you can't stop the agents from acting, you need to be able to understand what they did.</p>
+        <p>DarkMatter is the independent record of what actually happened.</p>
+      `
+    },
+    'saaspocalypse-audit-infrastructure': {
+      date: 'April 2026',
+      tag: 'market thinking',
+      title: 'The SaaSpocalypse Is Why Audit Infrastructure Wins',
+      content: `
+        <p>$2 trillion in software market cap has been wiped out. PayPal is down 85%. Zoom is down 86%. Salesforce is down 49%. Everyone's calling it the SaaSpocalypse.</p>
+        <p>They're not entirely wrong. But they're misreading the signal.</p>
+        <h2>The Wrong Diagnosis</h2>
+        <p>The conventional read is that AI killed SaaS. That Zoom got replaced by AI meetings, that Salesforce got replaced by AI CRM, that PayPal got replaced by something agentic. And while those narratives make for good LinkedIn posts, they miss the actual structural shift happening underneath.</p>
+        <p>The real story isn't that these products stopped working.</p>
+        <p><strong>It's that their pricing assumed a human on the other end — and the humans are leaving the loop.</strong></p>
+        <p>Traditional SaaS was built on one core assumption: a person would sit in front of a screen and click buttons. Per-seat licensing. Dashboard-driven workflows. Onboarding flows that assumed someone would read them.</p>
+        <p>AI agents don't sit in dashboards. They don't need seats. They don't read onboarding flows. They call an API, execute a decision, and move on — at machine speed, at machine volume, with zero patience for the friction that enterprise SaaS built its moats around.</p>
+        <p>The products still work. The pricing doesn't. That's not a product crisis — it's a monetization model crisis.</p>
+        <h2>What the Stack Actually Looks Like Now</h2>
+        <p>Here's what most people building in the agent space are focused on: identity (API keys, auth, who the agent is), execution (the agent calling APIs, doing things), memory (context persistence across sessions), and orchestration (multi-agent coordination).</p>
+        <p>Most of the capital, most of the talent, most of the infrastructure buildout is happening at those layers.</p>
+        <p><strong>Almost nobody is building the trust layer.</strong></p>
+        <p>That gap is not an accident. Trust is hard to build, harder to sell, and almost impossible to retrofit. It requires independence — which means it can't be owned by the same party doing the executing.</p>
+        <p>And that gap is exactly where the next wave of mandatory infrastructure gets built.</p>
+        <h2>The Real Opportunity Nobody Is Naming</h2>
+        <p>When humans leave the loop, accountability doesn't disappear. It becomes more important.</p>
+        <p>Think about what the loop actually provided. When a human clicked "approve" in a SaaS workflow, they were implicitly doing several things simultaneously: executing an action, reviewing it, and accepting responsibility for it. The human in the loop was the audit function.</p>
+        <p>Remove the human. What replaces the audit function?</p>
+        <p>Right now: nothing. An AI agent can execute hundreds of decisions per hour across your infrastructure, and the only record that exists lives inside the same system the agent is part of. The model provider can tell you what the model did. Your infrastructure can tell you what your infrastructure did. But neither of those is an independent record.</p>
+        <p><strong>This is the structural gap that the agent era creates: the more we trust agents to act, the less we can trust any single system's account of what they did.</strong></p>
+        <h2>Why "You Cannot Audit Yourself" Is the Central Insight</h2>
+        <p>The accounting profession figured this out a hundred years ago. You don't let companies audit their own financial statements. Not because companies are dishonest — but because independence is the only thing that makes an audit meaningful.</p>
+        <p>The same logic applies to AI agents.</p>
+        <p>If the record of what an agent did lives in your infrastructure, that record is only as trustworthy as your infrastructure. If it lives with the model provider, it's only as trustworthy as the model provider. Both are strong incentive misalignments — neither party benefits from surfacing their own errors.</p>
+        <p>An independent verification layer solves this not by monitoring the agent (that's a different product) but by creating a record that exists outside the system it's recording. A record that neither party can alter after the fact, that neither party controls, and that a third party — a regulator, an auditor, a customer, a court — can verify without asking either party to vouch for it.</p>
+        <p>That's what DarkMatter is.</p>
+        <h2>The Compliance Clock Is Already Running</h2>
+        <p>The EU AI Act is live. Enterprise governance teams are waking up to agent liability. The question of "what did your AI system decide, and how do you know?" is going from philosophical to legal faster than most people realize.</p>
+        <p>The companies in that drawdown chart — Salesforce, PayPal, Adobe — are simultaneously building agent products and facing this exact compliance question for their enterprise customers. Their customers want to deploy agents, and their legal teams want audit trails. The infrastructure to bridge that gap doesn't exist yet in any standardized form.</p>
+        <p>That's not a feature gap. That's a category gap.</p>
+        <h2>The Infrastructure Play</h2>
+        <p>Stripe didn't build stores. They didn't compete with merchants. They became the infrastructure that all stores relied on for a function — payment processing — that nobody wanted to build themselves and nobody could do credibly enough to be trusted.</p>
+        <p>The same dynamic exists for agent trust infrastructure. Nobody wants to build it. Everyone needs it. The parties closest to the problem — model providers, orchestration platforms, enterprise deployers — all have the same conflict of interest: they can't be both the executor and the auditor.</p>
+        <p>That leaves room for a layer that is purely independent. No execution. No orchestration. No model opinions. Just records that can be verified without asking anyone to vouch for themselves.</p>
+        <p><strong>AI agents are replacing human decision-makers. DarkMatter is the independent record of what they decided.</strong></p>
+        <p>That's not a SaaS product. That's infrastructure. And infrastructure doesn't die when the pricing model shifts. It becomes more necessary.</p>
+      `
+    },
     'execution-lineage-for-ai-agents': {
       date: 'March 2026',
       tag: 'announcement',
