@@ -634,7 +634,7 @@
 <!-- HERO -->
 <section class="hero">
   <div class="container">
-    <p class="hero-kicker">Canonical definition — v1.0 — Published April 2026</p>
+    <p class="hero-kicker">Version 1.0 — April 2026 — Stable</p>
     <h1 class="hero-headline">
       Black Box<br>
       <em>for AI</em>
@@ -656,7 +656,10 @@
       A Black Box for AI applies the aviation principle to autonomous systems: an independent record, written outside the system being observed, sealed at the moment it happens, and reconstructable by anyone who needs to know what actually occurred.
     </p>
     <p class="hero-opening">
-      This definition formalizes what a Black Box for AI means in the context of autonomous agents and independent verification. It is intended as an open standard. Any system satisfying all five properties qualifies.
+      This definition formalizes what a Black Box for AI means in the context of autonomous agents and independent verification. It is intended as an open standard — not a proprietary claim. Any system satisfying all five properties qualifies, regardless of who built it.
+    </p>
+    <p class="hero-opening">
+      This definition is designed to remain stable over time. Future revisions will extend, not break, the core properties.
     </p>
 
     <div class="hero-stamp">
@@ -895,7 +898,7 @@
         <tr>
           <td><span class="record-label">model and version</span></td>
           <td><span class="record-optional">Recommended</span></td>
-          <td>Which model produced the output — essential for attribution and reproducibility.</td>
+          <td>Which model produced the output — essential for attribution and reproducibility. In practice, a complete black box record includes model and version for every action, as this is typically the first field investigators need in a post-incident reconstruction.</td>
         </tr>
       </tbody>
     </table>
@@ -931,19 +934,19 @@
     <div class="attribution">
       <p class="attribution-label">Definition provenance</p>
       <p class="attribution-body">
-        This definition was first published by DarkMatter in April 2026. It is intended as an open, vendor-neutral standard — not a proprietary claim. Any system that satisfies all five properties qualifies, regardless of who built it.
+        This definition was first published by DarkMatter in April 2026. It is intended as an open, vendor-neutral standard. Any system that satisfies all five properties qualifies, regardless of who built it.
       </p>
       <p class="attribution-body">
-        DarkMatter is the first implementation of this standard. The full technical specification — including canonical serialization, hash chain construction, Ed25519 signing, Merkle inclusion proofs, signed checkpoints, and the standalone verifier — is published in the <a href="/integrity">DarkMatter Integrity Spec v1.0</a>. The spec is frozen. Changes require a new version number.
+        The requirements above are implementation-agnostic. DarkMatter's reference implementation — including how each required field is captured, chained, and verified — is defined in the <a href="/integrity">Integrity Spec v1.0</a>. That specification provides a concrete mapping from this abstract definition to a working system.
       </p>
       <p class="attribution-body">
-        The standalone verifier lets anyone confirm a record's integrity without contacting DarkMatter. It is open source and ships inside every export bundle. That is not a feature. That is how the independence guarantee is made real.
+        DarkMatter already satisfies the required properties of a Black Box for AI. We are continuing to expand the recommended fields to improve reconstruction fidelity — in particular tool call capture and human intervention events.
       </p>
 
       <div class="attribution-meta">
         <div class="attribution-row">
           <span class="attribution-key">Definition version</span>
-          <span class="attribution-val">v1.0</span>
+          <span class="attribution-val">v1.0 — Stable</span>
         </div>
         <div class="attribution-row">
           <span class="attribution-key">First published</span>
@@ -954,11 +957,11 @@
           <span class="attribution-val">DarkMatter</span>
         </div>
         <div class="attribution-row">
-          <span class="attribution-key">Technical spec</span>
+          <span class="attribution-key">Reference impl</span>
           <span class="attribution-val"><a href="/integrity">Integrity Spec v1.0</a></span>
         </div>
         <div class="attribution-row">
-          <span class="attribution-key">Implementation</span>
+          <span class="attribution-key">Open source</span>
           <span class="attribution-val"><a href="https://github.com/darkmatter-hub/darkmatter">github.com/darkmatter-hub/darkmatter</a></span>
         </div>
         <div class="attribution-row">
@@ -985,7 +988,7 @@
         </li>
         <li class="citation-format-item">
           <span class="citation-format-label">APA</span>
-          <span class="citation-format-text" id="cite-apa">DarkMatter. (2026). Black Box for AI — Definition (v1.0). https://darkmatterhub.ai/black-box-for-ai</span>
+          <span class="citation-format-text" id="cite-apa">DarkMatter. (2026). Black Box for AI — Definition (v1.0, Stable). https://darkmatterhub.ai/black-box-for-ai</span>
         </li>
         <li class="citation-format-item">
           <span class="citation-format-label">URL</span>
