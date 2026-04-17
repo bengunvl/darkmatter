@@ -690,7 +690,10 @@ async function commitToApi(scenario) {
     if (res.ok) {
       const data = await res.json();
       realCtxId    = data.id || null;
-      realVerifyUrl = data.verify_url || (realCtxId ? `${DM_HOST}/r/${realCtxId}` : null);
+      // buildContext doesn't include verify_url — construct from id
+      realVerifyUrl = realCtxId
+        ? `${DM_HOST}/r/${realCtxId}`
+        : (data.verify_url || null);
       return { id: realCtxId, verify_url: realVerifyUrl };
     }
   } catch (_) {}
@@ -724,25 +727,30 @@ function startStep2() {
   document.getElementById('rec-id').textContent = s.recordId;
   document.getElementById('rec-payload').innerHTML = formatPayload(s.payload);
 
-  // Fire real API commit in parallel with the animation
   commitToApi(currentScenario).then(result => {
     if (result && result.id) {
-      // Swap in real ID and verify URL
+      // Swap in real ID
       document.getElementById('rec-id').textContent = result.id;
       if (document.getElementById('rec-id-3')) {
         document.getElementById('rec-id-3').textContent = result.id;
       }
-      // Wire up the open-record button in step 4
-      const openBtn = document.getElementById('btn-open-record');
-      if (openBtn && result.verify_url) {
-        openBtn.href = result.verify_url;
-        openBtn.style.display = 'inline-block';
-      }
+      // Wire up verify URL display and open button
       const verifyUrlEl = document.getElementById('verify-url-display');
+      const openBtn     = document.getElementById('btn-open-record');
       if (verifyUrlEl && result.verify_url) {
         verifyUrlEl.textContent = result.verify_url;
-        verifyUrlEl.href = result.verify_url;
+        verifyUrlEl.href        = result.verify_url;
       }
+      if (openBtn && result.verify_url) {
+        openBtn.href         = result.verify_url;
+        openBtn.style.display = 'inline-block';
+      }
+    } else {
+      // API call failed — hide the real-record block gracefully
+      const verifyUrlEl = document.getElementById('verify-url-display');
+      if (verifyUrlEl) verifyUrlEl.textContent = 'Could not reach API — try refreshing.';
+      const block = document.getElementById('real-record-block');
+      if (block) block.style.opacity = '0.5';
     }
   });
 
