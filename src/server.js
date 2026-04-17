@@ -407,7 +407,7 @@ app.post('/api/provision', provisionLimiter, async (req, res) => {
       next: [
         `export DARKMATTER_API_KEY=${apiKey}`,
         'import darkmatter as dm',
-        'ctx = dm.commit(to_agent_id, payload={"output": result})',
+        'ctx = dm.commit(payload={"input": prompt, "output": result})',
       ],
       note: 'Your API key is active immediately. Check your email to set a password and access the dashboard.',
     });
@@ -905,9 +905,14 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
 
     // Accept either payload (v1) or context (legacy)
     const resolvedPayload = payload || (context ? { output: context } : null);
-    if (!toAgentId || !resolvedPayload) {
-      return res.status(400).json({ error: 'toAgentId and payload (or context) required' });
+    if (!resolvedPayload) {
+      return res.status(400).json({ error: 'payload (or context) required' });
     }
+
+    // toAgentId is optional — defaults to the committing agent's own ID.
+    // This removes the "create a second agent" requirement for single-agent workflows.
+    // Multi-agent pipelines still pass an explicit toAgentId as before.
+    const resolvedToAgentId = toAgentId || req.agent.agent_id;
 
     // Validate eventType
     const VALID_TYPES = ['commit', 'revert', 'override', 'branch', 'merge', 'error', 'spawn', 'timeout', 'retry', 'checkpoint', 'consent', 'redact', 'escalate', 'audit'];
@@ -978,7 +983,7 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
     const { data: toAgent } = await supabaseService
       .from('agents')
       .select('agent_id')
-      .eq('agent_id', toAgentId)
+      .eq('agent_id', resolvedToAgentId)
       .single();
 
     if (!toAgent) {
@@ -1006,14 +1011,14 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
           accepted_at:         acceptedAt,
           spec_version:        '1.0',
           verified:            false,
-          verification_reason: `Recipient agent ${toAgentId} not found`,
+          verification_reason: `Recipient agent ${resolvedToAgentId} not found`,
           timestamp,
         });
 
       return res.status(404).json({
         id:        commitId,
         verified:  false,
-        reason:    `Agent ${toAgentId} not found`,
+        reason:    `Agent ${resolvedToAgentId} not found`,
         timestamp,
       });
     }
@@ -1024,7 +1029,7 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
         id:                  commitId,
         schema_version:      schemaVersion,
         from_agent:          req.agent.agent_id,
-        to_agent:            toAgentId,
+        to_agent:            resolvedToAgentId,
         context:             { ...resolvedPayload, _eventType: resolvedType },
         payload:             resolvedPayload,
         event_type:          resolvedType,
@@ -1038,7 +1043,7 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
         hash_mismatch:       hashMismatch || false,
         verified:            true,
         verification_reason: 'API key authenticated',
-      capture_mode: 'client_signed',
+        capture_mode: 'client_signed',
         timestamp,
       });
 
@@ -1054,19 +1059,19 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
     const { data: recipientAgent } = await supabaseService
       .from('agents')
       .select('agent_id, agent_name, webhook_url, webhook_secret')
-      .eq('agent_id', toAgentId)
+      .eq('agent_id', resolvedToAgentId)
       .single();
 
     // Fire event hooks (post-commit)
     fireEventHooks(req.agent.agent_id, 'commit', {
-      ctxId: commitId, toAgentId, traceId, eventType: resolvedType,
+      ctxId: commitId, toAgentId: resolvedToAgentId, traceId, eventType: resolvedType,
     }).catch(() => {});
 
     if (recipientAgent?.webhook_url) {
       deliverWebhook(recipientAgent, {
         id:         commitId,
         from_agent: req.agent.agent_id,
-        to_agent:   toAgentId,
+        to_agent:   resolvedToAgentId,
         context:    resolvedPayload,
         verified:   true,
         timestamp,
@@ -1077,7 +1082,7 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
       id:                  commitId,
       schema_version:      schemaVersion,
       from_agent:          req.agent.agent_id,
-      to_agent:            toAgentId,
+      to_agent:            resolvedToAgentId,
       payload:             resolvedPayload,
       event_type:          resolvedType,
       parent_id:           parentId  || null,
@@ -1091,7 +1096,7 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
       verification_reason: 'API key authenticated',
       capture_mode: 'client_signed',
       timestamp,
-    }, { [req.agent.agent_id]: req.agent.agent_name, [toAgentId]: recipientAgent?.agent_name || toAgentId });
+    }, { [req.agent.agent_id]: req.agent.agent_name, [resolvedToAgentId]: recipientAgent?.agent_name || resolvedToAgentId });
 
     // ── Phase 3: append to log + Merkle tree ──────────
     let logEntry = null;
