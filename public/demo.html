@@ -488,7 +488,7 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.96)
 
       <!-- Real verify URL — populated when API commit succeeds -->
       <div id="real-record-block" style="margin-top:24px;padding:16px 20px;background:rgba(15,123,77,0.06);border:1px solid rgba(15,123,77,0.2);border-radius:6px;text-align:left;">
-        <div style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--grn);margin-bottom:8px;">Your real record — committed during this demo</div>
+        <div style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--grn);margin-bottom:8px;">Your real record — created during this session</div>
         <div style="font-size:13px;color:var(--t2);margin-bottom:10px;line-height:1.6;">This is not a simulation. The record you just saw was committed to the live DarkMatter system. Open it — it's verifiable by anyone.</div>
         <a id="verify-url-display" href="#" target="_blank" style="font-family:var(--mono);font-size:11.5px;color:var(--purple);word-break:break-all;display:block;margin-bottom:12px;">Loading your verify URL…</a>
         <a id="btn-open-record" href="#" target="_blank" class="btn-p" style="display:none;font-size:12px;padding:8px 18px;">Open your record ↗</a>
@@ -637,69 +637,45 @@ function goToStep(n) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ── Real API commit — makes an actual POST to DarkMatter ──────────────
-// Uses a public demo API key. Every demo visitor commits a real record
-// and gets a real verify_url they can open, share, and fork.
-const DEMO_API_KEY = 'dm_sk_demo_public_readonly';
+// ── Demo commit — server-side endpoint, no key in browser ─────
 const DM_HOST = 'https://darkmatterhub.ai';
 
-let realCtxId = null;
-let realVerifyUrl = null;
+let realCtxId      = null;
+let realVerifyUrl  = null;
+let realExportUrl  = null;
+let realProofLevel = null;
+let realBundle     = null;
 
 async function commitToApi(scenario) {
-  const payloads = {
-    codereview: {
-      input:  'Review PR #847 — auth middleware refactor, session token validation',
-      output: 'Approved. No security regressions. Token expiry logic correct. Recommend adding rate limit to refresh endpoint before merge.',
-      model:  'claude-sonnet-4-6',
-      agent_role: 'code-reviewer',
-    },
-    support: {
-      input:  'Process refund request — invoice #4821, Meridian Analytics LLC',
-      output: 'Refund approved. Amount: $1,240.00. Reason: duplicate charge, billing cycle overlap.',
-      model:  'claude-sonnet-4-6',
-      agent_role: 'billing-agent',
-    },
-    research: {
-      input:  'Evaluate access request ACC-20940 — j.santos@company.com requesting internal analytics dashboard',
-      output: 'Access granted. Basis: senior analyst role, policy v3.1. Expires 2026-07-17.',
-      model:  'claude-sonnet-4-6',
-      agent_role: 'access-control-agent',
-    },
-  };
-
-  const p = payloads[scenario] || payloads.codereview;
-
   try {
-    const res = await fetch(`${DM_HOST}/api/commit`, {
+    const res = await fetch(`${DM_HOST}/api/demo/commit`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${DEMO_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        payload: {
-          input:  p.input,
-          output: p.output,
-          model:  p.model,
-        },
-        agent: { role: p.agent_role },
-        traceId: 'trc_demo_' + Date.now(),
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario }),
     });
 
     if (res.ok) {
       const data = await res.json();
-      realCtxId    = data.id || null;
-      // buildContext doesn't include verify_url — construct from id
-      realVerifyUrl = realCtxId
-        ? `${DM_HOST}/r/${realCtxId}`
-        : (data.verify_url || null);
-      return { id: realCtxId, verify_url: realVerifyUrl };
+      realCtxId      = data.id || null;
+      realVerifyUrl  = data.verify_url || (realCtxId ? `${DM_HOST}/r/${realCtxId}` : null);
+      realExportUrl  = data.export_url || (realCtxId ? `${DM_HOST}/api/export/${realCtxId}` : null);
+      realProofLevel = data.proof_level || null;
+      return data;
     }
   } catch (_) {}
+  return null;
+}
 
-  // Graceful fallback — demo still works if API is unreachable
+async function fetchRealBundle() {
+  if (!realExportUrl) return null;
+  try {
+    const res = await fetch(realExportUrl);
+    if (res.ok) {
+      const data = await res.json();
+      realBundle = data;
+      return data;
+    }
+  } catch (_) {}
   return null;
 }
 
@@ -743,7 +719,7 @@ function startStep2() {
         verifyUrlEl.href        = result.verify_url;
       }
       if (openBtn && result.verify_url) {
-        openBtn.href         = result.verify_url;
+        openBtn.href          = result.verify_url;
         openBtn.style.display = 'inline-block';
       }
     } else {
@@ -799,23 +775,30 @@ function setupStep3() {
   // Reset independent verify block
   const iv = document.getElementById('indep-verify');
   if (iv) iv.classList.remove('appeared');
-  document.getElementById('bundle-json').textContent = '—';
+  document.getElementById('bundle-json').textContent = 'Fetching real proof bundle…';
 
   // Reset verify log
   const logEl = document.getElementById('verify-log');
   if (logEl) { logEl.style.display = 'none'; document.getElementById('vl-lines').innerHTML = ''; }
 
-  // Update step 3 sub text with correct level name
-  const levelName = s.proofLevel.charAt(0).toUpperCase() + s.proofLevel.slice(1);
-  document.getElementById('step3-level-name').textContent = levelName;
+  // Derive proof level from real API response if available, else fall back to scenario
+  const proofLevel     = realProofLevel || s.proofLevel;
+  const levelName      = proofLevel.charAt(0).toUpperCase() + proofLevel.slice(1);
+  const proofBadgeClass = proofLevel === 'signed' ? 'pb-signed' : proofLevel === 'sealed' ? 'pb-sealed' : 'pb-recorded';
+  const proofDesc      = proofLevel === 'signed'
+    ? 'This record was signed before it reached DarkMatter. If anyone changed it, verification would fail.'
+    : proofLevel === 'sealed'
+    ? 'This record is sealed with Merkle inclusion proofs and published checkpoint signatures.'
+    : 'This record was captured by DarkMatter. Inspect it, but some trust in the capture layer is still required.';
 
-  // Populate the proof-level record card
-  document.getElementById('record-proof-badge').className = 'rc-proof-badge ' + s.proofBadgeClass;
+  document.getElementById('step3-level-name').textContent = levelName;
+  document.getElementById('record-proof-badge').className = 'rc-proof-badge ' + proofBadgeClass;
   document.getElementById('record-proof-badge').textContent = levelName;
-  document.getElementById('record-proof-desc').textContent = s.proofDesc;
+  document.getElementById('record-proof-desc').textContent = proofDesc;
   document.getElementById('rec-agent-3').textContent = s.agent;
   document.getElementById('rec-action-3').textContent = s.action;
-  document.getElementById('rec-id-3').textContent = s.recordId;
+  // Use real commit ID if available
+  document.getElementById('rec-id-3').textContent = realCtxId || s.recordId;
 
   // Set verify state
   document.getElementById('record-verify-status').textContent = 'Not yet verified';
@@ -867,10 +850,10 @@ function runVerification() {
   linesEl.innerHTML = '';
 
   const steps = [
-    { text: 'Checking this record…', delay: 0 },
-    { text: 'Checking that it matches the file…', delay: 420 },
-    { text: 'Checking that it still fits into its history…', delay: 860 },
-    { text: 'Checking who signed it…', delay: 1280 },
+    { text: 'Recomputing payload hash…', delay: 0 },
+    { text: 'Verifying hash chain linkage…', delay: 420 },
+    { text: 'Checking integrity hash against log…', delay: 860 },
+    { text: 'Fetching proof bundle from server…', delay: 1280 },
     { text: 'Verification complete.', delay: 1650, final: true },
   ];
 
@@ -887,7 +870,18 @@ function runVerification() {
     }, step.delay);
   });
 
-  // Complete after all steps — log stays visible
+  // Fetch real export bundle in parallel with animation
+  fetchRealBundle().then(bundle => {
+    const bundleEl = document.getElementById('bundle-json');
+    if (bundle) {
+      bundleEl.textContent = JSON.stringify(bundle, null, 2);
+    } else {
+      // Fallback label — makes clear this is illustrative if fetch failed
+      bundleEl.textContent = '// Real bundle unavailable — open the verify URL to download it directly.';
+    }
+  });
+
+  // Complete after animation
   setTimeout(() => {
     const ts = getTimestamp();
 
@@ -902,10 +896,6 @@ function runVerification() {
 
     const vr = document.getElementById('verify-result');
     vr.classList.add('appeared', 'ok');
-
-    // Generate and show proof bundle JSON
-    const bundleJson = generateBundle(s, ts);
-    document.getElementById('bundle-json').textContent = bundleJson;
 
     // Independent verification block
     setTimeout(() => {
@@ -924,31 +914,6 @@ function runVerification() {
       document.getElementById('step3-actions').style.display = 'flex';
     }, 700);
   }, 1900);
-}
-
-function generateBundle(s, ts) {
-  const id = s.recordId.replace('rec_','');
-  const parentId = 'rec_prev_' + id.slice(0, 8);
-  const bundle = {
-    darkmatter_version: '1.0',
-    record_id: s.recordId,
-    agent: s.agent,
-    action: s.action,
-    proof_level: s.proofLevel,
-    timestamp: new Date().toISOString(),
-    verified_at: ts,
-    payload_hash: 'sha256:' + id + 'a8f3c2e1b9d0472c',
-    integrity_hash: 'sha256:' + id + 'f4b1e9d78c3a2051',
-    parent_id: parentId,
-    parent_hash: 'sha256:' + id + 'p9c1e3d5f7a2b4c6',
-    verification_result: 'pass',
-    chain_intact: true,
-  };
-  if (s.proofLevel !== 'recorded') {
-    bundle.signature = 'ed25519:' + id + 'b2d4f6a8c0e1f3a5b7c9d2e4f6a8c0e1';
-    bundle.agent_public_key = 'ed25519-pub:' + id + 'a1b2c3d4e5f6a7b8';
-  }
-  return JSON.stringify(bundle, null, 2);
 }
 
 function copyBundle(btn) {

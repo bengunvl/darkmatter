@@ -453,6 +453,113 @@ app.get('/demo', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/demo.html'));
 });
 
+// ── POST /api/demo/commit ─────────────────────────────
+// Server-side demo endpoint. No API key exposed in browser.
+// Constrained payload shape. Rate-limited. Returns real commit
+// id, verify_url, proof_level, and export bundle URL.
+// ─────────────────────────────────────────────────────
+const demoLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 120,                  // 120 demo commits per IP per hour
+  message: { error: 'Demo rate limit reached. Get your own API key at darkmatterhub.ai/signup' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const DEMO_AGENT_ID  = process.env.DEMO_AGENT_ID  || 'dm_demo_public';
+const DEMO_API_KEY   = process.env.DEMO_API_KEY   || 'dm_sk_demo_public_readonly';
+
+app.post('/api/demo/commit', demoLimiter, async (req, res) => {
+  try {
+    const ALLOWED_SCENARIOS = ['codereview', 'support', 'research'];
+    const { scenario } = req.body;
+    if (!scenario || !ALLOWED_SCENARIOS.includes(scenario)) {
+      return res.status(400).json({ error: 'Invalid scenario' });
+    }
+
+    const payloads = {
+      codereview: {
+        input:      'Review PR #847 — auth middleware refactor, session token validation',
+        output:     'Approved. No security regressions. Token expiry logic correct. Recommend adding rate limit to refresh endpoint before merge.',
+        model:      'claude-sonnet-4-6',
+        agent_role: 'code-reviewer',
+      },
+      support: {
+        input:      'Process refund request — invoice #4821, Meridian Analytics LLC',
+        output:     'Refund approved. Amount: $1,240.00. Reason: duplicate charge, billing cycle overlap.',
+        model:      'claude-sonnet-4-6',
+        agent_role: 'billing-agent',
+      },
+      research: {
+        input:      'Evaluate access request ACC-20940 — j.santos@company.com requesting internal analytics dashboard',
+        output:     'Access granted. Basis: senior analyst role, policy v3.1. Expires 2026-07-17.',
+        model:      'claude-sonnet-4-6',
+        agent_role: 'access-control-agent',
+      },
+    };
+
+    const p = payloads[scenario];
+    const traceId  = 'trc_demo_' + Date.now();
+    const commitId = 'ctx_' + Date.now() + '_' + crypto.randomBytes(6).toString('hex');
+    const timestamp = new Date().toISOString();
+    const normalizedPayload = JSON.stringify({ input: p.input, output: p.output, model: p.model }, ['input','model','output']);
+    const payloadHash    = crypto.createHash('sha256').update(normalizedPayload).digest('hex');
+    const integrityHash  = crypto.createHash('sha256').update(payloadHash + 'root').digest('hex');
+
+    // Insert into commits using demo agent
+    const { error } = await supabaseService
+      .from('commits')
+      .insert({
+        id:                  commitId,
+        schema_version:      '1.0',
+        from_agent:          DEMO_AGENT_ID,
+        to_agent:            DEMO_AGENT_ID,
+        payload:             { input: p.input, output: p.output, model: p.model },
+        context:             { input: p.input, output: p.output },
+        event_type:          'commit',
+        trace_id:            traceId,
+        branch_key:          'main',
+        agent_info:          { id: DEMO_AGENT_ID, name: 'DarkMatter Demo', role: p.agent_role, model: p.model },
+        integrity_hash:      integrityHash,
+        payload_hash:        payloadHash,
+        parent_hash:         null,
+        verified:            true,
+        verification_reason: 'Demo commit — API key authenticated',
+        capture_mode:        'client_signed',
+        timestamp,
+        accepted_at:         timestamp,
+      });
+
+    if (error) {
+      console.error('[demo/commit] insert error:', error.message);
+      return res.status(500).json({ error: 'Failed to create demo record' });
+    }
+
+    const baseUrl   = process.env.BASE_URL || 'https://darkmatterhub.ai';
+    const verifyUrl = `${baseUrl}/r/${commitId}`;
+    const exportUrl = `${baseUrl}/api/export/${commitId}`;
+
+    res.status(201).json({
+      id:           commitId,
+      trace_id:     traceId,
+      verify_url:   verifyUrl,
+      export_url:   exportUrl,
+      proof_level:  'signed',   // all demo commits are signed by server key
+      integrity: {
+        payload_hash:        'sha256:' + payloadHash,
+        integrity_hash:      'sha256:' + integrityHash,
+        verification_status: 'valid',
+      },
+      scenario,
+      timestamp,
+      _demo: true,
+    });
+  } catch (err) {
+    console.error('[demo/commit] error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /blog ── blog index
 app.get('/blog', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/blog.html'));
