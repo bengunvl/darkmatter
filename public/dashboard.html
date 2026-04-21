@@ -1055,8 +1055,12 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
       <div class="dm-section active" id="section-apikeys">
         <div class="section-page-header">
           <div class="section-page-title">Your API keys</div>
-          <button class="section-page-btn" onclick="createApiKey()">New key</button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="section-page-btn" style="background:var(--bg-1);color:var(--t2);border:1px solid var(--brd);font-size:11px;" onclick="runDebug()">Debug</button>
+            <button class="section-page-btn" onclick="createApiKey()">New key</button>
+          </div>
         </div>
+        <div id="debug-output" style="display:none;margin-bottom:16px;padding:14px 18px;background:var(--bg-0);border:1px solid var(--brd);border-radius:8px;font-family:var(--mono);font-size:11px;color:var(--t2);white-space:pre-wrap;word-break:break-all;"></div>
         <!-- Key list -->
         <div id="apikeys-list">
           <div style="padding:48px 32px 32px;">
@@ -2065,6 +2069,20 @@ let _recordsLoaded = false;
 // ── API Key management ─────────────────────────────────────────────────────
 let _apiKeys = [];
 let _selectedKeyIdx = null;
+
+async function runDebug() {
+  const out = document.getElementById('debug-output');
+  if (!out) return;
+  out.style.display = 'block';
+  out.textContent = 'Running…';
+  try {
+    const res  = await authFetch('/api/debug/whoami');
+    const data = await res.json();
+    out.textContent = JSON.stringify(data, null, 2);
+  } catch(e) {
+    out.textContent = 'Error: ' + e.message;
+  }
+}
 
 async function loadApiKeys() {
   const container = document.getElementById('apikeys-list');

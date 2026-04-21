@@ -6049,6 +6049,53 @@ app.patch('/api/workspace/provider-keys/:id', requireAuth, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ── GET /api/debug/whoami ── temporary debug endpoint ─────────────────────
+app.get('/api/debug/whoami', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const email  = req.user.email;
+
+    // Count agents by user_id
+    const { count: byId } = await supabaseService
+      .from('agents')
+      .select('agent_id', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    // Count all agents (no filter) for comparison
+    const { count: total } = await supabaseService
+      .from('agents')
+      .select('agent_id', { count: 'exact', head: true });
+
+    // Get sample of agents with null user_id
+    const { data: nullAgents } = await supabaseService
+      .from('agents')
+      .select('agent_id, agent_name, user_id, created_at')
+      .is('user_id', null)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    // Get sample of agents matching this user
+    const { data: myAgents } = await supabaseService
+      .from('agents')
+      .select('agent_id, agent_name, user_id, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    res.json({
+      auth_user_id:    userId,
+      auth_email:      email,
+      agents_by_my_id: byId,
+      agents_total:    total,
+      my_agents_sample: myAgents || [],
+      null_user_id_sample: nullAgents || [],
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── GET /api/workspace/api-keys ──────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
 // API KEY MANAGEMENT  (dashboard — JWT auth)
 // GET    /api/workspace/api-keys       → list user's agents/keys
