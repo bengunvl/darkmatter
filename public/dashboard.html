@@ -211,7 +211,113 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
 .section-link { font-family: var(--mono); font-size: 11px; color: var(--purple); text-decoration: none; cursor: pointer; }
 .section-link:hover { text-decoration: underline; }
 
-/* ── SETUP BANNER ── */
+/* ── API KEY BANNER ── */
+.api-key-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: var(--bg);
+  border: 1px solid var(--brd);
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin-bottom: 28px;
+}
+.api-key-banner-label {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--t3);
+  margin-bottom: 6px;
+}
+.api-key-value {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--t0);
+  letter-spacing: .02em;
+}
+.api-key-hint {
+  margin-top: 8px;
+}
+.api-key-hint code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--t2);
+  background: var(--bg-0);
+  border: 1px solid var(--brd);
+  padding: 5px 10px;
+  border-radius: 5px;
+  display: inline-block;
+}
+.api-key-banner-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.api-key-btn {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .15s;
+  border: 1px solid var(--t0);
+  background: var(--t0);
+  color: #fff;
+  white-space: nowrap;
+}
+.api-key-btn:hover { opacity: .85; }
+.api-key-btn.secondary { background: transparent; color: var(--t2); border-color: var(--brd); }
+.api-key-btn.secondary:hover { border-color: var(--t2); color: var(--t0); }
+.api-key-btn.copied { background: var(--grn); border-color: var(--grn); }
+
+/* ── QUICKSTART STEPS ── */
+.qs-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.qs-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--purple-light);
+  border: 1px solid var(--purple-brd);
+  color: var(--purple);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.qs-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--t0);
+  margin-bottom: 4px;
+}
+.qs-code {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--t2);
+  background: var(--bg-0);
+  border: 1px solid var(--brd);
+  padding: 5px 10px;
+  border-radius: 5px;
+  display: block;
+  line-height: 1.7;
+}
+
+/* ── SETUP BANNER (kept for smoke test, hidden) ── */
+.setup-banner { display: none; }
+
+/* ── SECTION HEADER ── */
 .setup-banner {
   background: linear-gradient(135deg, rgba(107,79,187,0.06) 0%, rgba(74,184,200,0.04) 100%);
   border: 1px solid var(--purple-brd);
@@ -685,29 +791,25 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
         <span class="logo-name">Dark<span class="logo-grad">Matter</span></span>
       </a>
       <div class="nav-links">
-        <a class="nav-link active" onclick="showSection('activity')">
+        <a class="nav-link active" onclick="showView('records')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           Overview
         </a>
-        <a class="nav-link" onclick="showSection('activity')">
+        <a class="nav-link" onclick="showView('records')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          All activity
-          <span class="nav-badge">24</span>
-        </a>
-        <a class="nav-link" href="/chat">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          Open chat
+          Records
+          <span class="nav-badge" id="nav-record-badge"></span>
         </a>
         <div class="nav-section-label">Workspace</div>
-        <a class="nav-link" onclick="showSection('team')">
+        <a class="nav-link" onclick="showView('apikeys')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          API Keys
+        </a>
+        <a class="nav-link" onclick="showView('team')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          Team members
+          Team
         </a>
-        <a class="nav-link" onclick="showSection('services')">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
-          AI services
-        </a>
-        <a class="nav-link" onclick="showSection('exports')">
+        <a class="nav-link" onclick="showView('exports')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Exports
         </a>
@@ -733,69 +835,64 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
       <div class="topbar-spacer"></div>
       <div class="topbar-search">
         <svg class="topbar-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" placeholder="Search conversations..." name="dm-search" autocomplete="off">
+        <input type="text" placeholder="Search records..." name="dm-search" autocomplete="off">
       </div>
       <button class="topbar-btn" onclick="openInviteModal()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Invite your team
+        Invite team
       </button>
     </div>
 
     <!-- Page content -->
     <div class="page-content" id="page-content">
 
-      <!-- Setup banner -->
-      <div class="setup-banner" id="setup-banner">
-        <div class="setup-banner-icon">✦</div>
-        <div class="setup-banner-body">
-          <div class="setup-banner-title">Finish setting up your workspace</div>
-          <div class="setup-banner-sub">Two quick steps and your team can start using AI with automatic record keeping.</div>
-          <div class="setup-steps">
-            <div class="setup-step done" onclick="showSection('services')">
-              <div class="setup-step-num">✓</div>
-              Connect Claude
-            </div>
-            <div class="setup-step todo" onclick="openInviteModal()">
-              <div class="setup-step-num">2</div>
-              Invite your team
-            </div>
+      <!-- API Key banner — always visible, first thing new users need -->
+      <div class="api-key-banner" id="api-key-banner">
+        <div class="api-key-banner-left">
+          <div class="api-key-banner-label">Your API key</div>
+          <div class="api-key-value" id="api-key-display">
+            <span id="api-key-text">Loading…</span>
+          </div>
+          <div class="api-key-hint" id="api-key-hint" style="display:none;">
+            <code>export DARKMATTER_API_KEY=<span id="api-key-env"></span></code>
           </div>
         </div>
-        <button onclick="document.getElementById('setup-banner').style.display='none'" style="background:none;border:none;cursor:pointer;color:var(--t4);padding:4px;margin-top:-4px;flex-shrink:0;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        <div class="api-key-banner-actions">
+          <button class="api-key-btn" onclick="copyApiKey(this)" id="copy-key-btn">Copy key</button>
+          <button class="api-key-btn secondary" onclick="toggleKeyHint()">Show export</button>
+        </div>
       </div>
 
       <!-- Stats -->
       <div class="section-header">
-        <span class="section-title">This week</span>
+        <span class="section-title">This month</span>
       </div>
       <div class="stats-row">
         <div class="stat-card">
-          <div class="stat-label">Conversations</div>
-          <div class="stat-value">--</div>
-          <div class="stat-sub">&nbsp;</div>
+          <div class="stat-label">Commits</div>
+          <div class="stat-value" id="stat-commits">--</div>
+          <div class="stat-sub">records created</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">People active</div>
-          <div class="stat-value">--</div>
-          <div class="stat-sub">&nbsp;</div>
+          <div class="stat-label">Chains</div>
+          <div class="stat-value" id="stat-chains">--</div>
+          <div class="stat-sub">linked sequences</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">AI services</div>
-          <div class="stat-value">--</div>
-          <div class="stat-sub">&nbsp;</div>
+          <div class="stat-label">Team active</div>
+          <div class="stat-value" id="stat-people">--</div>
+          <div class="stat-sub">this week</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Exports this week</div>
-          <div class="stat-value">--</div>
-          <div class="stat-sub">&nbsp;</div>
+          <div class="stat-label">Exports</div>
+          <div class="stat-value" id="stat-exports">--</div>
+          <div class="stat-sub">proof bundles</div>
         </div>
       </div>
 
-      <!-- Activity feed -->
+      <!-- Records feed -->
       <div class="section-header">
-        <span class="section-title">Recent activity</span>
+        <span class="section-title">Recent records</span>
         <a class="section-link">View all</a>
       </div>
       <div class="activity-card">
@@ -813,7 +910,7 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
         </div>
       </div>
 
-      <!-- Two col: team + services -->
+      <!-- Two col: team + quickstart -->
       <div class="two-col">
 
         <!-- Team panel -->
@@ -827,33 +924,36 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
           </div>
         </div>
 
-        <!-- AI services panel -->
-        <div class="panel" id="services-panel">
+        <!-- Quickstart panel -->
+        <div class="panel">
           <div class="panel-header">
-            <span class="panel-title">AI services</span>
-            <button class="panel-action" onclick="showSection('services')">Manage</button>
+            <span class="panel-title">Quick start</span>
+            <a class="panel-action" href="/docs/quickstart" target="_blank">Full docs ↗</a>
           </div>
-          <div class="service-row">
-            <div class="service-top">
-              <div class="service-logo">✦</div>
-              <span class="service-name">Claude (Anthropic)</span>
-              <span class="service-badge connected">Connected</span>
+          <div style="padding:16px 18px;display:flex;flex-direction:column;gap:14px;">
+            <div class="qs-step">
+              <div class="qs-num">1</div>
+              <div class="qs-body">
+                <div class="qs-title">Install the SDK</div>
+                <code class="qs-code">pip install darkmatter-sdk</code>
+              </div>
             </div>
-            <div class="service-desc">Your team's default AI for writing, analysis, and documents. Usage billed by Anthropic directly to your account.</div>
-            <div class="service-actions">
-              <button class="service-btn secondary" onclick="openServiceModal('claude')">Settings</button>
-              <button class="service-btn danger" onclick="disconnectService('claude')">Disconnect</button>
+            <div class="qs-step">
+              <div class="qs-num">2</div>
+              <div class="qs-body">
+                <div class="qs-title">Set your key</div>
+                <code class="qs-code">export DARKMATTER_API_KEY=dm_sk_…</code>
+              </div>
             </div>
-          </div>
-          <div class="service-row">
-            <div class="service-top">
-              <div class="service-logo">⬡</div>
-              <span class="service-name">ChatGPT (OpenAI)</span>
-              <span class="service-badge disconnected">Not connected</span>
+            <div class="qs-step">
+              <div class="qs-num">3</div>
+              <div class="qs-body">
+                <div class="qs-title">Record your first decision</div>
+                <code class="qs-code">ctx = dm.commit(payload={"input": prompt, "output": result})<br>print(ctx["verify_url"])</code>
+              </div>
             </div>
-            <div class="service-desc">Fast and versatile. Connect to give your team access. Usage billed by OpenAI directly to your account.</div>
-            <div class="service-actions">
-              <button class="service-btn primary" onclick="openServiceModal('gpt')">Connect</button>
+            <div style="padding-top:4px;border-top:1px solid var(--brd);">
+              <a href="/docs/cookbook" style="font-family:var(--mono);font-size:11px;color:var(--purple);text-decoration:none;">→ Browse cookbook recipes</a>
             </div>
           </div>
         </div>
@@ -866,93 +966,11 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
 
 <!-- ── MODALS ── -->
 
-<!-- Claude connect modal -->
-<div class="modal-overlay" id="modal-claude">
-  <div class="modal">
-    <div class="modal-title">Connect Claude</div>
-    <div class="modal-sub">Your team will use Claude for all AI conversations. Anthropic bills you directly for usage. DarkMatter charges separately for your workspace.</div>
-
-    <div class="modal-steps">
-      <div class="modal-step">
-        <div class="modal-step-num">1</div>
-        <div class="modal-step-text">Go to <strong>console.anthropic.com</strong> and sign in (or create a free account).</div>
-      </div>
-      <div class="modal-step">
-        <div class="modal-step-num">2</div>
-        <div class="modal-step-text">Click <strong>API Keys</strong> in the left menu, then click <strong>Create Key</strong>.</div>
-      </div>
-      <div class="modal-step">
-        <div class="modal-step-num">3</div>
-        <div class="modal-step-text">Give it a name like <code>DarkMatter workspace</code>, copy the key, and paste it below.</div>
-      </div>
-      <div class="modal-step">
-        <div class="modal-step-num">4</div>
-        <div class="modal-step-text">That's it. Your team can start using Claude immediately.</div>
-      </div>
-    </div>
-
-    <label class="modal-label">Paste your Claude key here</label>
-    <input class="modal-input" type="password" id="claude-key-input" placeholder="sk-ant-..." autocomplete="off">
-    <div class="modal-help">Not sure where to find it? <a href="https://console.anthropic.com/keys" target="_blank">Open Anthropic console</a></div>
-
-    <div class="modal-security">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      Your key is encrypted and stored securely. DarkMatter uses it only to send your team's requests to Anthropic. It is never shared with anyone.
-    </div>
-
-    <div class="modal-actions">
-      <button class="modal-btn-cancel" onclick="closeModal('modal-claude')">Cancel</button>
-      <button class="modal-btn-primary" onclick="connectService('claude')">Connect Claude</button>
-    </div>
-  </div>
-</div>
-
-<!-- GPT connect modal -->
-<div class="modal-overlay" id="modal-gpt">
-  <div class="modal">
-    <div class="modal-title">Connect ChatGPT</div>
-    <div class="modal-sub">Your team will be able to use GPT-4o alongside Claude. OpenAI bills you directly for usage.</div>
-
-    <div class="modal-steps">
-      <div class="modal-step">
-        <div class="modal-step-num">1</div>
-        <div class="modal-step-text">Go to <strong>platform.openai.com</strong> and sign in (or create a free account).</div>
-      </div>
-      <div class="modal-step">
-        <div class="modal-step-num">2</div>
-        <div class="modal-step-text">Click your profile at the top right, then go to <strong>API Keys</strong>.</div>
-      </div>
-      <div class="modal-step">
-        <div class="modal-step-num">3</div>
-        <div class="modal-step-text">Click <strong>Create new secret key</strong>, name it <code>DarkMatter workspace</code>, copy it, and paste it below.</div>
-      </div>
-      <div class="modal-step">
-        <div class="modal-step-num">4</div>
-        <div class="modal-step-text">That's it. ChatGPT will appear as an option for your team in the chat.</div>
-      </div>
-    </div>
-
-    <label class="modal-label">Paste your OpenAI key here</label>
-    <input class="modal-input" type="password" id="gpt-key-input" placeholder="sk-..." autocomplete="off">
-    <div class="modal-help">Not sure where to find it? <a href="https://platform.openai.com/api-keys" target="_blank">Open OpenAI platform</a></div>
-
-    <div class="modal-security">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      Your key is encrypted and stored securely. DarkMatter uses it only to send your team's requests to OpenAI. It is never shared with anyone.
-    </div>
-
-    <div class="modal-actions">
-      <button class="modal-btn-cancel" onclick="closeModal('modal-gpt')">Cancel</button>
-      <button class="modal-btn-primary" onclick="connectService('gpt')">Connect ChatGPT</button>
-    </div>
-  </div>
-</div>
-
 <!-- Invite modal -->
 <div class="modal-overlay" id="modal-invite">
   <div class="modal">
     <div class="modal-title">Invite people to your workspace</div>
-    <div class="modal-sub">Each person will get an email with a link to join. They sign in and can start chatting right away. No setup needed on their end.</div>
+    <div class="modal-sub">Each person will get an email with a link to join. They sign in, get access to the workspace records, and can use their own API key to commit. No setup needed on their end.</div>
 
     <label class="modal-label">Email addresses</label>
     <div class="invite-tags" id="invite-tags" onclick="document.getElementById('invite-input').focus()">
@@ -1474,8 +1492,8 @@ function renderActivity(data) {
   if (!data.length) {
     feed.innerHTML = `
       <div style="padding:40px 24px;text-align:center;color:var(--t3);">
-        <div style="font-size:14px;margin-bottom:8px;">No activity yet</div>
-        <div style="font-size:12px;font-family:var(--mono);">Connect Claude or ChatGPT and start a conversation to see records here.</div>
+        <div style="font-size:14px;margin-bottom:8px;">No records yet</div>
+        <div style="font-size:12px;font-family:var(--mono);">Make your first commit with <code style="background:var(--bg-1);padding:1px 5px;border-radius:3px;">dm.commit(payload={"input":…,"output":…})</code></div>
       </div>`;
     return;
   }
@@ -1555,15 +1573,63 @@ async function loadStats() {
     const res = await authFetch('/api/workspace/stats');
     if (!res.ok) return;
     const d = await res.json();
-    const els = {
-      conversations: document.querySelector('.stat-card:nth-child(1) .stat-value'),
-      people:        document.querySelector('.stat-card:nth-child(2) .stat-value'),
-      services:      document.querySelector('.stat-card:nth-child(3) .stat-value'),
-    };
-    if (els.conversations) els.conversations.textContent = d.conversations ?? '--';
-    if (els.people)        els.people.textContent        = d.peopleActive ?? '--';
-    if (els.services)      els.services.textContent      = d.aiServices   ?? '--';
+    const commits  = document.getElementById('stat-commits');
+    const chains   = document.getElementById('stat-chains');
+    const people   = document.getElementById('stat-people');
+    const exports  = document.getElementById('stat-exports');
+    if (commits) commits.textContent = d.conversations ?? '--';
+    if (chains)  chains.textContent  = d.conversations ?? '--';
+    if (people)  people.textContent  = d.peopleActive  ?? '--';
+    if (exports) exports.textContent = d.exports       ?? '--';
   } catch(e) { /* silent */ }
+}
+
+async function loadApiKey() {
+  try {
+    const res = await authFetch('/api/me');
+    if (!res.ok) return;
+    const data = await res.json();
+    const key = data.apiKey || data.api_key;
+    if (!key) return;
+    const display = document.getElementById('api-key-text');
+    const envEl   = document.getElementById('api-key-env');
+    if (display) {
+      // Show first 12 chars then mask rest
+      const masked = key.slice(0, 16) + '…' + key.slice(-4);
+      display.textContent = masked;
+      display.dataset.full = key;
+    }
+    if (envEl) envEl.textContent = key;
+  } catch(e) { /* silent */ }
+}
+
+function copyApiKey(btn) {
+  const keyEl = document.getElementById('api-key-text');
+  const key   = keyEl?.dataset.full || keyEl?.textContent;
+  if (!key || key.includes('…')) {
+    // Full key not loaded — fetch it
+    authFetch('/api/me').then(r => r.json()).then(data => {
+      const full = data.apiKey || data.api_key;
+      if (full) {
+        navigator.clipboard.writeText(full).then(() => {
+          btn.textContent = '✓ Copied';
+          btn.classList.add('copied');
+          setTimeout(() => { btn.textContent = 'Copy key'; btn.classList.remove('copied'); }, 2000);
+        });
+      }
+    });
+    return;
+  }
+  navigator.clipboard.writeText(key).then(() => {
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy key'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function toggleKeyHint() {
+  const hint = document.getElementById('api-key-hint');
+  if (hint) hint.style.display = hint.style.display === 'none' ? 'block' : 'none';
 }
 
 async function loadConnectedServices() {
@@ -1595,7 +1661,7 @@ document.addEventListener('DOMContentLoaded', () => {
   showView('records');
   loadActivity();
   loadStats();
-  loadConnectedServices();
+  loadApiKey();
   loadUserProfile();
   loadTeamMembers();
   startAutoPoll();
@@ -1666,14 +1732,14 @@ function filterByPerson(val) {
 
 // ── Section switching ──
 function showSection(section) {
-  const titles = { activity: 'Overview', team: 'Team members', services: 'AI services', exports: 'Exports' };
+  const titles = { records: 'Overview', activity: 'Overview', team: 'Team', apikeys: 'API Keys', exports: 'Exports' };
   document.getElementById('topbar-title').textContent = titles[section] || 'Overview';
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
 
-  if (section === 'services') {
-    document.getElementById('services-panel').scrollIntoView({ behavior: 'smooth' });
-  } else if (section === 'team') {
+  if (section === 'team') {
     document.querySelector('.two-col').scrollIntoView({ behavior: 'smooth' });
+  } else if (section === 'apikeys') {
+    document.getElementById('api-key-banner').scrollIntoView({ behavior: 'smooth' });
   }
 }
 
