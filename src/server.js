@@ -447,6 +447,9 @@ app.get('/signup', (req, res) => {
 app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/dashboard.html'));
 });
+app.get('/dashboard/keys/:keyId', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/dashboard.html'));
+});
 
 // ── GET /demo ── live interactive demo (no login required)
 app.get('/demo', (req, res) => {
@@ -4813,9 +4816,21 @@ app.post('/api/workspace/invite', wsAuth, async (req, res) => {
     if (!emails.length) return res.status(400).json({ error: 'Email required' });
     const email = emails[0]; // process first email (loop below handles rest)
 
-    const { data: me } = await supabaseService.from('workspace_members')
+    let { data: me } = await supabaseService.from('workspace_members')
       .select('workspace_id, role').eq('user_id', req.user.id).single();
-    if (!me || !['admin','owner'].includes(me.role)) return res.status(403).json({ error: 'Admin only' });
+
+    // Auto-create workspace if user has none yet (solo founder flow)
+    if (!me) {
+      const wsName = (req.user.email || 'workspace').split('@')[0];
+      const { data: ws, error: wsErr } = await supabaseService
+        .from('workspaces')
+        .insert({ name: wsName, owner_user_id: req.user.id })
+        .select().single();
+      if (wsErr) throw wsErr;
+      await supabaseService.from('workspace_members')
+        .insert({ workspace_id: ws.id, user_id: req.user.id, role: 'owner' });
+      me = { workspace_id: ws.id, role: 'owner' };
+    }
 
     const { data: inv, error } = await supabaseService.from('workspace_invitations')
       .insert({ workspace_id: me.workspace_id, email, role, invited_by: req.user.id })

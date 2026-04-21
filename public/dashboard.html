@@ -1528,26 +1528,29 @@ async function openDrawer(record) {
   const overlay = document.getElementById('drawer-overlay');
   const modelLabel = record.model === 'claude' ? 'Claude 4.6' : 'GPT-4o';
 
-  document.getElementById('drawer-title').textContent    = record.title;
-  document.getElementById('drawer-user').textContent     = record.user;
-  document.getElementById('drawer-model').textContent    = modelLabel;
-  document.getElementById('dt-ai-role').textContent      = modelLabel;
-  document.getElementById('drawer-time').textContent     = record.time;
-  document.getElementById('drawer-preview').textContent  = record.preview || 'Loading…';
+  // Reset content before populating — prevents stale content flash
+  const transcriptEl = document.querySelector('.drawer-transcript');
+  if (transcriptEl) transcriptEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--t3);font-size:13px;font-family:var(--mono);">Loading…</div>';
+
+  document.getElementById('drawer-title').textContent     = record.title;
+  document.getElementById('drawer-user').textContent      = record.user;
+  document.getElementById('drawer-model').textContent     = modelLabel;
+  document.getElementById('dt-ai-role').textContent       = modelLabel;
+  document.getElementById('drawer-time').textContent      = record.time;
+  document.getElementById('drawer-preview').textContent   = record.preview || '';
   document.getElementById('drawer-record-id').textContent = record.record || record.traceId || '—';
 
+  // Ensure clean open state
   drawer.classList.add('open');
   overlay.classList.add('active');
   document.body.style.overflow = 'hidden';
 
-  // Load real transcript — prefer traceId (backend conv ID), fall back to record id
   const traceId = record.traceId || record.record;
   if (traceId) {
     try {
       const res = await authFetch('/api/workspace/conversation/' + encodeURIComponent(traceId));
       if (res.ok) {
         const data = await res.json();
-        const transcriptEl = document.querySelector('.drawer-transcript');
         if (transcriptEl && data.transcript?.length) {
           const firstAssistant = data.transcript.find(t => t.role === 'assistant');
           if (firstAssistant?.content) {
@@ -1556,18 +1559,22 @@ async function openDrawer(record) {
           }
           transcriptEl.innerHTML = data.transcript.map(t => `
             <div class="dt-turn" style="margin-bottom:14px;">
-              <div style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:4px;">${t.role === 'assistant' ? (modelLabel) : 'You'}</div>
+              <div style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:4px;">${t.role === 'assistant' ? modelLabel : 'You'}</div>
               <div style="font-size:13.5px;color:var(--t1);line-height:1.6;">${escHtml(t.content).replace(/\n/g,'<br>')}</div>
             </div>`).join('');
+        } else if (transcriptEl) {
+          transcriptEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--t3);font-size:13px;">No transcript available.</div>';
         }
       }
-    } catch(e) { /* silent — transcript stays as preview */ }
+    } catch(e) {
+      if (transcriptEl) transcriptEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--t3);font-size:13px;">Could not load transcript.</div>';
+    }
   }
 }
 
 function closeDrawer() {
-  document.getElementById('conv-drawer').classList.remove('open');
-  document.getElementById('drawer-overlay').classList.remove('active');
+  document.getElementById('conv-drawer')?.classList.remove('open');
+  document.getElementById('drawer-overlay')?.classList.remove('active');
   document.body.style.overflow = '';
   activeDrawerRecord = null;
 }
@@ -1956,12 +1963,23 @@ async function loadConnectedServices() {
 
 // Init on load
 document.addEventListener('DOMContentLoaded', () => {
-  // Populate user display immediately from session (no API call)
   loadUserProfile();
   startAutoPoll();
   startPoll();
-  // Small defer so session is guaranteed written after OAuth redirect
-  setTimeout(() => showView('apikeys'), 50);
+  setTimeout(() => {
+    showView('apikeys');
+    // If URL is /dashboard/keys/:id, auto-open that key's drawer after keys load
+    const m = location.pathname.match(/\/dashboard\/keys\/(.+)/);
+    if (m) {
+      const targetId = m[1];
+      const tryOpen  = (attempts) => {
+        const idx = _apiKeys.findIndex(k => k.id === targetId);
+        if (idx >= 0) { selectApiKey(idx); return; }
+        if (attempts > 0) setTimeout(() => tryOpen(attempts - 1), 300);
+      };
+      setTimeout(() => tryOpen(10), 500);
+    }
+  }, 50);
 });
 
 // ── Load team members from server ───────────────────────────────────────────
