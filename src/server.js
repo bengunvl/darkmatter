@@ -617,6 +617,53 @@ app.post('/auth/login', authLimiter, async (req, res) => {
     const { data, error } = await supabaseAnon.auth.signInWithPassword({ email, password });
     if (error) return res.status(400).json({ error: error.message });
 
+    // ── Backfill: link all null-user_id agents to this user ──────────────
+    // Agents created via SDK have user_id=null. We find them by email prefix
+    // in agent_name and stamp user_id so the dashboard can list them.
+    if (data.user?.id && data.user?.email) {
+      try {
+        const userId      = data.user.id;
+        const emailPrefix = data.user.email.split('@')[0].toLowerCase();
+
+        // Find any agents with this email prefix that aren't yet linked
+        const { data: unlinked } = await supabaseService
+          .from('agents')
+          .select('agent_id')
+          .ilike('agent_name', `%${emailPrefix}%`)
+          .is('user_id', null)
+          .limit(100);
+
+        if (unlinked && unlinked.length > 0) {
+          await supabaseService
+            .from('agents')
+            .update({ user_id: userId })
+            .in('agent_id', unlinked.map(a => a.agent_id));
+        }
+
+        // Also stamp any agents that have a matching api_key stored
+        // in user_recording_keys (from the old chat proxy flow)
+        const { data: rkRows } = await supabaseService
+          .from('user_recording_keys')
+          .select('encrypted_key')
+          .eq('user_id', userId)
+          .limit(10);
+
+        if (rkRows && rkRows.length > 0) {
+          for (const rk of rkRows) {
+            if (!rk.encrypted_key) continue;
+            await supabaseService
+              .from('agents')
+              .update({ user_id: userId })
+              .eq('api_key', rk.encrypted_key)
+              .is('user_id', null);
+          }
+        }
+      } catch (backfillErr) {
+        // Non-fatal — log and continue, login still succeeds
+        console.warn('[login backfill]', backfillErr.message);
+      }
+    }
+
     res.json({ user: data.user, session: data.session });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -6011,53 +6058,19 @@ app.patch('/api/workspace/provider-keys/:id', requireAuth, async (req, res) => {
 
 app.get('/api/workspace/api-keys', requireAuth, async (req, res) => {
   try {
-    const userId    = req.user.id;
-    const userEmail = req.user.email || '';
-
-    // Step 1: agents with matching user_id (created via dashboard)
-    const { data: byUserId } = await supabaseService
+    const { data: agents, error } = await supabaseService
       .from('agents')
-      .select('agent_id, agent_name, created_at, user_id, api_key')
-      .eq('user_id', userId)
+      .select('agent_id, agent_name, created_at, user_id')
+      .eq('user_id', req.user.id)
       .order('created_at', { ascending: false });
 
-    // Step 2: if we found any, also look for agents whose user_id is null
-    // but whose api_key matches a key we know belongs to this user.
-    // This covers SDK-created agents that predate the user_id column.
-    // Strategy: find all agents where agent_name contains the email prefix
-    // OR agent_id starts with 'dm_' and was registered with no user_id.
-    const emailPrefix = userEmail.split('@')[0].toLowerCase();
-    const { data: byName } = emailPrefix ? await supabaseService
-      .from('agents')
-      .select('agent_id, agent_name, created_at, user_id, api_key')
-      .ilike('agent_name', `%${emailPrefix}%`)
-      .is('user_id', null)
-      .order('created_at', { ascending: false })
-      .limit(50) : { data: [] };
+    if (error) throw error;
 
-    // Merge and deduplicate
-    const seen = new Set();
-    const all  = [...(byUserId || []), ...(byName || [])].filter(a => {
-      if (seen.has(a.agent_id)) return false;
-      seen.add(a.agent_id);
-      return true;
-    });
-
-    // Step 3: for any null user_id agents we found, backfill user_id so
-    // they show up correctly on future logins without this fallback
-    const toBackfill = all.filter(a => !a.user_id);
-    if (toBackfill.length > 0) {
-      await supabaseService
-        .from('agents')
-        .update({ user_id: userId })
-        .in('agent_id', toBackfill.map(a => a.agent_id));
-    }
-
-    const keys = all.map(a => ({
+    const keys = (agents || []).map(a => ({
       id:         a.agent_id,
       name:       a.agent_name || 'API Key',
       created_at: a.created_at,
-      created_by: userEmail,
+      created_by: req.user.email,
       note:       'DarkMatter workspace',
     }));
 

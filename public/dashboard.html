@@ -989,7 +989,7 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
         </a>
         <a class="nav-link" id="nav-records" onclick="showView('records')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          Records
+          Commits
         </a>
         <a class="nav-link" id="nav-team" onclick="showView('team')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -1138,10 +1138,13 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
       <!-- ── SECTION: RECORDS ── -->
       <div class="dm-section" id="section-records">
         <div class="section-page-header">
-          <div class="section-page-title">Records</div>
+          <div>
+            <div class="section-page-title">Commits</div>
+            <div style="font-size:12.5px;color:var(--t3);margin-top:3px;">Every time an agent calls <code style="font-family:var(--mono);font-size:11px;background:var(--bg-1);padding:1px 5px;border-radius:3px;">dm.commit()</code>, a verifiable record appears here.</div>
+          </div>
           <div class="topbar-search" style="width:220px;">
             <svg class="topbar-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" placeholder="Search records..." name="dm-search" autocomplete="off" oninput="filterActivityBySearch(this.value)">
+            <input type="text" placeholder="Search commits..." name="dm-search" autocomplete="off" oninput="filterActivityBySearch(this.value)">
           </div>
         </div>
         <div class="activity-card" style="margin-bottom:0;">
@@ -2027,8 +2030,8 @@ function filterByPerson(val) {
 // ── Section switching ──
 // ── Section switching ──────────────────────────────────────────────────────
 const SECTION_TITLES = {
-  apikeys: 'Your API keys', records: 'Records',
-  team: 'Team', exports: 'Exports', overview: 'API Keys', activity: 'Records',
+  apikeys: 'Your API keys', records: 'Commits',
+  team: 'Team', exports: 'Exports', overview: 'API Keys', activity: 'Commits',
 };
 let _currentSection = 'apikeys';
 
