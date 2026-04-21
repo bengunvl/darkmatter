@@ -6002,6 +6002,98 @@ app.patch('/api/workspace/provider-keys/:id', requireAuth, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// API KEY MANAGEMENT  (dashboard — JWT auth)
+// GET    /api/workspace/api-keys       → list user's agents/keys
+// POST   /api/workspace/api-keys       → create a new key
+// DELETE /api/workspace/api-keys/:id   → delete a key by agent_id
+// ─────────────────────────────────────────────────────────────────────────────
+
+app.get('/api/workspace/api-keys', requireAuth, async (req, res) => {
+  try {
+    const { data: agents, error } = await supabaseService
+      .from('agents')
+      .select('agent_id, agent_name, created_at, user_id')
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    const keys = (agents || []).map(a => ({
+      id:         a.agent_id,
+      name:       a.agent_name || 'API Key',
+      created_at: a.created_at,
+      created_by: req.user.email,
+      note:       'DarkMatter workspace',
+    }));
+
+    res.json({ keys });
+  } catch (e) {
+    console.error('[api-keys GET]', e.message);
+    res.status(500).json({ error: 'Could not load API keys' });
+  }
+});
+
+app.post('/api/workspace/api-keys', requireAuth, async (req, res) => {
+  try {
+    const name      = sanitizeText(req.body?.name || 'API Key', 100);
+    const newAgentId = generateAgentId();
+    const newApiKey  = generateApiKey();
+
+    const { data, error } = await supabaseService
+      .from('agents')
+      .insert({
+        agent_id:   newAgentId,
+        agent_name: name,
+        user_id:    req.user.id,
+        api_key:    newApiKey,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json({
+      id:         data.agent_id,
+      name:       data.agent_name,
+      key:        newApiKey,
+      created_at: data.created_at,
+    });
+  } catch (e) {
+    console.error('[api-keys POST]', e.message);
+    res.status(500).json({ error: 'Could not create API key' });
+  }
+});
+
+app.delete('/api/workspace/api-keys/:keyId', requireAuth, async (req, res) => {
+  try {
+    const { keyId } = req.params;
+
+    // Verify ownership before delete
+    const { data: agent } = await supabaseService
+      .from('agents')
+      .select('agent_id, user_id')
+      .eq('agent_id', keyId)
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (!agent) return res.status(404).json({ error: 'Key not found or not yours' });
+
+    const { error } = await supabaseService
+      .from('agents')
+      .delete()
+      .eq('agent_id', keyId)
+      .eq('user_id', req.user.id);
+
+    if (error) throw error;
+
+    res.json({ deleted: true, id: keyId });
+  } catch (e) {
+    console.error('[api-keys DELETE]', e.message);
+    res.status(500).json({ error: 'Could not delete key' });
+  }
+});
+
 // 4. GET /api/workspace/stats
 //    Dashboard stats cards — conversations, active people, AI services, exports
 // ─────────────────────────────────────────────────────────────────────────────

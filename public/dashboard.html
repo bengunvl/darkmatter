@@ -1108,7 +1108,28 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
 
 <!-- ── MODALS ── -->
 
-<!-- New API Key modal — shown once after creation -->
+<!-- New API Key — form modal (Tinker style) -->
+<div class="modal-overlay" id="modal-newkeyform">
+  <div class="modal" style="max-width:440px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div class="modal-title" style="margin-bottom:0;">New API Key</div>
+      <button type="button" onclick="closeModal('modal-newkeyform')" style="background:none;border:none;cursor:pointer;color:var(--t3);padding:4px;border-radius:5px;font-size:18px;line-height:1;">×</button>
+    </div>
+    <input
+      class="modal-input"
+      id="new-key-name-input"
+      type="text"
+      placeholder="Key name (optional)"
+      autocomplete="off"
+      onkeydown="if(event.key==='Enter') generateKey()"
+      style="margin-bottom:20px;">
+    <div style="display:flex;justify-content:flex-end;">
+      <button type="button" id="generate-key-btn" onclick="generateKey()" style="font-family:var(--sans);font-size:14px;font-weight:500;padding:9px 20px;background:var(--bg-1);color:var(--t0);border:1px solid var(--brd);border-radius:8px;cursor:pointer;transition:all .15s;">Generate key</button>
+    </div>
+  </div>
+</div>
+
+<!-- New API Key — reveal modal (shown once after creation) -->
 <div class="modal-overlay" id="modal-newkey">
   <div class="modal">
     <div class="modal-title">API key created</div>
@@ -2068,29 +2089,32 @@ async function deleteCurrentKey() {
 }
 
 async function createApiKey() {
-  const name = prompt('Key name (e.g. "production", "my-agent"):');
-  if (name === null) return; // cancelled
-  const keyName = name.trim() || 'API Key';
+  openModal('modal-newkeyform');
+  document.getElementById('new-key-name-input').value = '';
+  document.getElementById('new-key-name-input').focus();
+}
+
+async function generateKey() {
+  const nameEl  = document.getElementById('new-key-name-input');
+  const keyName = (nameEl?.value || '').trim() || 'API Key';
+  const genBtn  = document.getElementById('generate-key-btn');
+  if (genBtn) { genBtn.textContent = 'Generating…'; genBtn.disabled = true; }
   try {
     const res = await authFetch('/api/workspace/api-keys', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: keyName }),
     });
-    if (!res.ok) {
-      const d = await res.json();
-      showToast('Error: ' + (d.error || 'Could not create key'));
-      return;
-    }
     const data = await res.json();
+    if (!res.ok) { showToast('Error: ' + (data.error || 'Could not create key')); return; }
     const newKey = data.key || data.api_key;
-    // Show the key once — it won't be shown again
-    if (newKey) {
-      showNewKeyModal(keyName, newKey);
-    }
+    closeModal('modal-newkeyform');
+    if (newKey) showNewKeyModal(keyName, newKey);
     loadApiKeys();
   } catch(e) {
     showToast('Error: ' + e.message);
+  } finally {
+    if (genBtn) { genBtn.textContent = 'Generate key'; genBtn.disabled = false; }
   }
 }
 
