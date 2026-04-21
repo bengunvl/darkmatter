@@ -2576,10 +2576,13 @@ app.get('/enterprise/report/:traceId', requireApiKey, requireEnterprise, async (
 
 // Page routes for new pages
 app.get('/security',   (req, res) => res.sendFile(path.join(__dirname, '../public/security.html')));
-app.get('/pricing',    (req, res) => res.sendFile(path.join(__dirname, '../public/pricing.html')));
-app.get('/why',        (req, res) => res.sendFile(path.join(__dirname, '../public/why.html')));
-app.get('/docs',       (req, res) => res.sendFile(path.join(__dirname, '../public/docs.html')));
-app.get('/enterprise', (req, res) => res.sendFile(path.join(__dirname, '../public/enterprise.html')));
+app.get('/pricing',           (req, res) => res.sendFile(path.join(__dirname, '../public/pricing.html')));
+app.get('/why',               (req, res) => res.sendFile(path.join(__dirname, '../public/why.html')));
+app.get('/docs',              (req, res) => res.sendFile(path.join(__dirname, '../public/docs.html')));
+app.get('/docs/quickstart',   (req, res) => res.sendFile(path.join(__dirname, '../public/docs/quickstart.html')));
+app.get('/docs/cheatsheet',   (req, res) => res.sendFile(path.join(__dirname, '../public/docs/cheatsheet.html')));
+app.get('/docs/cookbook',     (req, res) => res.sendFile(path.join(__dirname, '../public/docs/cookbook.html')));
+app.get('/enterprise',        (req, res) => res.sendFile(path.join(__dirname, '../public/enterprise.html')));
 
 
 // ═══════════════════════════════════════════════════
