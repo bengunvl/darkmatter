@@ -4778,19 +4778,21 @@ app.get('/api/workspace/members', wsAuth, async (req, res) => {
 
     const { data: members } = await supabaseService.from('workspace_members')
       .select('*').eq('workspace_id', me.workspace_id)
-      .order('joined_at', { ascending: true });
+      .order('created_at', { ascending: true });
 
-    // For members missing email, try to get it from workspace_invitations
-    const enriched = await Promise.all((members || []).map(async m => {
-      if (m.email) return m;
-      // Look up by user_id match in invitations (accepted)
-      const { data: inv } = await supabaseService
-        .from('workspace_invitations')
-        .select('email')
-        .eq('workspace_id', me.workspace_id)
-        .not('accepted_at', 'is', null)
-        .limit(1);
-      return { ...m, email: inv?.[0]?.email || null };
+    // Get accepted invitations to fill in emails for members who have none
+    const { data: acceptedInvites } = await supabaseService
+      .from('workspace_invitations')
+      .select('email, accepted_at')
+      .eq('workspace_id', me.workspace_id)
+      .not('accepted_at', 'is', null);
+
+    const inviteEmails = (acceptedInvites || []).map(i => i.email);
+
+    const enriched = (members || []).map((m, idx) => ({
+      ...m,
+      email:        m.email || inviteEmails[idx] || null,
+      display_name: m.display_name || (m.email || inviteEmails[idx] || '')?.split('@')[0] || '?',
     }));
 
     res.json({ members: enriched, isAdmin: me.role === 'admin' || me.role === 'owner' });
@@ -6341,8 +6343,8 @@ app.post('/api/workspace/api-keys', requireAuth, async (req, res) => {
       created_at: data.created_at,
     });
   } catch (e) {
-    console.error('[api-keys POST]', e.message);
-    res.status(500).json({ error: 'Could not create API key' });
+    console.error('[api-keys POST]', e.message, e.details || '');
+    res.status(500).json({ error: 'Could not create API key: ' + e.message });
   }
 });
 
