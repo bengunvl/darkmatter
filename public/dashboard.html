@@ -341,14 +341,14 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
 
 /* ── USER DROPDOWN ── */
 .user-menu {
-  position: absolute;
+  position: fixed;
   bottom: 70px;
   left: 12px;
-  right: 12px;
+  width: 196px;
   background: var(--t0);
   border-radius: 10px;
   overflow: hidden;
-  z-index: 300;
+  z-index: 1000;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
 }
 .user-menu-email {
@@ -954,29 +954,19 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
         <span class="logo-name">Dark<span class="logo-grad">Matter</span></span>
       </a>
       <div class="nav-links">
-        <a class="nav-link active" id="nav-overview" onclick="showView('records')">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          Overview
+        <a class="nav-link active" id="nav-apikeys" onclick="showView('apikeys')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          API Keys
         </a>
         <a class="nav-link" id="nav-records" onclick="showView('records')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           Records
-          <span class="nav-badge" id="nav-record-badge" style="display:none;"></span>
-        </a>
-        <div class="nav-section-label">Workspace</div>
-        <a class="nav-link" id="nav-apikeys" onclick="showView('apikeys')">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-          API Keys
         </a>
         <a class="nav-link" id="nav-team" onclick="showView('team')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Team
         </a>
-        <a class="nav-link" id="nav-exports" onclick="showView('exports')">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Exports
-        </a>
-        <a class="nav-link" href="/docs" target="_blank" style="margin-top:4px;">
+        <a class="nav-link" href="/docs" target="_blank">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           Docs ↗
         </a>
@@ -986,134 +976,47 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
       <div class="nav-user" onclick="toggleUserMenu()" id="nav-user-btn">
         <div class="nav-avatar" id="nav-avatar">?</div>
         <div class="nav-user-info">
-          <div class="nav-user-name" id="nav-user-name">Loading&hellip;</div>
-          <div class="nav-user-role" id="nav-user-role">&mdash;</div>
+          <div class="nav-user-name" id="nav-user-name">Account</div>
+          <div class="nav-user-role" id="nav-user-role">Member</div>
         </div>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--t4);flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
-      <!-- User dropdown — matches Tinker style -->
-      <div class="user-menu" id="user-menu" style="display:none;">
-        <div class="user-menu-email" id="user-menu-email"></div>
-        <div class="user-menu-divider"></div>
-        <a class="user-menu-item" href="/docs" target="_blank">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Docs
-        </a>
-        <a class="user-menu-item" href="mailto:support@darkmatterhub.ai">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          Feedback
-        </a>
-        <div class="user-menu-divider"></div>
-        <a class="user-menu-item user-menu-danger" onclick="signOut()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          Log out
-        </a>
-      </div>
     </div>
   </nav>
+
+  <!-- User dropdown — outside nav so it can't block nav links -->
+  <div class="user-menu" id="user-menu" style="display:none;">
+    <div class="user-menu-email" id="user-menu-email"></div>
+    <div class="user-menu-divider"></div>
+    <a class="user-menu-item" href="/docs" target="_blank">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Docs
+    </a>
+    <a class="user-menu-item" href="mailto:support@darkmatterhub.ai">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Feedback
+    </a>
+    <div class="user-menu-divider"></div>
+    <a class="user-menu-item user-menu-danger" onclick="signOut()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Log out
+    </a>
+  </div>
 
   <!-- ── MAIN ── -->
   <main class="main">
 
     <!-- Top bar -->
     <div class="topbar">
-      <span class="topbar-title" id="topbar-title">Overview</span>
+      <span class="topbar-title" id="topbar-title">API Keys</span>
       <div class="topbar-spacer"></div>
-      <div class="topbar-search">
-        <svg class="topbar-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" placeholder="Search records..." name="dm-search" autocomplete="off">
-      </div>
-      <button class="topbar-btn" onclick="openInviteModal()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Invite team
-      </button>
     </div>
 
     <!-- Page content -->
     <div class="page-content" id="page-content">
 
-      <!-- ── SECTION: OVERVIEW ── -->
-      <div class="dm-section active" id="section-overview">
-        <div class="section-page-header">
-          <div class="section-page-title">Overview</div>
-        </div>
-        <div class="stats-row" style="margin-bottom:28px;">
-          <div class="stat-card">
-            <div class="stat-label">Records</div>
-            <div class="stat-value" id="stat-commits">--</div>
-            <div class="stat-sub">this month</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Team active</div>
-            <div class="stat-value" id="stat-people">--</div>
-            <div class="stat-sub">this week</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Exports</div>
-            <div class="stat-value" id="stat-exports">--</div>
-            <div class="stat-sub">proof bundles</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Verifications</div>
-            <div class="stat-value" id="stat-chains">--</div>
-            <div class="stat-sub">this month</div>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">Quick start</span>
-            <a class="panel-action" href="/docs/quickstart" target="_blank">Full docs ↗</a>
-          </div>
-          <div style="padding:16px 18px;display:flex;flex-direction:column;gap:14px;">
-            <div class="qs-step">
-              <div class="qs-num">1</div>
-              <div class="qs-body">
-                <div class="qs-title">Install the SDK</div>
-                <code class="qs-code">pip install darkmatter-sdk</code>
-              </div>
-            </div>
-            <div class="qs-step">
-              <div class="qs-num">2</div>
-              <div class="qs-body">
-                <div class="qs-title">Create an API key</div>
-                <div style="font-size:12px;color:var(--t3);margin-top:2px;">Go to <a onclick="showView('apikeys')" style="color:var(--purple);cursor:pointer;text-decoration:underline;">API Keys</a> in the left nav and click <strong>New key</strong></div>
-              </div>
-            </div>
-            <div class="qs-step">
-              <div class="qs-num">3</div>
-              <div class="qs-body">
-                <div class="qs-title">Record your first decision</div>
-                <code class="qs-code">import darkmatter as dm<br>dm.configure(api_key="dm_sk_…")<br>ctx = dm.commit(payload={"input": prompt, "output": result})<br>print(ctx["verify_url"])</code>
-              </div>
-            </div>
-            <div style="padding-top:4px;border-top:1px solid var(--brd);">
-              <a href="/docs/quickstart" style="font-family:var(--mono);font-size:11px;color:var(--purple);text-decoration:none;">→ View full quickstart guide</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SECTION: RECORDS ── -->
-      <div class="dm-section" id="section-records">
-        <div class="section-page-header">
-          <div class="section-page-title">Records</div>
-        </div>
-        <div class="activity-card" style="margin-bottom:0;">
-          <div class="activity-filters">
-            <button class="filter-btn active" onclick="filterActivity(this,'all')">All</button>
-            <button class="filter-btn" onclick="filterActivity(this,'today')">Today</button>
-            <button class="filter-btn" onclick="filterActivity(this,'yesterday')">Yesterday</button>
-            <div class="filter-spacer"></div>
-            <select class="filter-select" id="person-filter" onchange="filterByPerson(this.value)">
-              <option value="">All people</option>
-            </select>
-          </div>
-          <div id="activity-feed"></div>
-        </div>
-      </div>
-
-      <!-- ── SECTION: API KEYS ── -->
-      <div class="dm-section" id="section-apikeys">
+      <!-- ── SECTION: API KEYS (default landing) ── -->
+      <div class="dm-section active" id="section-apikeys">
         <div class="section-page-header">
           <div class="section-page-title">Your API keys</div>
           <button class="section-page-btn" onclick="createApiKey()">New key</button>
@@ -1160,6 +1063,29 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION: RECORDS ── -->
+      <div class="dm-section" id="section-records">
+        <div class="section-page-header">
+          <div class="section-page-title">Records</div>
+          <div class="topbar-search" style="width:220px;">
+            <svg class="topbar-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Search records..." name="dm-search" autocomplete="off" oninput="filterActivityBySearch(this.value)">
+          </div>
+        </div>
+        <div class="activity-card" style="margin-bottom:0;">
+          <div class="activity-filters">
+            <button class="filter-btn active" onclick="filterActivity(this,'all')">All</button>
+            <button class="filter-btn" onclick="filterActivity(this,'today')">Today</button>
+            <button class="filter-btn" onclick="filterActivity(this,'yesterday')">Yesterday</button>
+            <div class="filter-spacer"></div>
+            <select class="filter-select" id="person-filter" onchange="filterByPerson(this.value)">
+              <option value="">All people</option>
+            </select>
+          </div>
+          <div id="activity-feed"></div>
         </div>
       </div>
 
@@ -1225,8 +1151,8 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
     </div>
 
     <div class="modal-actions">
-      <button class="modal-btn-cancel" onclick="closeModal('modal-invite')">Cancel</button>
-      <button class="modal-btn-primary" onclick="sendInvites()">Send invites</button>
+      <button type="button" class="modal-btn-cancel" onclick="closeModal('modal-invite')">Cancel</button>
+      <button type="button" class="modal-btn-primary" onclick="sendInvites()">Send invites</button>
     </div>
   </div>
 </div>
@@ -1928,8 +1854,7 @@ async function loadConnectedServices() {
 
 // Init on load
 document.addEventListener('DOMContentLoaded', () => {
-  showView('records');
-  loadStats();
+  showView('apikeys');
   loadUserProfile();
   startAutoPoll();
   startPoll();
@@ -1990,6 +1915,16 @@ function filterActivity(btn, filter) {
   }
 }
 
+function filterActivityBySearch(val) {
+  if (!val) { renderActivity(activityData); return; }
+  const q = val.toLowerCase();
+  renderActivity(activityData.filter(a =>
+    getRecordTitle(a).toLowerCase().includes(q) ||
+    (a.agentName || '').toLowerCase().includes(q) ||
+    (a.id || '').toLowerCase().includes(q)
+  ));
+}
+
 function filterByPerson(val) {
   if (!val) { renderActivity(activityData); return; }
   renderActivity(activityData.filter(a =>
@@ -2000,39 +1935,30 @@ function filterByPerson(val) {
 // ── Section switching ──
 // ── Section switching ──────────────────────────────────────────────────────
 const SECTION_TITLES = {
-  overview: 'Overview', records: 'Records',
-  apikeys: 'Your API keys', team: 'Team', exports: 'Exports', activity: 'Overview',
+  apikeys: 'Your API keys', records: 'Records',
+  team: 'Team', exports: 'Exports', overview: 'API Keys', activity: 'Records',
 };
-let _currentSection = 'overview';
+let _currentSection = 'apikeys';
 
 function switchTab(section) { showView(section); }
-
 function showSection(section) { showView(section); }
 
-// ── showView — smoke test expects this as a named function ──
 var dm={records:'flex',activity:'flex',team:'flex',services:'flex',exports:'flex'};
 function showView(view) {
-  const section = view === 'activity' ? 'overview' : view;
+  const section = (view === 'activity' || view === 'overview') ? 'apikeys' : view;
   _currentSection = section;
 
-  // Hide all sections, show target
   document.querySelectorAll('.dm-section').forEach(s => s.classList.remove('active'));
   const target = document.getElementById('section-' + section);
   if (target) target.classList.add('active');
 
-  // Update topbar title
-  document.getElementById('topbar-title').textContent = SECTION_TITLES[section] || 'Overview';
+  document.getElementById('topbar-title').textContent = SECTION_TITLES[section] || 'API Keys';
 
-  // Update nav active state
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  const navMap = {
-    overview: 'nav-overview', records: 'nav-records',
-    apikeys: 'nav-apikeys', team: 'nav-team', exports: 'nav-exports',
-  };
+  const navMap = { apikeys: 'nav-apikeys', records: 'nav-records', team: 'nav-team' };
   const navId = navMap[section];
   if (navId) document.getElementById(navId)?.classList.add('active');
 
-  // Lazy-load section data
   if (section === 'records' && !_recordsLoaded) { loadActivity(); _recordsLoaded = true; }
   if (section === 'apikeys') loadApiKeys();
   if (section === 'team')    loadTeamMembers();
@@ -2428,27 +2354,10 @@ document.addEventListener('keydown', (e) => {
 async function loadUserProfile() {
   const session = getSession();
   if (!session?.user?.email) return;
-
-  const email   = session.user.email;
+  const email    = session.user.email;
   const namePart = email.split('@')[0];
-  const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-  setUserDisplay(displayName, email, 'Member');
-
-  try {
-    const res = await authFetch('/api/workspace');
-    if (res.ok) {
-      const data = await res.json();
-      const role = data.membership?.role;
-      const isAdmin = (role === 'admin' || role === 'owner');
-      setUserDisplay(displayName, email, isAdmin ? 'Admin' : 'Member');
-      return;
-    }
-  } catch(e) { /* silent */ }
-
-  try {
-    const res = await authFetch('/admin/stats');
-    if (res.ok) setUserDisplay(displayName, email, 'Admin');
-  } catch(e) { /* silent */ }
+  const name     = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+  setUserDisplay(name, email, 'Member');
 }
 
 function setUserDisplay(name, email, role) {
