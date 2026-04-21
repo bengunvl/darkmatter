@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Join workspace — DarkMatter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --ink:#0a0e1a;--ink2:#2d3552;--ink3:#5a6480;--ink4:#9199b0;
+  --bg:#f4f6fb;--bg2:#fff;--border:#e5e7eb;
+  --blue:#3b82f6;--red:#ef4444;--green:#10b981;
+  --mono:"IBM Plex Mono","Courier New",monospace;
+  --sans:"IBM Plex Sans",sans-serif;
+  --grad:linear-gradient(90deg,#7C3AED,#2563EB,#0891b2);
+}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;}
+.dm-nav{position:sticky;top:0;z-index:300;height:60px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 40px;}
+.dm-nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.dm-nav-name{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-0.03em;}
+.dm-nav-grad{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:2rem;}
+.card{background:#fff;border:1px solid var(--border);border-radius:10px;width:100%;max-width:420px;padding:2rem;box-shadow:0 4px 24px rgba(0,0,0,.06);}
+.card-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#7C3AED22,#2563EB22);border:1px solid #7C3AED33;display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem;}
+.card-title{font-size:1.2rem;font-weight:700;color:var(--ink);margin-bottom:.4rem;letter-spacing:-.02em;}
+.card-sub{font-size:.85rem;color:var(--ink3);line-height:1.6;margin-bottom:1.5rem;}
+.workspace-name{font-weight:600;color:var(--ink);}
+.field{display:flex;flex-direction:column;gap:.35rem;margin-bottom:1rem;}
+.field label{font-size:.78rem;font-weight:600;color:var(--ink2);}
+.field input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:.6rem .8rem;color:var(--ink);font-family:var(--sans);font-size:.85rem;outline:none;transition:border-color .15s;width:100%;}
+.field input:focus{border-color:var(--blue);background:#fff;}
+.field input::placeholder{color:var(--ink4);}
+.submit-btn{background:var(--ink);color:#fff;font-family:var(--mono);font-weight:700;font-size:.85rem;padding:.75rem 1rem;border-radius:7px;border:none;cursor:pointer;transition:opacity .15s;width:100%;margin-top:.5rem;}
+.submit-btn:hover{opacity:.85;}
+.submit-btn:disabled{opacity:.45;cursor:not-allowed;}
+.error-msg{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18);border-radius:6px;padding:.6rem .8rem;font-size:.82rem;color:var(--red);display:none;margin-bottom:1rem;}
+.success-msg{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:6px;padding:.6rem .8rem;font-size:.82rem;color:#065f46;display:none;margin-bottom:1rem;}
+.divider{display:flex;align-items:center;gap:.75rem;margin:.75rem 0;color:var(--ink4);font-size:.75rem;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.loading{text-align:center;padding:2rem;color:var(--ink3);font-family:var(--mono);font-size:.85rem;}
+</style>
+</head>
+<body>
+<nav class="dm-nav">
+  <a class="dm-nav-logo" href="/">
+    <svg style="width:26px;height:26px;" viewBox="0 0 40 40" fill="none">
+      <defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7C3AED"/><stop offset="100%" stop-color="#0891b2"/></linearGradient></defs>
+      <circle cx="20" cy="20" r="17" stroke="#e5e7eb" stroke-width="0.8" stroke-dasharray="2 3"/>
+      <circle cx="20" cy="5" r="3.2" fill="#7C3AED"/>
+      <circle cx="33" cy="28" r="2.6" fill="#2563EB"/>
+      <circle cx="7" cy="28" r="2.2" fill="#22D3EE"/>
+      <line x1="20" y1="8" x2="31" y2="26" stroke="url(#g)" stroke-width="0.6" opacity="0.5"/>
+      <line x1="20" y1="8" x2="9" y2="26" stroke="#7C3AED" stroke-width="0.6" opacity="0.4"/>
+      <line x1="30" y1="27" x2="10" y2="27" stroke="#22D3EE" stroke-width="0.6" opacity="0.4"/>
+    </svg>
+    <span class="dm-nav-name">Dark<span class="dm-nav-grad">Matter</span></span>
+  </a>
+</nav>
+
+<div class="wrap">
+  <div class="card" id="main-card">
+    <div class="loading" id="loading-state">Validating invite link…</div>
+  </div>
+</div>
+
+<script>
+const token = new URLSearchParams(location.search).get('token');
+
+async function init() {
+  if (!token) { showError('Invalid invite link — no token found.'); return; }
+
+  try {
+    const res  = await fetch('/api/workspace/invite/validate?token=' + encodeURIComponent(token));
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      showError(data.error || 'This invite link is invalid or has expired.');
+      return;
+    }
+
+    renderAcceptForm(data);
+  } catch(e) {
+    showError('Could not validate invite link. Please try again.');
+  }
+}
+
+function renderAcceptForm(invite) {
+  const card = document.getElementById('main-card');
+  const wsName = invite.workspace_name || 'a DarkMatter workspace';
+
+  // Check if already logged in
+  const session = getSession();
+  const isLoggedIn = !!(session?.access_token);
+
+  card.innerHTML = `
+    <div class="card-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div class="card-title">You're invited to join</div>
+    <div class="card-sub">You've been invited to <span class="workspace-name">${escHtml(wsName)}</span> on DarkMatter.</div>
+
+    <div id="error-msg" class="error-msg"></div>
+    <div id="success-msg" class="success-msg"></div>
+
+    ${isLoggedIn ? `
+      <p style="font-size:.85rem;color:var(--ink3);margin-bottom:1rem;">You're signed in as <strong>${escHtml(session.user?.email || '')}</strong>.</p>
+      <button class="submit-btn" onclick="acceptWithSession()">Accept invitation →</button>
+    ` : `
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Create a password" autocomplete="new-password"/>
+      </div>
+      <button class="submit-btn" id="accept-btn" onclick="acceptWithSignup()">Create account &amp; accept →</button>
+      <div class="divider">or</div>
+      <p style="font-size:.82rem;color:var(--ink3);text-align:center;">Already have an account? <a href="/login?next=${encodeURIComponent(location.href)}" style="color:var(--blue);">Sign in</a> first, then return to this link.</p>
+    `}
+  `;
+}
+
+async function acceptWithSession() {
+  const btn = document.querySelector('.submit-btn');
+  btn.disabled = true; btn.textContent = 'Accepting…';
+  try {
+    const session = getSession();
+    const res = await fetch('/api/workspace/invite/accept', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ token }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showFormError(data.error || 'Could not accept invite'); btn.disabled = false; btn.textContent = 'Accept invitation →'; return; }
+    showFormSuccess('Invitation accepted! Redirecting to dashboard…');
+    setTimeout(() => window.location.href = '/dashboard', 1500);
+  } catch(e) { showFormError('Something went wrong.'); btn.disabled = false; }
+}
+
+async function acceptWithSignup() {
+  const email    = new URLSearchParams(location.search).get('email') || '';
+  const password = document.getElementById('password')?.value;
+  if (!password || password.length < 8) { showFormError('Password must be at least 8 characters.'); return; }
+  const btn = document.getElementById('accept-btn');
+  btn.disabled = true; btn.textContent = 'Creating account…';
+  try {
+    const res = await fetch('/api/workspace/invite/accept', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showFormError(data.error || 'Could not accept invite'); btn.disabled = false; btn.textContent = 'Create account & accept →'; return; }
+    if (data.session) {
+      localStorage.setItem('dm_session', JSON.stringify(data.session));
+    }
+    showFormSuccess('Account created! Redirecting to dashboard…');
+    setTimeout(() => window.location.href = '/dashboard', 1500);
+  } catch(e) { showFormError('Something went wrong.'); btn.disabled = false; }
+}
+
+function showError(msg) {
+  document.getElementById('main-card').innerHTML = `
+    <div style="text-align:center;padding:1rem 0;">
+      <div style="font-size:1.1rem;font-weight:600;color:#ef4444;margin-bottom:.5rem;">Invalid invite</div>
+      <div style="font-size:.85rem;color:var(--ink3);">${escHtml(msg)}</div>
+      <a href="/" style="display:inline-block;margin-top:1.5rem;font-size:.82rem;color:var(--blue);">Go to homepage →</a>
+    </div>`;
+}
+function showFormError(msg) { const el = document.getElementById('error-msg'); if(el){el.textContent=msg;el.style.display='block';} }
+function showFormSuccess(msg) { const el = document.getElementById('success-msg'); if(el){el.textContent=msg;el.style.display='block';} }
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function getSession() { try{return JSON.parse(localStorage.getItem('dm_session')||'null');}catch{return null;} }
+
+init();
+</script>
+</body>
+</html>

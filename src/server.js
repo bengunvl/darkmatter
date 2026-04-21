@@ -4884,6 +4884,101 @@ app.post('/api/workspace/invite', wsAuth, async (req, res) => {
 });
 
 
+// ── GET /api/workspace/invite/validate — validate invite token (public) ──────
+app.get('/api/workspace/invite/validate', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.status(400).json({ error: 'Token required' });
+
+    const { data: inv } = await supabaseService
+      .from('workspace_invitations')
+      .select('id, email, role, workspace_id, created_at')
+      .or(`token.eq.${token},id.eq.${token}`)
+      .single();
+
+    if (!inv) return res.status(404).json({ error: 'Invite not found or expired' });
+
+    const { data: ws } = await supabaseService
+      .from('workspaces')
+      .select('name')
+      .eq('id', inv.workspace_id)
+      .single();
+
+    res.json({
+      valid:          true,
+      email:          inv.email,
+      workspace_name: ws?.name || 'DarkMatter workspace',
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── POST /api/workspace/invite/accept — accept invite (creates account if needed) ──
+app.post('/api/workspace/invite/accept', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token) return res.status(400).json({ error: 'Token required' });
+
+    // Look up invitation
+    const { data: inv } = await supabaseService
+      .from('workspace_invitations')
+      .select('id, email, role, workspace_id')
+      .or(`token.eq.${token},id.eq.${token}`)
+      .single();
+
+    if (!inv) return res.status(404).json({ error: 'Invite not found or expired' });
+
+    let userId, session = null;
+
+    // Check if user is already authenticated (header)
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      const t = authHeader.replace('Bearer ', '').trim();
+      const { data: { user } } = await supabaseService.auth.getUser(t);
+      if (user) userId = user.id;
+    }
+
+    // If not authenticated and password provided — create account
+    if (!userId && password) {
+      const { data: signUpData, error: signUpErr } = await supabaseAnon.auth.signUp({
+        email:    inv.email,
+        password: password,
+        options:  { emailRedirectTo: `${process.env.BASE_URL || 'https://darkmatterhub.ai'}/dashboard` },
+      });
+      if (signUpErr) return res.status(400).json({ error: signUpErr.message });
+      userId  = signUpData.user?.id;
+      session = signUpData.session;
+
+      // Also sign in immediately so they get a session
+      if (!session) {
+        const { data: signInData } = await supabaseAnon.auth.signInWithPassword({ email: inv.email, password });
+        session = signInData?.session;
+        userId  = signInData?.user?.id || userId;
+      }
+    }
+
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    // Add to workspace
+    await supabaseService.from('workspace_members').upsert({
+      workspace_id: inv.workspace_id,
+      user_id:      userId,
+      role:         inv.role || 'member',
+    }, { onConflict: 'workspace_id,user_id' });
+
+    // Mark invitation used
+    await supabaseService.from('workspace_invitations')
+      .update({ accepted_at: new Date().toISOString() })
+      .or(`token.eq.${token},id.eq.${token}`);
+
+    res.json({ success: true, session });
+  } catch(e) {
+    console.error('[invite accept]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Alias: /api/workspace/invitations → /api/workspace/invite ───────────────
 // Compatibility for clients that call the plural form
 app.post('/api/workspace/invitations', wsAuth, async (req, res) => {
