@@ -57,19 +57,21 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
   border-right: 1px solid var(--brd);
   transition: width .2s ease;
 }
-.leftnav.collapsed { width: 52px; }
+.leftnav.collapsed { width: 52px; overflow: visible; }
 .leftnav.collapsed .logo-name { display: none; }
 .leftnav.collapsed .nav-user-info,
 .leftnav.collapsed .nav-user svg:last-child,
 .leftnav.collapsed .nav-section-label { display: none; }
-.leftnav.collapsed .leftnav-top { padding: 14px 8px; }
-.leftnav.collapsed .leftnav-bottom { padding: 10px 8px; }
-.leftnav.collapsed .nav-link { justify-content: center; padding: 10px 0; }
+.leftnav.collapsed .leftnav-top { padding: 12px 6px 10px; }
+.leftnav.collapsed .leftnav-bottom { padding: 10px 6px; }
+.leftnav.collapsed .nav-links { gap: 4px; }
+.leftnav.collapsed .nav-link { justify-content: center; padding: 10px 0; width: 40px; margin: 0 auto; border-radius: 8px; }
 .leftnav.collapsed .nav-link span { display: none; }
-.leftnav.collapsed .nav-user { justify-content: center; padding: 7px 0; }
+.leftnav.collapsed .nav-link svg { width: 18px; height: 18px; opacity: .65; }
+.leftnav.collapsed .nav-link.active svg { opacity: 1; }
+.leftnav.collapsed .nav-user { justify-content: center; padding: 6px 0; }
 .leftnav.collapsed .nav-avatar { margin: 0; }
-/* In collapsed state, header row: logo SVG on left, toggle btn on right → center both */
-.leftnav.collapsed .leftnav-top > div:first-child { justify-content: center; gap: 0; margin-bottom: 14px; }
+.leftnav.collapsed .leftnav-top > div:first-child { justify-content: center; margin-bottom: 12px; }
 .leftnav.collapsed .nav-logo { display: none; }
 .leftnav.collapsed .sidebar-toggle-btn { margin: 0 auto; }
 .nav-toggle-btn {
@@ -1026,17 +1028,17 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
         </button>
       </div>
       <div class="nav-links">
-        <a class="nav-link active" id="nav-apikeys" onclick="showView('apikeys')">
+        <a class="nav-link active" id="nav-apikeys" onclick="showView('apikeys')" title="API Keys">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-          API Keys
+          <span>API Keys</span>
         </a>
-        <a class="nav-link" id="nav-records" onclick="showView('records')">
+        <a class="nav-link" id="nav-records" onclick="showView('records')" title="Commits">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          Commits
+          <span>Commits</span>
         </a>
-        <a class="nav-link" href="/docs" target="_blank">
+        <a class="nav-link" href="/docs" target="_blank" title="Docs">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Docs ↗
+          <span>Docs ↗</span>
         </a>
       </div>
     </div>
