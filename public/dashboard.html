@@ -1339,8 +1339,9 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
   </div>
 
   <div class="drawer-actions">
-    <button type="button" class="drawer-btn-primary" onclick="exportFromDrawer()">Export record</button>
-    <button type="button" class="drawer-btn-secondary" onclick="verifyFromDrawer()">Verify independently</button>
+    <button type="button" class="drawer-btn-primary" onclick="exportFromDrawer(event)">Download proof (.json)</button>
+    <button type="button" class="drawer-btn-secondary" onclick="shareFromDrawer(event)">Copy share link</button>
+    <button type="button" class="drawer-btn-secondary" onclick="verifyFromDrawer()">Verify →</button>
   </div>
 </div>
 
@@ -1603,25 +1604,61 @@ function closeDrawer() {
   activeDrawerRecord = null;
 }
 
-async function exportFromDrawer() {
-  const btn = event.target;
-  btn.textContent = 'Exporting…';
-  btn.disabled = true;
-  const traceId = activeDrawerRecord?.traceId || activeDrawerRecord?.record;
-  if (traceId) {
-    // Open the JSON proof bundle in a new tab
-    window.open('/r/' + encodeURIComponent(traceId) + '?format=json', '_blank');
-  }
-  btn.textContent = '✓ Exported';
-  setTimeout(() => { btn.textContent = 'Export record'; btn.disabled = false; }, 2200);
+async function getShareUrl(traceId) {
+  const res = await authFetch('/api/workspace/share/' + encodeURIComponent(traceId), { method: 'POST' });
+  if (!res.ok) throw new Error('Could not generate share link');
+  const data = await res.json();
+  return data.shareUrl;
 }
 
-function verifyFromDrawer() {
+async function exportFromDrawer(e) {
+  const btn = e?.target || event?.target;
+  if (btn) { btn.textContent = 'Generating…'; btn.disabled = true; }
   const traceId = activeDrawerRecord?.traceId || activeDrawerRecord?.record;
   if (traceId) {
-    window.open('/r/' + encodeURIComponent(traceId), '_blank');
-  } else {
-    window.open('/verify', '_blank');
+    try {
+      const shareUrl = await getShareUrl(traceId);
+      const downloadUrl = shareUrl + '&format=json';
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = 'darkmatter_proof_' + traceId.slice(-12) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      if (btn) { btn.textContent = '✓ Downloaded'; }
+    } catch(err) {
+      showToast('Error: ' + err.message);
+      if (btn) { btn.textContent = 'Download proof (.json)'; btn.disabled = false; return; }
+    }
+  }
+  if (btn) setTimeout(() => { btn.textContent = 'Download proof (.json)'; btn.disabled = false; }, 2200);
+}
+
+async function shareFromDrawer(e) {
+  const btn = e?.target;
+  const traceId = activeDrawerRecord?.traceId || activeDrawerRecord?.record;
+  if (!traceId) return;
+  if (btn) { btn.textContent = 'Generating…'; btn.disabled = true; }
+  try {
+    const shareUrl = await getShareUrl(traceId);
+    await navigator.clipboard.writeText(shareUrl);
+    if (btn) btn.textContent = '✓ Link copied';
+    showToast('Share link copied — valid 30 days. Anyone with this link can verify the record.');
+    setTimeout(() => { if (btn) { btn.textContent = 'Copy share link'; btn.disabled = false; } }, 2500);
+  } catch(err) {
+    showToast('Error: ' + err.message);
+    if (btn) { btn.textContent = 'Copy share link'; btn.disabled = false; }
+  }
+}
+
+async function verifyFromDrawer() {
+  const traceId = activeDrawerRecord?.traceId || activeDrawerRecord?.record;
+  if (!traceId) { window.open('/verify', '_blank'); return; }
+  try {
+    const shareUrl = await getShareUrl(traceId);
+    window.open(shareUrl, '_blank');
+  } catch(err) {
+    showToast('Error generating verify link: ' + err.message);
   }
 }
 </script>

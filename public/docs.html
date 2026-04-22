@@ -997,6 +997,37 @@ provider.add_span_processor(
   <h2 id="api-export">GET /api/export/:ctxId</h2>
   <p>Downloads a portable JSON proof artifact. <code>chain_hash</code> is deterministic across exports of the same unchanged chain. <code>export_hash</code> is unique per export instance.</p>
   <div class="endpoint"><div class="endpoint-title"><span class="badge get">GET</span> https://darkmatterhub.ai/api/export/:ctxId</div></div>
+  <div class="callout info" style="margin-top:20px;">
+    <div class="callout-title">Verification levels and export encryption</div>
+    <p style="margin-bottom:12px;">Whether to encrypt a proof bundle depends on your verification level and what's in the payload.</p>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead><tr style="border-bottom:1px solid rgba(0,0,0,.1);">
+        <th style="text-align:left;padding:6px 10px;font-weight:600;">Level</th>
+        <th style="text-align:left;padding:6px 10px;font-weight:600;">Export format</th>
+        <th style="text-align:left;padding:6px 10px;font-weight:600;">Auditor can verify?</th>
+      </tr></thead>
+      <tbody>
+        <tr style="border-bottom:1px solid rgba(0,0,0,.06);">
+          <td style="padding:8px 10px;"><code>L1</code> Verifiable record</td>
+          <td style="padding:8px 10px;">Plain JSON — hashes + plaintext payload</td>
+          <td style="padding:8px 10px;">✓ Yes — hashes verify against payload directly</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(0,0,0,.06);">
+          <td style="padding:8px 10px;"><code>L2</code> Independent verification</td>
+          <td style="padding:8px 10px;">Plain JSON + Bitcoin timestamp proof</td>
+          <td style="padding:8px 10px;">✓ Yes — timestamp anchors to external chain</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 10px;"><code>L3</code> Non-repudiation (roadmap)</td>
+          <td style="padding:8px 10px;">Encrypted payload, signed with your key</td>
+          <td style="padding:8px 10px;">✓ Yes — if auditor has your decryption key</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin-top:14px;font-size:13px;color:inherit;opacity:.85;">For <strong>L1/L2 audits</strong>: the bundle is readable plaintext. This is intentional — the auditor verifies the hash chain <em>against</em> the payload. Encrypting the payload breaks their ability to verify unless you give them the decryption key too. The right approach: share under NDA, not encryption. For <strong>L3</strong>: the payload is encrypted with your own key (BYOK). The auditor needs your key to read it, but the integrity proof is still independently verifiable — they just can't see what was decided without your permission.</p>
+    <p style="margin-top:10px;font-size:13px;color:inherit;opacity:.85;"><strong>Share links are on-demand.</strong> Clicking <em>Share link</em> or <em>Verify →</em> in the dashboard generates a signed URL valid for 30 days. Records are not publicly accessible until you explicitly share them.</p>
+  </div>
+
 
   <h2 id="api-lineage">GET /api/lineage/:ctxId</h2>
   <p>Returns ancestor chain metadata (no payloads) from tip to root. Faster than replay for visualization.</p>
@@ -1137,6 +1168,18 @@ curl -X POST https://darkmatterhub.ai/api/agents/register \
   <p>DarkMatter's trust model is built on one principle: <strong>you should not need to trust DarkMatter to verify your chain.</strong> The integrity layer is designed so that even if DarkMatter's servers were compromised or acquired, tampering with stored records would be mathematically detectable by anyone holding a chain export.</p>
 
   <div class="callout info"><div class="callout-title">One-line takeaway</div>We don't build a system that needs to be trusted. We build a system that can be verified without trust.</div>
+
+  <h3>Verification levels</h3>
+  <p>Every commit starts at L1. L2 is automatic (Bitcoin anchoring runs on checkpoints). L3 requires a customer-held signing key.</p>
+  <table class="params-table" style="margin-top:12px;">
+    <thead><tr><th>Level</th><th>Guarantee</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td><code>L1</code> Verifiable record</td><td>SHA-256 hash chain. Tampering breaks every downstream hash. Independent offline verifier included.</td><td>Live</td></tr>
+      <tr><td><code>L2</code> Independent verification</td><td>Signed checkpoints anchored to Bitcoin via OpenTimestamps. Timestamp proof lives outside DarkMatter.</td><td>Live</td></tr>
+      <tr><td><code>L3</code> Non-repudiation</td><td>Customer-held Ed25519 signing keys (BYOK). Even DarkMatter cannot forge a record.</td><td>Roadmap</td></tr>
+    </tbody>
+  </table>
+
 
   <h3>How it works — four layers</h3>
 

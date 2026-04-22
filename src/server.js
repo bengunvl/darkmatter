@@ -2766,7 +2766,51 @@ app.get('/api/diff/:ctxIdA/:ctxIdB', requireApiKey, async (req, res) => {
 // WEEK 1: SHARED READ-ONLY CHAIN LINKS
 // ═══════════════════════════════════════════════════
 
-// POST /api/share/:ctxId — create a shareable read-only link
+// ── POST /api/workspace/share/:traceId — generate on-demand share token ────────
+// Called from dashboard when user explicitly clicks Share or Verify.
+// Returns a signed URL valid for 30 days. No token = no public access.
+app.post('/api/workspace/share/:traceId', requireAuth, async (req, res) => {
+  try {
+    const { traceId } = req.params;
+    const secret = process.env.APP_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'dm_fallback_secret';
+    const expiresAt = Math.floor(Date.now() / 1000) + (30 * 24 * 3600); // 30 days
+
+    // Verify the commit belongs to this user
+    const { data: commit } = await supabaseService
+      .from('commits')
+      .select('id, trace_id, from_agent, agent_id')
+      .or(`trace_id.eq."${traceId}",trace_id.eq.${traceId},id.eq.${traceId}`)
+      .limit(1)
+      .single();
+
+    if (!commit) return res.status(404).json({ error: 'Record not found' });
+
+    // Check ownership via agent
+    const agentId = commit.agent_id || commit.from_agent;
+    if (agentId) {
+      const { data: agent } = await supabaseService
+        .from('agents').select('user_id').eq('agent_id', agentId).single();
+      if (agent?.user_id && agent.user_id !== req.user.id) {
+        return res.status(403).json({ error: 'Not your record' });
+      }
+    }
+
+    // Generate HMAC token: sign "traceId:expiresAt" with secret
+    const payload = `${traceId}:${expiresAt}`;
+    const token = require('crypto').createHmac('sha256', secret).update(payload).digest('hex');
+
+    const baseUrl = process.env.APP_URL || 'https://darkmatterhub.ai';
+    const shareUrl = `${baseUrl}/r/${encodeURIComponent(traceId)}?token=${token}&exp=${expiresAt}`;
+    const verifyUrl = shareUrl;
+
+    res.json({ shareUrl, verifyUrl, expiresAt: new Date(expiresAt * 1000).toISOString() });
+  } catch(e) {
+    console.error('[share]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
 app.post('/api/share/:ctxId', apiLimiter, requireApiKey, async (req, res) => {
   try {
     const { ctxId } = req.params;
@@ -3851,6 +3895,48 @@ app.get('/r/:traceId', async (req, res) => {
   try {
     const { traceId } = req.params;
     if (!traceId || traceId.length > 120) return res.status(400).json({ error: 'Invalid ID' });
+
+    // ── Access control: require valid signed token OR authenticated user ────────
+    const { token, exp } = req.query;
+    const secret = process.env.APP_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'dm_fallback_secret';
+    let authorized = false;
+
+    if (token && exp) {
+      // Verify HMAC token
+      const now = Math.floor(Date.now() / 1000);
+      if (parseInt(exp) >= now) {
+        const expected = require('crypto').createHmac('sha256', secret)
+          .update(`${traceId}:${exp}`).digest('hex');
+        authorized = (token === expected);
+      }
+    }
+
+    if (!authorized) {
+      // Check for auth header (dashboard user)
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith('Bearer ')) {
+        try {
+          const { data: { user } } = await supabaseService.auth.getUser(
+            authHeader.replace('Bearer ', '').trim()
+          );
+          authorized = !!user;
+        } catch(_) {}
+      }
+    }
+
+    if (!authorized) {
+      if (req.query.format === 'json') {
+        return res.status(401).json({ error: 'This record requires a share link to access. Open in DarkMatter dashboard to generate one.' });
+      }
+      return res.status(401).send(`<!DOCTYPE html><html><head><title>Access required — DarkMatter</title>
+        <meta charset="UTF-8"/><style>body{font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;background:#f9fafb;margin:0;}
+        .card{max-width:440px;text-align:center;padding:40px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.06);}
+        h2{font-size:1.2rem;margin-bottom:8px;color:#111827;}p{color:#6b7280;font-size:.875rem;line-height:1.6;}
+        a{display:inline-block;margin-top:20px;padding:10px 20px;background:#111827;color:#fff;border-radius:7px;text-decoration:none;font-size:.85rem;}</style></head>
+        <body><div class="card"><h2>Share link required</h2>
+        <p>This record is private. To share it for verification, open it in your DarkMatter dashboard and click <strong>Share link</strong> or <strong>Verify →</strong>.</p>
+        <a href="/">Go to DarkMatter</a></div></body></html>`);
+    }
 
     const { data: commits, error } = await supabaseService
       .from('commits')
