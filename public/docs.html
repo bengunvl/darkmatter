@@ -41,6 +41,7 @@
   padding:8px 18px;border-radius:7px;text-decoration:none;transition:opacity .15s;
 }
 .dm-nav-cta:hover{opacity:.85;}
+.dm-nav-grad{background:linear-gradient(90deg,#7C3AED,#2563EB,#0891b2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 @media(max-width:768px){
   .dm-nav{padding:0 16px;}
   .dm-nav-links{display:none;}
@@ -154,18 +155,18 @@ tr:hover td{background:var(--bg2);}
 <nav class="dm-nav">
   <a class="dm-nav-logo" href="/">
     <svg style="width:28px;height:28px;flex-shrink:0;" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs><linearGradient id="dlg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7C3AED"/><stop offset="55%" stop-color="#2563EB"/><stop offset="100%" stop-color="#0891b2"/></linearGradient></defs>
+      <defs><linearGradient id="dlg-n" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7C3AED"/><stop offset="55%" stop-color="#2563EB"/><stop offset="100%" stop-color="#0891b2"/></linearGradient></defs>
       <circle cx="20" cy="20" r="17" stroke="#e5e7eb" stroke-width="0.8" stroke-dasharray="2 3"/>
       <circle cx="20" cy="20" r="12" stroke="#d1d5db" stroke-width="0.5" opacity="0.6"/>
       <circle cx="20" cy="5"  r="3.2" fill="#7C3AED" opacity="0.95"/>
       <circle cx="33" cy="28" r="2.6" fill="#2563EB" opacity="0.95"/>
       <circle cx="7"  cy="28" r="2.2" fill="#22D3EE" opacity="0.9"/>
-      <line x1="20" y1="8"  x2="31" y2="26" stroke="url(#dlg)" stroke-width="0.6" opacity="0.5"/>
+      <line x1="20" y1="8"  x2="31" y2="26" stroke="url(#dlg-n)" stroke-width="0.6" opacity="0.5"/>
       <line x1="20" y1="8"  x2="9"  y2="26" stroke="#7C3AED" stroke-width="0.6" opacity="0.4"/>
       <line x1="30" y1="27" x2="10" y2="27" stroke="#22D3EE" stroke-width="0.6" opacity="0.4"/>
-      <circle cx="20" cy="20" r="2.5" fill="url(#dlg)" opacity="0.6"/>
+      <circle cx="20" cy="20" r="2.5" fill="url(#dlg-n)" opacity="0.6"/>
     </svg>
-    <span class="dm-nav-name">Dark<span style="background:linear-gradient(90deg,#7C3AED,#2563EB,#0891b2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Matter</span></span>
+    <span class="dm-nav-name">Dark<span class="dm-nav-grad">Matter</span></span>
   </a>
   <ul class="dm-nav-links">
     <li><a href="/demo">Demo</a></li>
@@ -176,7 +177,6 @@ tr:hover td{background:var(--bg2);}
   </ul>
   <div class="dm-nav-right">
     <a href="/login" class="dm-nav-icon" title="Sign in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:18px;height:18px;stroke-width:1.6;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg></a>
-    <a href="/signup" class="dm-nav-cta">Start free</a>
   </div>
 </nav>
 
@@ -250,14 +250,13 @@ tr:hover td{background:var(--bg2);}
   <p class="lead">DarkMatter records AI execution as a verifiable chain. Every step is hashed client-side, signed by the agent, and committed to an append-only log. Use these docs to add execution records, replay, and cryptographic verification to your AI agent pipelines. Works with any language, any model, any framework.</p>
 
   <h2 id="overview">Overview</h2>
-  <p>DarkMatter is an execution history layer for multi-agent AI systems. Every agent action becomes a <strong>context commit</strong>, an immutable node chained to its parent via SHA-256 hash linkage. The chain is independently verifiable and can be replayed, forked, or exported as a compliance artifact.</p>
-  <div class="table-wrap"><table><thead><tr><th>Concept</th><th>What it does</th><th>Endpoint</th></tr></thead><tbody>
-    <tr><td><strong>Commit</strong></td><td>Record what an agent received and produced</td><td>POST /api/commit</td></tr>
-    <tr><td><strong>Pull</strong></td><td>Inherit verified context from upstream agent</td><td>GET /api/pull</td></tr>
+  <p>DarkMatter is the independent verification and audit layer for AI agent decisions. Every agent action becomes a <strong>commit</strong>, an immutable node chained to its parent via SHA-256 hash linkage. The chain is independently verifiable and can be replayed, forked, or exported as a compliance artifact.</p>
+  <div class="table-wrap"><table><thead><tr><th>Operation</th><th>What it does</th><th>Endpoint</th></tr></thead><tbody>
+    <tr><td><strong>Commit</strong></td><td>Record an agent decision as an immutable, verifiable record</td><td>POST /api/commit</td></tr>
+    <tr><td><strong>Verify</strong></td><td>Prove the chain was never tampered with</td><td>GET /api/verify/:id</td></tr>
+    <tr><td><strong>Export</strong></td><td>Download a portable proof bundle for offline verification</td><td>GET /api/export/:id</td></tr>
     <tr><td><strong>Replay</strong></td><td>Walk the full decision chain root to tip</td><td>GET /api/replay/:id</td></tr>
     <tr><td><strong>Fork</strong></td><td>Branch from any checkpoint without touching the original</td><td>POST /api/fork/:id</td></tr>
-    <tr><td><strong>Verify</strong></td><td>Prove the chain was never tampered with</td><td>GET /api/verify/:id</td></tr>
-    <tr><td><strong>Export</strong></td><td>Download a portable proof artifact</td><td>GET /api/export/:id</td></tr>
   </tbody></table></div>
   <div class="callout info"><div class="callout-title">Base URL</div>All API calls go to <code>https://darkmatterhub.ai</code>. Get your API key at <a href="/signup">darkmatterhub.ai/signup</a>.</div>
 
@@ -267,31 +266,37 @@ tr:hover td{background:var(--bg2);}
   <div class="callout info"><div class="callout-title">Try it first — no signup required</div>
   Install the SDK and run the demo locally. See exactly what DarkMatter records, replays, forks, and verifies — all on your machine.</div>
 
-<pre><code>pip install darkmatter-sdk
-darkmatter demo    # see it locally — no signup
-darkmatter init    # create account + agent, write .env<div class="lang-label">bash</div></code></pre>
+<pre><code># Run these in your terminal (bash/zsh/PowerShell)
+pip install darkmatter-sdk
+darkmatter demo    # see it locally — no signup (optional)
+darkmatter init    # create account + agent, write .env (optional)<div class="lang-label">bash</div></code></pre>
 
   <p>You'll see a 3-step chain commit, verify, replay, fork, and diff — locally. Then get your free API key to run it in production.</p>
 
   <h3 id="single-dev">Single developer (no multi-agent needed)</h3>
   <p>You don't need multiple agents to use DarkMatter. One developer, one pipeline, full replay of every step. Commit to yourself:</p>
 
-<pre><code>import darkmatter as dm
+<pre><code><span class="cm"># ⚠️  Python code — run in a .py file or `python3`, not in bash/terminal</span>
+import darkmatter as dm
 
-MY_AGENT = <span class="cv">"dm_agent_your_id"</span>
+<span class="cm"># Simplest commit — no agent configuration needed to start</span>
+ctx = dm.commit(payload={
+    <span class="ck">"input"</span>:  <span class="cv">"Approve refund for order #84721?"</span>,
+    <span class="ck">"output"</span>: <span class="cv">"Approved. Reason: within 30-day window."</span>,
+})
+print(ctx[<span class="cv">"verify_url"</span>])  <span class="cm"># share with anyone — no login required</span>
+
+<span class="cm"># Chain commits for multi-step pipelines</span>
 parent_id = None
-
-<span class="cm"># Record each step of your pipeline</span>
 for step in pipeline_steps:
     result = run_step(step)
     ctx = dm.commit(
-        to_agent_id=MY_AGENT,
         payload={<span class="ck">"input"</span>: step, <span class="ck">"output"</span>: result},
         parent_id=parent_id,
     )
     parent_id = ctx[<span class="cv">"id"</span>]
 
-<span class="cm"># Replay it</span>
+<span class="cm"># Replay the full chain</span>
 replay = dm.replay(parent_id)
 for s in replay[<span class="cv">"replay"</span>]:
     print(s[<span class="cv">"step"</span>], s[<span class="cv">"payload"</span>][<span class="cv">"output"</span>])<div class="lang-label">python</div></code></pre>
@@ -400,7 +405,7 @@ bundle = dm.bundle(ctx[<span class="cv">"id"</span>])
     <pre><code>npm install darkmatter-js</code></pre>
 
     <pre><code><span class="c">// ES module / TypeScript</span>
-<span class="k">import</span> { commit, replay, fork, diff, verify } <span class="k">from</span> <span class="cv">'darkmatter-js'</span>;
+<span class="k">import</span> { commit, verify, replay, fork } <span class="k">from</span> <span class="cv">'darkmatter-js'</span>;
 <span class="c">// or: import DarkMatter from 'darkmatter-js';</span>
 
 <span class="c">// DARKMATTER_API_KEY read from process.env automatically</span>
@@ -412,7 +417,7 @@ bundle = dm.bundle(ctx[<span class="cv">"id"</span>])
 
 <span class="k">const</span> chain  = <span class="k">await</span> replay(ctx.id);
 <span class="k">const</span> forked = <span class="k">await</span> fork(ctx.id);
-<span class="k">const</span> delta  = <span class="k">await</span> diff(ctx.id, forked.id);
+<span class="cm">// diff() available for comparing two chain branches</span>
 <span class="k">const</span> proof  = <span class="k">await</span> verify(ctx.id);</code></pre>
 
     <pre><code><span class="c">// Class-style interface</span>
@@ -426,7 +431,7 @@ bundle = dm.bundle(ctx[<span class="cv">"id"</span>])
 
     <div class="callout info">
       <div class="callout-title">Same primitives as Python</div>
-      <code>commit</code>, <code>replay</code>, <code>fork</code>, <code>diff</code>, <code>verify</code>, <code>share</code>, <code>bundle</code>, <code>me</code>, <code>spawn</code> — all identical to the Python SDK. Source on <a href="https://github.com/darkmatter-hub/darkmatter" target="_blank">GitHub</a>.
+      <code>commit</code>, <code>verify</code>, <code>export</code>, <code>replay</code>, <code>fork</code> — all identical to the Python SDK. Source on <a href="https://github.com/darkmatter-hub/darkmatter" target="_blank">GitHub</a>.
     </div>
   </section>
 
@@ -1478,18 +1483,18 @@ def commit(dm_key, to_agent_id, payload, parent_id=None):
 <footer class="dm-footer">
   <a class="dm-footer-brand" href="/">
     <svg style="width:22px;height:22px;flex-shrink:0;" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs><linearGradient id="dlgf" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7C3AED"/><stop offset="55%" stop-color="#2563EB"/><stop offset="100%" stop-color="#0891b2"/></linearGradient></defs>
+      <defs><linearGradient id="dlg-f" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7C3AED"/><stop offset="55%" stop-color="#2563EB"/><stop offset="100%" stop-color="#0891b2"/></linearGradient></defs>
       <circle cx="20" cy="20" r="17" stroke="#e5e7eb" stroke-width="0.8" stroke-dasharray="2 3"/>
       <circle cx="20" cy="20" r="12" stroke="#d1d5db" stroke-width="0.5" opacity="0.6"/>
       <circle cx="20" cy="5"  r="3.2" fill="#7C3AED" opacity="0.95"/>
       <circle cx="33" cy="28" r="2.6" fill="#2563EB" opacity="0.95"/>
       <circle cx="7"  cy="28" r="2.2" fill="#22D3EE" opacity="0.9"/>
-      <line x1="20" y1="8"  x2="31" y2="26" stroke="url(#dlgf)" stroke-width="0.6" opacity="0.5"/>
+      <line x1="20" y1="8"  x2="31" y2="26" stroke="url(#dlg-f)" stroke-width="0.6" opacity="0.5"/>
       <line x1="20" y1="8"  x2="9"  y2="26" stroke="#7C3AED" stroke-width="0.6" opacity="0.4"/>
       <line x1="30" y1="27" x2="10" y2="27" stroke="#22D3EE" stroke-width="0.6" opacity="0.4"/>
-      <circle cx="20" cy="20" r="2.5" fill="url(#dlgf)" opacity="0.6"/>
+      <circle cx="20" cy="20" r="2.5" fill="url(#dlg-f)" opacity="0.6"/>
     </svg>
-    <span class="dm-footer-name">Dark<span style="background:linear-gradient(90deg,#7C3AED,#2563EB,#0891b2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Matter</span></span>
+    <span class="dm-footer-name">Dark<span class="dm-nav-grad">Matter</span></span>
   </a>
   <div class="dm-footer-groups">
     <div class="dm-footer-group">
