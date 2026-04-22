@@ -1040,6 +1040,10 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           <span>Docs ↗</span>
         </a>
+        <a class="nav-link" onclick="showView('billing')" id="nav-billing" title="Billing">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          <span>Billing</span>
+        </a>
       </div>
     </div>
     <div class="leftnav-bottom">
@@ -1175,10 +1179,120 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
         </div>
       </div>
 
+      <!-- ── SECTION: BILLING ── -->
+      <div class="dm-section" id="section-billing">
+        <div class="section-page-header">
+          <div class="section-page-title">Billing</div>
+        </div>
+        <!-- Billing tabs -->
+        <div style="display:flex;gap:0;border-bottom:1px solid var(--brd);margin-bottom:24px;">
+          <button class="billing-tab active" onclick="switchBillingTab(this,'balance')" style="font-size:13.5px;padding:10px 16px;background:none;border:none;border-bottom:2px solid var(--purple);cursor:pointer;color:var(--t0);font-weight:500;margin-bottom:-1px;">Balance</button>
+          <button class="billing-tab" onclick="switchBillingTab(this,'payment')" style="font-size:13.5px;padding:10px 16px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--t2);margin-bottom:-1px;">Payment methods</button>
+          <button class="billing-tab" onclick="switchBillingTab(this,'history')" style="font-size:13.5px;padding:10px 16px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--t2);margin-bottom:-1px;">Billing history</button>
+          <button class="billing-tab" onclick="switchBillingTab(this,'pricing')" style="font-size:13.5px;padding:10px 16px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--t2);margin-bottom:-1px;">Pricing</button>
+        </div>
+
+        <!-- Balance tab -->
+        <div class="billing-pane active" id="billing-balance">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:800px;">
+            <div class="panel" style="padding:24px;">
+              <div style="font-size:14px;font-weight:600;color:var(--t0);margin-bottom:4px;">Current balance</div>
+              <div style="font-size:13px;color:var(--t3);margin-bottom:16px;">Credit available to spend.</div>
+              <div style="font-size:2rem;font-weight:700;color:var(--t0);margin-bottom:16px;">$0.00</div>
+              <button style="padding:8px 18px;background:var(--purple);color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer;" onclick="showToast('Billing coming soon — contact support@darkmatterhub.ai')">Add to balance</button>
+            </div>
+            <div class="panel" style="padding:24px;">
+              <div style="font-size:14px;font-weight:600;color:var(--t0);margin-bottom:4px;">Auto-reload settings</div>
+              <div style="font-size:13px;color:var(--t3);margin-bottom:16px;">Automatically add credit when your balance falls below a threshold.</div>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--t1);cursor:pointer;">
+                <input type="checkbox" style="width:14px;height:14px;"> Enable auto-reload
+              </label>
+              <button style="margin-top:16px;padding:7px 16px;background:var(--bg-0);border:1px solid var(--brd);border-radius:7px;font-size:13px;cursor:pointer;color:var(--t2);">Save settings</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment methods tab -->
+        <div class="billing-pane" id="billing-payment" style="display:none;">
+          <div style="max-width:600px;">
+            <div class="panel" style="padding:24px;margin-bottom:16px;">
+              <div style="font-size:13.5px;color:var(--t3);font-style:italic;">No payment methods yet. Add a card to get started.</div>
+            </div>
+            <button style="padding:8px 18px;background:var(--bg-0);border:1px solid var(--brd);border-radius:7px;font-size:13px;cursor:pointer;color:var(--t1);" onclick="showToast('Payment methods coming soon — contact support@darkmatterhub.ai')">Add payment method</button>
+          </div>
+        </div>
+
+        <!-- Billing history tab -->
+        <div class="billing-pane" id="billing-history" style="display:none;">
+          <div style="max-width:600px;">
+            <div class="panel" style="padding:24px;">
+              <div style="font-size:13.5px;color:var(--t3);font-style:italic;">No billing history yet.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pricing tab -->
+        <div class="billing-pane" id="billing-pricing" style="display:none;">
+          <div style="max-width:600px;">
+            <p style="font-size:13.5px;color:var(--t2);margin-bottom:20px;">See our full pricing at <a href="/pricing" target="_blank" style="color:var(--purple);">darkmatterhub.ai/pricing</a>.</p>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /page-content -->
   </main>
 
 </div><!-- /.app -->
+
+<!-- ── SHARE MODAL ── -->
+<div class="modal-overlay" id="modal-share" onclick="if(event.target===this)closeModal('modal-share')">
+  <div class="modal" style="max-width:460px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div class="modal-title" style="margin-bottom:0;">Share a link to this record</div>
+      <button onclick="closeModal('modal-share')" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:20px;padding:2px 6px;border-radius:4px;">×</button>
+    </div>
+    <!-- Link preview -->
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-0);border:1px solid var(--brd);border-radius:8px;margin-bottom:20px;">
+      <svg width="28" height="28" viewBox="0 0 40 40" fill="none" style="flex-shrink:0;">
+        <circle cx="20" cy="20" r="18" fill="#111827"/>
+        <circle cx="20" cy="5" r="3" fill="#7C3AED" opacity=".9"/>
+        <circle cx="33" cy="27" r="2.5" fill="#2563EB" opacity=".9"/>
+        <circle cx="7" cy="27" r="2" fill="#22D3EE" opacity=".85"/>
+        <line x1="20" y1="8" x2="31" y2="25" stroke="#7C3AED" stroke-width="0.8" opacity=".6"/>
+        <line x1="20" y1="8" x2="9" y2="25" stroke="#7C3AED" stroke-width="0.8" opacity=".4"/>
+        <line x1="30" y1="26" x2="10" y2="26" stroke="#22D3EE" stroke-width="0.8" opacity=".4"/>
+      </svg>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12.5px;font-weight:500;color:var(--t0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="share-modal-title">Commit record</div>
+        <div style="font-family:var(--mono);font-size:10.5px;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="share-modal-url">Generating link…</div>
+      </div>
+    </div>
+    <!-- Options -->
+    <div style="display:flex;gap:16px;margin-bottom:20px;">
+      <div style="flex:1;">
+        <label style="font-size:12px;color:var(--t3);display:block;margin-bottom:6px;">Link expires after</label>
+        <select id="share-expires" style="width:100%;padding:8px 10px;border:1px solid var(--brd);border-radius:7px;font-size:13.5px;background:var(--bg-0);color:var(--t1);cursor:pointer;">
+          <option value="7">7 days</option>
+          <option value="30" selected>30 days</option>
+          <option value="90">90 days</option>
+          <option value="365">1 year</option>
+        </select>
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:12px;color:var(--t3);display:block;margin-bottom:6px;">Available to</label>
+        <select id="share-access" style="width:100%;padding:8px 10px;border:1px solid var(--brd);border-radius:7px;font-size:13.5px;background:var(--bg-0);color:var(--t1);cursor:pointer;">
+          <option value="anyone" selected>Anyone with the link</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;">
+      <button id="share-copy-btn" onclick="copyShareModalLink()" style="display:flex;align-items:center;gap:8px;padding:10px 22px;background:var(--purple);color:#fff;border:none;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Copy Link
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- ── MODALS ── -->
 
@@ -1340,7 +1454,10 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
 
   <div class="drawer-actions">
     <button type="button" class="drawer-btn-primary" onclick="exportFromDrawer(event)">Download proof (.json)</button>
-    <button type="button" class="drawer-btn-secondary" onclick="shareFromDrawer(event)">Copy share link</button>
+    <button type="button" class="drawer-btn-secondary" onclick="openShareModal(event)" style="display:flex;align-items:center;gap:6px;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      Share
+    </button>
     <button type="button" class="drawer-btn-secondary" onclick="verifyFromDrawer()">Verify →</button>
   </div>
 </div>
@@ -1602,6 +1719,91 @@ function closeDrawer() {
   document.getElementById('drawer-overlay')?.classList.remove('active');
   document.body.style.overflow = '';
   activeDrawerRecord = null;
+}
+
+// ── Share modal ───────────────────────────────────────────────────────────────
+let _shareModalUrl = '';
+
+async function openShareModal(e) {
+  const traceId = activeDrawerRecord?.traceId || activeDrawerRecord?.record;
+  if (!traceId) return;
+
+  // Show modal immediately with loading state
+  document.getElementById('share-modal-title').textContent = activeDrawerRecord?.title || 'Commit record';
+  document.getElementById('share-modal-url').textContent = 'Generating link…';
+  document.getElementById('share-copy-btn').disabled = true;
+  _shareModalUrl = '';
+  openModal('modal-share');
+
+  // Generate the signed link
+  try {
+    const days = parseInt(document.getElementById('share-expires')?.value || '30');
+    const res  = await authFetch('/api/workspace/share/' + encodeURIComponent(traceId), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ days }),
+    });
+    if (!res.ok) throw new Error('Could not generate link');
+    const data = await res.json();
+    _shareModalUrl = data.shareUrl;
+    document.getElementById('share-modal-url').textContent = _shareModalUrl;
+    document.getElementById('share-copy-btn').disabled = false;
+  } catch(err) {
+    document.getElementById('share-modal-url').textContent = 'Error: ' + err.message;
+  }
+}
+
+// Re-generate link when expiry changes
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('share-expires')?.addEventListener('change', async () => {
+    const traceId = activeDrawerRecord?.traceId || activeDrawerRecord?.record;
+    if (!traceId || !document.getElementById('modal-share')?.classList.contains('active')) return;
+    document.getElementById('share-modal-url').textContent = 'Regenerating…';
+    document.getElementById('share-copy-btn').disabled = true;
+    try {
+      const days = parseInt(document.getElementById('share-expires').value);
+      const res  = await authFetch('/api/workspace/share/' + encodeURIComponent(traceId), {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ days }),
+      });
+      const data = await res.json();
+      _shareModalUrl = data.shareUrl;
+      document.getElementById('share-modal-url').textContent = _shareModalUrl;
+      document.getElementById('share-copy-btn').disabled = false;
+    } catch(err) { document.getElementById('share-modal-url').textContent = 'Error'; }
+  });
+});
+
+function copyShareModalLink() {
+  if (!_shareModalUrl) return;
+  const btn = document.getElementById('share-copy-btn');
+  navigator.clipboard.writeText(_shareModalUrl).then(() => {
+    if (btn) { btn.textContent = '✓ Copied!'; btn.style.background = 'var(--grn)'; }
+    setTimeout(() => {
+      if (btn) {
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Copy Link';
+        btn.style.background = '';
+        btn.disabled = false;
+      }
+      closeModal('modal-share');
+    }, 1500);
+  });
+}
+
+// ── Billing tab switcher ──────────────────────────────────────────────────────
+function switchBillingTab(btn, tab) {
+  document.querySelectorAll('.billing-tab').forEach(b => {
+    b.style.borderBottom = '2px solid transparent';
+    b.style.color = 'var(--t2)';
+    b.style.fontWeight = '';
+    b.classList.remove('active');
+  });
+  btn.style.borderBottom = '2px solid var(--purple)';
+  btn.style.color = 'var(--t0)';
+  btn.style.fontWeight = '500';
+  btn.classList.add('active');
+  document.querySelectorAll('.billing-pane').forEach(p => p.style.display = 'none');
+  const pane = document.getElementById('billing-' + tab);
+  if (pane) pane.style.display = '';
 }
 
 async function getShareUrl(traceId) {
@@ -2210,7 +2412,7 @@ function filterByPerson(val) {
 // ── Section switching ──────────────────────────────────────────────────────
 const SECTION_TITLES = {
   apikeys: 'Your API keys', records: 'Commits',
-  team: 'Team', exports: 'Exports', overview: 'API Keys', activity: 'Commits',
+  team: 'Team', exports: 'Exports', overview: 'API Keys', activity: 'Commits', billing: 'Billing',
 };
 let _currentSection = 'apikeys';
 let _recordsLoaded  = false;
@@ -2228,13 +2430,14 @@ function switchTab(section) {
   if (titleEl) titleEl.textContent = SECTION_TITLES[s] || 'API Keys';
 
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  const navMap = { apikeys: 'nav-apikeys', records: 'nav-records', team: 'nav-team' };
+  const navMap = { apikeys: 'nav-apikeys', records: 'nav-records', team: 'nav-team', billing: 'nav-billing' };
   const navId = navMap[s];
   if (navId) document.getElementById(navId)?.classList.add('active');
 
   if (s === 'records' && !_recordsLoaded) { loadActivity(); _recordsLoaded = true; }
   if (s === 'apikeys') loadApiKeys();
   if (s === 'team')    loadTeamMembers();
+  if (s === 'billing') {} // billing section is static for now
 
   window.scrollTo({ top: 0 });
 }

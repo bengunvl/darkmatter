@@ -2773,7 +2773,9 @@ app.post('/api/workspace/share/:traceId', requireAuth, async (req, res) => {
   try {
     const { traceId } = req.params;
     const secret = process.env.APP_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'dm_fallback_secret';
-    const expiresAt = Math.floor(Date.now() / 1000) + (30 * 24 * 3600); // 30 days
+    const { days } = req.body;
+    const expiryDays = Math.min(Math.max(parseInt(days) || 30, 1), 365);
+    const expiresAt = Math.floor(Date.now() / 1000) + (expiryDays * 24 * 3600);
 
     // Verify the commit belongs to this user
     const { data: commit } = await supabaseService
