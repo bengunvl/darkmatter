@@ -156,6 +156,12 @@ function mountBillingRoutes(app, supabaseService, requireAuth) {
 }
 
 // ── Stripe webhook event handler ──────────────────────────────────────────────
+function stripeTs(unix) {
+  if (!unix) return null;
+  const d = new Date(unix * 1000);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
+
 async function handleStripeEvent(event, db) {
   const { type, data } = event;
   console.log('[stripe webhook]', type);
@@ -170,6 +176,7 @@ async function handleStripeEvent(event, db) {
     const stripe    = getStripe();
     const stripeSub = await stripe.subscriptions.retrieve(s.subscription);
     console.log('[stripe] writing subscription for user', userId, 'plan', plan, 'sub', s.subscription);
+    console.log('[stripe] period start:', stripeSub.current_period_start, 'end:', stripeSub.current_period_end);
 
     const row = {
       id:                   s.subscription,
@@ -177,13 +184,12 @@ async function handleStripeEvent(event, db) {
       stripe_customer_id:   s.customer,
       plan,
       status:               stripeSub.status,
-      current_period_start: new Date(stripeSub.current_period_start * 1000).toISOString(),
-      current_period_end:   new Date(stripeSub.current_period_end   * 1000).toISOString(),
-      stripe_price_id:      stripeSub.items.data[0]?.price?.id,
+      current_period_start: stripeTs(stripeSub.current_period_start),
+      current_period_end:   stripeTs(stripeSub.current_period_end),
+      stripe_price_id:      stripeSub.items?.data?.[0]?.price?.id || null,
       updated_at:           new Date().toISOString(),
     };
 
-    // Try update first (existing row), then insert (new row)
     const { data: existing } = await db.from('subscriptions').select('id').eq('user_id', userId).single();
     if (existing) {
       const { error } = await db.from('subscriptions').update(row).eq('user_id', userId);
@@ -198,15 +204,15 @@ async function handleStripeEvent(event, db) {
 
   if (type === 'customer.subscription.updated') {
     const s    = data.object;
-    const plan = s.metadata?.plan || planFromPriceId(s.items.data[0]?.price?.id);
+    const plan = s.metadata?.plan || planFromPriceId(s.items?.data?.[0]?.price?.id);
     const { error } = await db.from('subscriptions')
       .update({
         plan,
         status:               s.status,
-        current_period_start: new Date(s.current_period_start * 1000).toISOString(),
-        current_period_end:   new Date(s.current_period_end   * 1000).toISOString(),
+        current_period_start: stripeTs(s.current_period_start),
+        current_period_end:   stripeTs(s.current_period_end),
         cancel_at_period_end: s.cancel_at_period_end,
-        stripe_price_id:      s.items.data[0]?.price?.id,
+        stripe_price_id:      s.items?.data?.[0]?.price?.id || null,
         updated_at:           new Date().toISOString(),
       })
       .eq('id', s.id);
