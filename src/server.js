@@ -104,8 +104,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── Billing routes (webhook must be before express.json) ─────────────────────
-mountBillingRoutes(app, supabaseService, requireAuth);
+// ── Billing webhook must be mounted before express.json — see below ──────────
+// mountBillingRoutes() is called after supabaseService and requireAuth are defined
 
 app.use(express.json({ limit: '10mb' })); // increased for rich content from extension
 app.use(express.static(path.join(__dirname, '../public')));
@@ -327,6 +327,10 @@ async function flexAuth(req, res, next) {
 
 // ── GET / ── serve homepage
 // Handled by express.static above
+
+// ── Billing routes — mounted here so supabaseService + requireAuth exist ─────
+// Webhook handler uses express.raw() internally — registered before routes.
+mountBillingRoutes(app, supabaseService, requireAuth);
 
 // ── POST /api/provision ─────────────────────────────
 // Frictionless agent creation — no account needed.
