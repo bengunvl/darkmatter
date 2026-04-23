@@ -2889,9 +2889,17 @@ app.get('/api/diff/:ctxIdA/:ctxIdB', requireApiKey, async (req, res) => {
 
 // ── SIGNING KEY REGISTRY — Phase 2 ──────────────────────────────────────────
 
+// ── Signing key routes use flexAuth — accept both JWT (dashboard) and dm_sk_ (CLI/SDK) ──
+function _signingUserId(req) {
+  // JWT auth → req.user.id, API key auth → req.agent.user_id
+  return req.user?.id || req.agent?.user_id || null;
+}
+
 // POST /api/signing-keys — register a public key for L3 commits
-app.post('/api/signing-keys', requireAuth, async (req, res) => {
+app.post('/api/signing-keys', flexAuth, async (req, res) => {
   try {
+    const userId = _signingUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Could not resolve user ID' });
     const { key_id, public_key, algorithm, description } = req.body;
     if (!key_id || !public_key) {
       return res.status(400).json({ error: 'key_id and public_key are required' });
@@ -2909,7 +2917,7 @@ app.post('/api/signing-keys', requireAuth, async (req, res) => {
     const { data, error } = await supabaseService
       .from('signing_keys')
       .upsert({
-        user_id:     req.user.id,
+        user_id:     userId,
         key_id:      sanitizeText(key_id, 100),
         public_key,
         algorithm:   'Ed25519',
@@ -2929,12 +2937,14 @@ app.post('/api/signing-keys', requireAuth, async (req, res) => {
 });
 
 // GET /api/signing-keys — list registered keys
-app.get('/api/signing-keys', requireAuth, async (req, res) => {
+app.get('/api/signing-keys', flexAuth, async (req, res) => {
   try {
+    const userId = _signingUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Could not resolve user ID' });
     const { data, error } = await supabaseService
       .from('signing_keys')
       .select('key_id, algorithm, status, description, created_at, revoked_at')
-      .eq('user_id', req.user.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
     if (error) throw error;
     res.json({ keys: data || [] });
@@ -2944,13 +2954,15 @@ app.get('/api/signing-keys', requireAuth, async (req, res) => {
 });
 
 // DELETE /api/signing-keys/:keyId — revoke a key
-app.delete('/api/signing-keys/:keyId', requireAuth, async (req, res) => {
+app.delete('/api/signing-keys/:keyId', flexAuth, async (req, res) => {
   try {
+    const userId = _signingUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Could not resolve user ID' });
     const { keyId } = req.params;
     const { data, error } = await supabaseService
       .from('signing_keys')
       .update({ status: 'revoked', revoked_at: new Date().toISOString() })
-      .eq('user_id', req.user.id)
+      .eq('user_id', userId)
       .eq('key_id', keyId)
       .select()
       .single();
