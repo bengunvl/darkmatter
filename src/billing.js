@@ -174,9 +174,19 @@ async function handleStripeEvent(event, db) {
     if (!userId) { console.error('[stripe] No darkmatter_user_id in metadata'); return; }
 
     const stripe    = getStripe();
-    const stripeSub = await stripe.subscriptions.retrieve(s.subscription);
+    const stripeSub = await stripe.subscriptions.retrieve(s.subscription, {
+      expand: ['latest_invoice'],
+    });
+    console.log('[stripe] sub keys:', Object.keys(stripeSub).join(', '));
     console.log('[stripe] writing subscription for user', userId, 'plan', plan, 'sub', s.subscription);
-    console.log('[stripe] period start:', stripeSub.current_period_start, 'end:', stripeSub.current_period_end);
+
+    // Stripe API 2026+ may use different field names — try multiple paths
+    const periodStart = stripeSub.current_period_start
+      ?? stripeSub.billing_cycle_anchor
+      ?? null;
+    const periodEnd = stripeSub.current_period_end
+      ?? null;
+    console.log('[stripe] period start:', periodStart, 'end:', periodEnd);
 
     const row = {
       id:                   s.subscription,
@@ -184,8 +194,8 @@ async function handleStripeEvent(event, db) {
       stripe_customer_id:   s.customer,
       plan,
       status:               stripeSub.status,
-      current_period_start: stripeTs(stripeSub.current_period_start),
-      current_period_end:   stripeTs(stripeSub.current_period_end),
+      current_period_start: stripeTs(periodStart),
+      current_period_end:   stripeTs(periodEnd),
       stripe_price_id:      stripeSub.items?.data?.[0]?.price?.id || null,
       updated_at:           new Date().toISOString(),
     };
