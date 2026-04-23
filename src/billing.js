@@ -11,7 +11,7 @@
 // All plans include every feature. Only commits/month and retention differ.
 const ALL_FEATURES = [
   'SHA-256 hash chain (L1)',
-  'Bitcoin anchoring (L2)',
+  'Independently anchored timestamps (L2)',
   'Share links',
   'Export proof bundles',
   'Verify independently',
