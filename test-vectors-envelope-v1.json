@@ -1,0 +1,63 @@
+[
+  {
+    "name": "Vector 1 - Minimal root commit",
+    "description": "Root commit, no parent, no metadata",
+    "test_key_seed_hex": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+    "test_public_key": "ebVWLo_mVPlAeLES6KmLp5AfhTrmlb7X4OORC60ElmQ",
+    "payload": {"input": "approve transaction", "output": "approved"},
+    "metadata": null,
+    "parent_id": null,
+    "agent_id": "dm_abc123",
+    "key_id": "test-key-1",
+    "client_timestamp": "2026-04-23T18:42:11.182Z",
+    "expected": {
+      "payload_canonical":  "{\"input\":\"approve transaction\",\"output\":\"approved\"}",
+      "payload_hash":       "sha256:fe2b6cc41d22e9f6c13837410ce0421c2587bd9f901a748c760ba264620b33b3",
+      "metadata_hash":      null,
+      "envelope_canonical": "{\"agent_id\":\"dm_abc123\",\"algorithm\":\"Ed25519\",\"client_timestamp\":\"2026-04-23T18:42:11.182Z\",\"key_id\":\"test-key-1\",\"metadata_hash\":null,\"parent_id\":null,\"payload_hash\":\"sha256:fe2b6cc41d22e9f6c13837410ce0421c2587bd9f901a748c760ba264620b33b3\",\"version\":\"dm-envelope-v1\"}",
+      "envelope_hash":      "sha256:27f09680ce08db832bda5f874ac5ccf6a4d310f89abbc95613974f32560d1e19",
+      "signature":          "NPGMfsUpH7682nxbHEQkiVgTBd29oxclfIxHxJE6NNmvvYP-XwoDg1cxjLIQNtd6nTAIdmNz0xG8QG9IHKcnCA"
+    }
+  },
+  {
+    "name": "Vector 2 - Commit with parent and metadata",
+    "description": "Chained commit with parent_id and metadata object",
+    "test_key_seed_hex": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+    "test_public_key": "ebVWLo_mVPlAeLES6KmLp5AfhTrmlb7X4OORC60ElmQ",
+    "payload": {"input": "Risk: HIGH", "output": "Escalated to human review"},
+    "metadata": {"model": "claude-sonnet-4-6", "provider": "anthropic", "temperature": 0.2},
+    "parent_id": "ctx_1776867044953_f59579ba4edc",
+    "agent_id": "dm_abc123",
+    "key_id": "test-key-1",
+    "client_timestamp": "2026-04-23T18:43:00.000Z",
+    "expected": {
+      "payload_canonical":  "{\"input\":\"Risk: HIGH\",\"output\":\"Escalated to human review\"}",
+      "payload_hash":       "sha256:6e457a84811bde035a839bb7cf5f9df5c36d93351ac8991a14b2c15935fdc54b",
+      "metadata_canonical": "{\"model\":\"claude-sonnet-4-6\",\"provider\":\"anthropic\",\"temperature\":0.2}",
+      "metadata_hash":      "sha256:4e9a83e4ae012e94beeaa7eafde9b055383e668ceda46a46a96e3272c1f88bbd",
+      "envelope_canonical": "{\"agent_id\":\"dm_abc123\",\"algorithm\":\"Ed25519\",\"client_timestamp\":\"2026-04-23T18:43:00.000Z\",\"key_id\":\"test-key-1\",\"metadata_hash\":\"sha256:4e9a83e4ae012e94beeaa7eafde9b055383e668ceda46a46a96e3272c1f88bbd\",\"parent_id\":\"ctx_1776867044953_f59579ba4edc\",\"payload_hash\":\"sha256:6e457a84811bde035a839bb7cf5f9df5c36d93351ac8991a14b2c15935fdc54b\",\"version\":\"dm-envelope-v1\"}",
+      "envelope_hash":      "sha256:3705e58f0a5da1a72f638c19ea0753b8f658573aec151e57e153cf13d3f87e4c",
+      "signature":          "mjJimA06HETbprpf5wem0zJhDeHWvNW4G5wT-ADK_fe_e9DErlPmeBCdJhvLS4zarWsFYuCezI-JE83yZCcWDA"
+    }
+  },
+  {
+    "name": "Vector 3 - Unicode payload",
+    "description": "Non-ASCII characters must not be escaped — literal UTF-8 only",
+    "test_key_seed_hex": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+    "test_public_key": "ebVWLo_mVPlAeLES6KmLp5AfhTrmlb7X4OORC60ElmQ",
+    "payload": {"input": "Révision du contrat", "output": "Approuvé — décision finale"},
+    "metadata": null,
+    "parent_id": null,
+    "agent_id": "dm_abc123",
+    "key_id": "test-key-1",
+    "client_timestamp": "2026-04-23T18:44:00.000Z",
+    "expected": {
+      "payload_canonical":  "{\"input\":\"Révision du contrat\",\"output\":\"Approuvé — décision finale\"}",
+      "payload_hash":       "sha256:c2401aa1297271dae5bd8e4857e8757e6f86306ae8a8100aca6ac2dcd86a03dd",
+      "metadata_hash":      null,
+      "envelope_canonical": "{\"agent_id\":\"dm_abc123\",\"algorithm\":\"Ed25519\",\"client_timestamp\":\"2026-04-23T18:44:00.000Z\",\"key_id\":\"test-key-1\",\"metadata_hash\":null,\"parent_id\":null,\"payload_hash\":\"sha256:c2401aa1297271dae5bd8e4857e8757e6f86306ae8a8100aca6ac2dcd86a03dd\",\"version\":\"dm-envelope-v1\"}",
+      "envelope_hash":      "sha256:e2bd9261344abfdd7db8e5a1e6740b8f6dae79fc3189a473c16ec4d57ee4faea",
+      "signature":          "Q6Z7HztTb2ubcv2EDDczj_1e5SJrcKXEMKFpXd2DuZkNOP1_ghw_yX3GPLP9oBnyc7YefT9zSNbkMAm3ESfzDw"
+    }
+  }
+]
