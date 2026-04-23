@@ -104,8 +104,35 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── Billing webhook must be mounted before express.json — see below ──────────
-// mountBillingRoutes() is called after supabaseService and requireAuth are defined
+// ── Stripe webhook — MUST be before express.json() ───────────────────────────
+// Stripe signature verification requires raw bytes. express.json() would parse
+// the body first, making signature verification impossible.
+app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig    = req.headers['stripe-signature'];
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  const key    = process.env.STRIPE_SECRET_KEY;
+  if (!secret || !key) return res.sendStatus(200);
+
+  let event;
+  try {
+    const stripe = require('stripe')(key);
+    event = stripe.webhooks.constructEvent(req.body, sig, secret);
+  } catch(e) {
+    console.error('[webhook] signature verification failed:', e.message);
+    return res.status(400).send(`Webhook Error: ${e.message}`);
+  }
+
+  // supabaseService is defined later in the file but JS hoisting means
+  // by the time a request arrives the server is fully initialized.
+  try {
+    const { handleStripeEventExport } = require('./billing');
+    await handleStripeEventExport(event, supabaseService);
+  } catch(e) {
+    console.error('[webhook] handler error:', e.message);
+  }
+
+  res.sendStatus(200);
+});
 
 app.use(express.json({ limit: '10mb' })); // increased for rich content from extension
 app.use(express.static(path.join(__dirname, '../public')));

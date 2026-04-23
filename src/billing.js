@@ -59,26 +59,8 @@ function planFromPriceId(priceId) {
 
 // ── Mount all billing routes ──────────────────────────────────────────────────
 function mountBillingRoutes(app, supabaseService, requireAuth) {
-  const express = require('express');
-
-  // Webhook MUST be registered BEFORE express.json() in the caller.
-  // We register it here with its own raw-body parser.
-  app.post('/api/billing/webhook',
-    express.raw({ type: 'application/json' }),
-    async (req, res) => {
-      const sig    = req.headers['stripe-signature'];
-      const secret = process.env.STRIPE_WEBHOOK_SECRET;
-      const stripe = getStripe();
-      if (!stripe || !secret) return res.sendStatus(200);
-      let event;
-      try { event = stripe.webhooks.constructEvent(req.body, sig, secret); }
-      catch(e) { return res.status(400).send(`Webhook Error: ${e.message}`); }
-      try { await handleStripeEvent(event, supabaseService); } catch(e) {
-        console.error('[webhook] handler error:', e.message);
-      }
-      res.sendStatus(200);
-    }
-  );
+  // Note: webhook route is registered in server.js BEFORE express.json()
+  // so raw body is preserved for Stripe signature verification.
 
   // GET /api/billing/plans — public
   app.get('/api/billing/plans', (req, res) => res.json({ plans: PLANS }));
@@ -293,4 +275,4 @@ async function incrementCommitUsage(userId, db) {
   } catch(e) { console.error('[usage]', e.message); }
 }
 
-module.exports = { mountBillingRoutes, checkCommitLimit, incrementCommitUsage, PLANS };
+module.exports = { mountBillingRoutes, checkCommitLimit, incrementCommitUsage, PLANS, handleStripeEventExport: handleStripeEvent };
