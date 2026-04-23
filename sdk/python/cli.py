@@ -431,7 +431,7 @@ def cmd_init(args):
     ctx_id = None
     do_test = False
     if not no_test and not noninter:
-        try: ans = input('  Create a test commit now? [Y/n] ').strip().lower()
+        try: ans = input('  Create a test commit now? [y/n] ').strip().lower()
         except (KeyboardInterrupt, EOFError): ans = 'n'
         do_test = ans in ('', 'y', 'yes')
 
@@ -472,7 +472,7 @@ def cmd_init(args):
             blank()
             # Auto-open option
             if not noninter:
-                try: ans2 = input('  Open in browser? [y/N] ').strip().lower()
+                try: ans2 = input('  Open in browser? [y/n] ').strip().lower()
                 except (KeyboardInterrupt, EOFError): ans2 = 'n'
                 if ans2 in ('y', 'yes'):
                     ok2s, rs = _api('POST', f'/api/share/{ctx_id}',

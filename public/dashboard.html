@@ -1725,7 +1725,7 @@ async function openDrawer(record) {
   activeDrawerRecord = record;
   const drawer  = document.getElementById('conv-drawer');
   const overlay = document.getElementById('drawer-overlay');
-  const modelLabel = record.model === 'claude' ? 'Claude 4.6' : 'GPT-4o';
+  const modelLabel = record.model === 'gpt' ? 'GPT-4o' : record.model === 'claude' ? 'Claude' : '';
 
   // Populate fields
   document.getElementById('drawer-title').textContent     = record.title || 'Commit record';
@@ -2267,14 +2267,14 @@ function renderActivity(data) {
       <tbody>
         ${pageData.map((a, i) => {
           const idx        = start + i;
-          const modelType  = (a.provider === 'openai') ? 'gpt' : 'claude';
-          const modelLabel = (a.provider === 'openai') ? 'GPT-4o' : 'Claude 4.6';
+          const modelType  = (a.provider === 'openai') ? 'gpt' : (a.provider === 'anthropic' || a.provider === 'claude') ? 'claude' : '';
+          const modelLabel = (a.provider === 'openai') ? 'GPT-4o' : (a.provider === 'anthropic' || a.provider === 'claude') ? 'Claude' : '';
           const utc        = new Date(a.timestamp).toISOString();
           return `
           <tr data-idx="${idx}" data-utc="${utc}" onclick="openDrawerByIdx(this)" style="cursor:pointer;">
             <td class="td-name">
               <div>${escHtml(getRecordTitle(a))}</div>
-              <div class="td-sub"><span class="activity-model ${modelType}" style="font-size:10px;padding:1px 6px;">${modelLabel}</span></div>
+              <div class="td-sub">${modelLabel ? `<span class="activity-model ${modelType}" style="font-size:10px;padding:1px 6px;">${modelLabel}</span>` : ''}</div>
             </td>
             <td class="td-email">${escHtml(a.agentName || '—')}</td>
             <td class="td-date">${localTimestamp(a.timestamp)}</td>
@@ -2296,7 +2296,7 @@ function openDrawerByIdx(el) {
   const idx = parseInt(el.dataset.idx, 10);
   const a   = _activityIndex[idx];
   if (!a) return;
-  const modelType = (a.provider === 'openai') ? 'gpt' : 'claude';
+  const modelType = (a.provider === 'openai') ? 'gpt' : (a.provider === 'anthropic' || a.provider === 'claude') ? 'claude' : '';
   openDrawer({
     user:    a.agentName,
     initials: getInitials(a.agentName),

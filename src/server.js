@@ -336,8 +336,15 @@ async function flexAuth(req, res, next) {
   // API key path (SDK, CLI, agents)
   try {
     const keyHash = require('crypto').createHash('sha256').update(auth).digest('hex');
-    const { data: agent } = await supabaseService.from('agents')
+    // Try hash lookup first (new agents store hash)
+    let { data: agent } = await supabaseService.from('agents')
       .select('agent_id, agent_name, user_id').eq('api_key_hash', keyHash).single();
+    // Fallback: plain key lookup (agents created via /api/provision store plain key)
+    if (!agent) {
+      const { data: agent2 } = await supabaseService.from('agents')
+        .select('agent_id, agent_name, user_id').eq('api_key', auth).single();
+      agent = agent2;
+    }
     if (agent) {
       req.agent = agent;
       req.authType = 'apikey';
