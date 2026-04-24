@@ -1226,6 +1226,7 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
         client_metadata_hash:       clientAttestation.metadata_hash || null,
         client_envelope_hash:       clientAttestation.envelope_hash,
         client_attestation_ts:      clientAttestation.client_timestamp,
+        client_attestation_ts_text: clientAttestation.client_timestamp, // TEXT — exact string, not normalized
         timestamp_skew_warning:     skewWarning,
       };
     }
@@ -1348,6 +1349,7 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
         verification_reason: 'API key authenticated',
         capture_mode: 'client_signed',
         timestamp,
+        metadata:     req.body.metadata || null,
         ...attestationFields,
       });
 
@@ -1910,7 +1912,7 @@ app.get('/api/export/:ctxId', async (req, res) => {
           algorithm:        c.client_signature_algorithm || 'Ed25519',
           key_id:           c.client_key_id,
           public_key:       c.client_public_key || null,
-          client_timestamp: c.client_attestation_ts || c.client_timestamp,
+          client_timestamp: c.client_attestation_ts_text || c.client_attestation_ts || c.client_timestamp,
           agent_id:         c.from_agent || c.agent_id,
           payload_hash:     c.client_payload_hash   || (c.payload_hash   ? 'sha256:' + c.payload_hash   : null),
           metadata_hash:    c.client_metadata_hash  || null,
