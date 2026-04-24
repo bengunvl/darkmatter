@@ -1901,6 +1901,13 @@ app.get('/api/export/:ctxId', async (req, res) => {
     // Build commits array with proof receipts
     const commitsWithProofs = chain.map(c => {
       const built    = buildContext(c);
+      // Include full attestation for offline L3 verification
+      if (c.client_attestation) {
+        built.client_attestation = c.client_attestation;
+      }
+      if (c.metadata) {
+        built.metadata = c.metadata;
+      }
       const logEntry = logByCommit[c.id];
       if (logEntry) {
         let inclusionProof = null;
@@ -1988,7 +1995,7 @@ app.get('/api/export/:ctxId', async (req, res) => {
         lineage_root:   root?.lineage_root || root?.id,
         trace_id:       tip?.trace_id || null,
         exported_at:    exportedAt,
-        exported_by:    req.agent.agent_id,
+        exported_by:    req.agent?.agent_id || req.user?.id || 'anonymous',
       },
       integrity: {
         chain_intact:    chainIntact,
