@@ -690,19 +690,21 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
 .activity-model.claude { background: rgba(229,124,73,0.1); color: #b85a1e; }
 .activity-model.gpt { background: rgba(16,163,127,0.1); color: #0a7a5e; }
 
-  /* Completeness badges */
+  /* Completeness badges — intentionally small/subtle */
   .cc-badge {
     font-family: var(--mono);
-    font-size: 9.5px;
-    font-weight: 600;
-    letter-spacing: .06em;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: .05em;
     text-transform: uppercase;
-    padding: 1px 6px;
+    padding: 1px 5px;
     border-radius: 3px;
     display: inline-block;
+    opacity: 0.85;
   }
-  .cc-complete { background: rgba(15,123,77,.08); color: #0f7b4d; border: 1px solid rgba(15,123,77,.2); }
-  .cc-partial  { background: var(--bg-0); color: var(--t4); border: 1px solid var(--brd); }
+  .cc-complete  { background: rgba(15,123,77,.07);  color: #0f7b4d; border: 1px solid rgba(15,123,77,.18); }
+  .cc-partial   { background: rgba(180,93,19,.07);  color: #b45d13; border: 1px solid rgba(180,93,19,.18); }
+  .cc-no-claim  { background: transparent; color: var(--t4); border: none; font-weight: 400; }
 .activity-time { font-family: var(--mono); font-size: 10.5px; color: var(--t4); margin-left: auto; flex-shrink: 0; }
 
 /* ── TWO-COL LAYOUT ── */
@@ -2235,7 +2237,14 @@ const _activityIndex = {};
 let _activityRecords = [];
 
 const COMMIT_PAGE_SIZE = 10;
-let _commitPage = 0;
+let _commitPage   = 0;
+let _commitFilter = 'all';
+
+function setCommitFilter(f) {
+  _commitFilter = f;
+  _commitPage   = 0;
+  renderActivity(_activityAll);
+}
 let _activityAll = [];
 
 function renderActivity(data) {
@@ -2253,12 +2262,23 @@ function renderActivity(data) {
     return;
   }
 
-  const total    = data.length;
+  // Apply completeness filter
+  const filtered = _commitFilter === 'complete'  ? data.filter(a => a.completeness_claim === true)
+                 : _commitFilter === 'partial'   ? data.filter(a => a.completeness_claim === false)
+                 : _commitFilter === 'no-claim'  ? data.filter(a => a.completeness_claim === null || a.completeness_claim === undefined)
+                 : data;
+
+  if (_commitFilter !== 'all' && !filtered.length) {
+    feed.innerHTML = `<div style="padding:40px 24px;text-align:center;color:var(--t3);font-size:13px;">No commits match this filter.</div>`;
+    return;
+  }
+
+  const total    = filtered.length;
   const pages    = Math.ceil(total / COMMIT_PAGE_SIZE);
   _commitPage    = Math.min(_commitPage, pages - 1);
   const start    = _commitPage * COMMIT_PAGE_SIZE;
   const end      = Math.min(start + COMMIT_PAGE_SIZE, total);
-  const pageData = data.slice(start, end);
+  const pageData = filtered.slice(start, end);
   pageData.forEach((a, i) => { _activityIndex[start + i] = a; });
 
   const prevDis  = _commitPage === 0;
@@ -2272,12 +2292,19 @@ function renderActivity(data) {
         <button onclick="commitPageNext()" ${nextDis ? 'disabled' : ''} style="font-size:12.5px;color:${nextDis ? 'var(--t4)' : 'var(--t2)'};background:none;border:none;cursor:${nextDis ? 'default' : 'pointer'};padding:4px 8px;border-radius:5px;">Next &rsaquo;</button>
       </div>
     </div>
+    <div style="display:flex;gap:6px;margin:8px 20px 4px;flex-wrap:wrap;">
+      ${['all','complete','no-claim','partial'].map(f => {
+        const label = f === 'all' ? 'All' : f === 'complete' ? 'Complete' : f === 'no-claim' ? 'No claim' : 'Partial';
+        const active = (_commitFilter || 'all') === f;
+        return '<button onclick="setCommitFilter(\'' + f + '\')" style="font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;padding:3px 10px;border-radius:4px;cursor:pointer;transition:all .15s;border:1px solid ' + (active ? 'var(--accent)' : 'var(--brd)') + ';background:' + (active ? 'var(--accent)' : 'var(--bg)') + ';color:' + (active ? '#fff' : 'var(--t3)') + ';">' + label + '</button>';
+      }).join('')}
+    </div>
     <table class="apikey-table">
       <thead><tr>
         <th>Decision</th>
         <th>Agent</th>
         <th onclick="toggleUTC()" title="Click to toggle UTC / local time" style="cursor:pointer;user-select:none;white-space:nowrap;">Date created <span style="font-family:var(--mono);font-size:9px;font-weight:500;color:var(--t4);border:1px solid var(--brd);border-radius:3px;padding:1px 4px;margin-left:3px;">${_showUTC ? 'UTC' : 'local'}</span></th>
-        <th style="white-space:nowrap;">Completeness</th>
+        <th style="white-space:nowrap;font-weight:400;color:var(--t3);font-size:11px;">Completeness</th>
       </tr></thead>
       <tbody>
         ${pageData.map((a, i) => {
@@ -2289,7 +2316,7 @@ function renderActivity(data) {
             ? '<span class="cc-badge cc-complete">Complete</span>'
             : a.completeness_claim === false
             ? '<span class="cc-badge cc-partial">Partial</span>'
-            : '<span style="color:var(--t4);font-size:11px;">—</span>';
+            : '<span class="cc-badge cc-no-claim">No claim</span>';
           return `
           <tr data-idx="${idx}" data-utc="${utc}" onclick="openDrawerByIdx(this)" style="cursor:pointer;">
             <td class="td-name">
@@ -2728,7 +2755,7 @@ function renderApiKeys(keys) {
         <th>Name</th>
         <th>Created by</th>
         <th onclick="toggleUTC()" title="Click to toggle UTC / local time" style="cursor:pointer;user-select:none;white-space:nowrap;">Date created <span style="font-family:var(--mono);font-size:9px;font-weight:500;color:var(--t4);border:1px solid var(--brd);border-radius:3px;padding:1px 4px;margin-left:3px;">${_showUTC ? 'UTC' : 'local'}</span></th>
-        <th style="white-space:nowrap;">Completeness</th>
+        <th style="white-space:nowrap;font-weight:400;color:var(--t3);font-size:11px;">Completeness</th>
       </tr></thead>
       <tbody>
         ${pageKeys.map((k, i) => `
