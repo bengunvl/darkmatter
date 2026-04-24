@@ -6341,7 +6341,7 @@ app.get('/api/workspace/activity', requireAuth, async (req, res) => {
     const idList = allAgentIds.map(id => `"${id}"`).join(',');
     const { data: commits, error } = await supabaseService
       .from('commits')
-      .select('id, trace_id, from_agent, agent_id, agent_info, payload, timestamp, event_type, verified, capture_mode')
+      .select('id, trace_id, from_agent, agent_id, agent_info, payload, timestamp, event_type, verified, capture_mode, assurance_level, completeness_claim')
       .or(`from_agent.in.(${idList}),agent_id.in.(${idList})`)
       .order('timestamp', { ascending: false })
       .limit(limit);
@@ -6368,6 +6368,8 @@ app.get('/api/workspace/activity', requireAuth, async (req, res) => {
         agentName, provider: provider || 'unknown', model: model || 'unknown',
         eventType: c.event_type || 'commit', title, timestamp: c.timestamp,
         verified: c.verified || false, source,
+        assurance_level:  c.assurance_level  || null,
+        completeness_claim: c.completeness_claim !== undefined ? c.completeness_claim : null,
       };
     });
 

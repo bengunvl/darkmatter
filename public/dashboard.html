@@ -689,6 +689,20 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
 }
 .activity-model.claude { background: rgba(229,124,73,0.1); color: #b85a1e; }
 .activity-model.gpt { background: rgba(16,163,127,0.1); color: #0a7a5e; }
+
+  /* Completeness badges */
+  .cc-badge {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+  .cc-complete { background: rgba(15,123,77,.08); color: #0f7b4d; border: 1px solid rgba(15,123,77,.2); }
+  .cc-partial  { background: var(--bg-0); color: var(--t4); border: 1px solid var(--brd); }
 .activity-time { font-family: var(--mono); font-size: 10.5px; color: var(--t4); margin-left: auto; flex-shrink: 0; }
 
 /* ── TWO-COL LAYOUT ── */
@@ -2263,6 +2277,7 @@ function renderActivity(data) {
         <th>Decision</th>
         <th>Agent</th>
         <th onclick="toggleUTC()" title="Click to toggle UTC / local time" style="cursor:pointer;user-select:none;white-space:nowrap;">Date created <span style="font-family:var(--mono);font-size:9px;font-weight:500;color:var(--t4);border:1px solid var(--brd);border-radius:3px;padding:1px 4px;margin-left:3px;">${_showUTC ? 'UTC' : 'local'}</span></th>
+        <th style="white-space:nowrap;">Completeness</th>
       </tr></thead>
       <tbody>
         ${pageData.map((a, i) => {
@@ -2270,6 +2285,11 @@ function renderActivity(data) {
           const modelType  = (a.provider === 'openai') ? 'gpt' : (a.provider === 'anthropic' || a.provider === 'claude') ? 'claude' : '';
           const modelLabel = (a.provider === 'openai') ? 'GPT-4o' : (a.provider === 'anthropic' || a.provider === 'claude') ? 'Claude' : '';
           const utc        = new Date(a.timestamp).toISOString();
+          const ccBadge    = a.completeness_claim === true
+            ? '<span class="cc-badge cc-complete">Complete</span>'
+            : a.completeness_claim === false
+            ? '<span class="cc-badge cc-partial">Partial</span>'
+            : '<span style="color:var(--t4);font-size:11px;">—</span>';
           return `
           <tr data-idx="${idx}" data-utc="${utc}" onclick="openDrawerByIdx(this)" style="cursor:pointer;">
             <td class="td-name">
@@ -2278,6 +2298,7 @@ function renderActivity(data) {
             </td>
             <td class="td-email">${escHtml(a.agentName || '—')}</td>
             <td class="td-date">${localTimestamp(a.timestamp)}</td>
+            <td style="white-space:nowrap;">${ccBadge}</td>
           </tr>`;
         }).join('')}
       </tbody>
@@ -2707,6 +2728,7 @@ function renderApiKeys(keys) {
         <th>Name</th>
         <th>Created by</th>
         <th onclick="toggleUTC()" title="Click to toggle UTC / local time" style="cursor:pointer;user-select:none;white-space:nowrap;">Date created <span style="font-family:var(--mono);font-size:9px;font-weight:500;color:var(--t4);border:1px solid var(--brd);border-radius:3px;padding:1px 4px;margin-left:3px;">${_showUTC ? 'UTC' : 'local'}</span></th>
+        <th style="white-space:nowrap;">Completeness</th>
       </tr></thead>
       <tbody>
         ${pageKeys.map((k, i) => `
