@@ -236,7 +236,7 @@ footer{padding:3rem 2.5rem;border-top:1px solid var(--rule);}
           </div>
           <div class="diff-item">
             <div class="diff-icon">02</div>
-            <div><div class="diff-text-label">Signed records</div><div class="diff-text-desc">Client-side hashing before transmission — the server cannot alter what was committed</div></div>
+            <div><div class="diff-text-label">Signed records</div><div class="diff-text-desc">Client-side hashing before transmission — any alteration is mathematically detectable</div></div>
           </div>
           <div class="diff-item">
             <div class="diff-icon">03</div>
@@ -377,17 +377,17 @@ footer{padding:3rem 2.5rem;border-top:1px solid var(--rule);}
         <tr>
           <td><div style="margin-bottom:5px;"><span class="level-code">L1</span></div><div class="level-name">Verifiable record</div></td>
           <td class="level-desc">SHA-256 payload hash and parent chain linkage. Tampering at any node breaks every downstream hash. Independent offline verifier included with every export.</td>
-          <td><span class="status-live">Live</span></td>
+          <td><span class="status-live">Live</span> <a href="https://github.com/darkmatter-hub/darkmatter-l3-example" style="font-size:0.78rem;color:var(--ink3);margin-left:6px;">Verify L3 yourself →</a></td>
         </tr>
         <tr>
           <td><div style="margin-bottom:5px;"><span class="level-code">L2</span></div><div class="level-name">Independent verification</div></td>
           <td class="level-desc">Signed checkpoint bundles with independently anchored timestamps. The timestamp proof lives outside DarkMatter's infrastructure, so verification does not depend on us.</td>
-          <td><span class="status-live">Live</span></td>
+          <td><span class="status-live">Live</span> <a href="https://github.com/darkmatter-hub/darkmatter-l3-example" style="font-size:0.78rem;color:var(--ink3);margin-left:6px;">Verify L3 yourself →</a></td>
         </tr>
         <tr>
           <td><div style="margin-bottom:5px;"><span class="level-code">L3</span></div><div class="level-name">Non-repudiation</div></td>
           <td class="level-desc">Customer-held Ed25519 signing keys (BYOK). Even DarkMatter cannot forge a record. Verification works without revealing the payload content.</td>
-          <td><span class="status-live">Live</span></td>
+          <td><span class="status-live">Live</span> <a href="https://github.com/darkmatter-hub/darkmatter-l3-example" style="font-size:0.78rem;color:var(--ink3);margin-left:6px;">Verify L3 yourself →</a></td>
         </tr>
       </tbody>
     </table>
