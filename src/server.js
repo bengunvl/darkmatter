@@ -5931,9 +5931,7 @@ app.get('/chat', (req, res) => {
 
 
 // ── GET /admin/usage — usage analytics page — MUST be before catch-all ───────
-app.get('/admin/usage', requireAuth, (req, res) => {
-  const adminEmails = (process.env.SUPERUSER_EMAIL || process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
-  if (!adminEmails.includes(req.user.email)) return res.status(403).send('Admin only');
+app.get('/admin/usage', (req, res) => {
   res.sendFile(require('path').join(__dirname, '../public/admin-usage.html'));
 });
 
