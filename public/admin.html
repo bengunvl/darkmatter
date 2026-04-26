@@ -158,6 +158,7 @@ nav{
     <a href="#s-adoption" class="nav-link">Adoption</a>
     <a href="#s-users"    class="nav-link">Users</a>
     <a href="#s-health"   class="nav-link">Health</a>
+    <a href="#s-sdk"       class="nav-link">SDK Usage</a>
   </div>
   <div class="nav-right">
     <div class="range-btns">
@@ -172,6 +173,39 @@ nav{
     <button class="nav-link" onclick="logout()">Sign out</button>
   </div>
 </nav>
+
+
+  <!-- SDK / Wrapper Usage -->
+  <div class="section" id="s-sdk" style="display:none;">
+    <div class="section-title">SDK &amp; Wrapper Usage <span style="font-size:9px;color:var(--text3);font-weight:400;">(v1.3.0+)</span></div>
+    <div class="g5" style="margin-bottom:16px;">
+      <div class="kpi-card"><div class="kpi-label">Total commits</div><div class="kpi-val" id="sdk-total">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">L3 adoption</div><div class="kpi-val" id="sdk-l3pct">—</div><div style="font-size:10px;color:var(--text3);" id="sdk-l3n"></div></div>
+      <div class="kpi-card"><div class="kpi-label">Active agents (7d)</div><div class="kpi-val" id="sdk-active7">—</div><div style="font-size:10px;color:var(--text3);" id="sdk-active30"></div></div>
+      <div class="kpi-card"><div class="kpi-label">New agents (7d)</div><div class="kpi-val" id="sdk-newagents">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Commits/agent p50·p90</div><div class="kpi-val" style="font-size:18px;"><span id="sdk-p50">—</span> · <span id="sdk-p90">—</span></div></div>
+    </div>
+    <div style="background:var(--bg2);border-radius:8px;padding:16px;">
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;">Wrapper attribution</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px;">
+        <span style="width:80px;font-family:var(--mono);font-size:11px;color:var(--text3);">Anthropic</span>
+        <div style="flex:1;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;"><div id="sdk-bar-anthropic" style="height:100%;width:0%;background:#0f7b4d;border-radius:4px;transition:width .4s;"></div></div>
+        <span id="sdk-cnt-anthropic" style="width:40px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--text3);">0</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px;">
+        <span style="width:80px;font-family:var(--mono);font-size:11px;color:var(--text3);">OpenAI</span>
+        <div style="flex:1;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;"><div id="sdk-bar-openai" style="height:100%;width:0%;background:#2563eb;border-radius:4px;transition:width .4s;"></div></div>
+        <span id="sdk-cnt-openai" style="width:40px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--text3);">0</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:12px;">
+        <span style="width:80px;font-family:var(--mono);font-size:11px;color:var(--text3);">Manual</span>
+        <div style="flex:1;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;"><div id="sdk-bar-manual" style="height:100%;width:0%;background:#888;border-radius:4px;transition:width .4s;"></div></div>
+        <span id="sdk-cnt-manual" style="width:40px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--text3);">0</span>
+      </div>
+      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:10px;">Only counts commits with metadata.wrapper set (SDK v1.3.0+)</div>
+    </div>
+  </div>
+
 
 <div id="access-denied">
   <div style="font-size:15px;font-weight:600;color:var(--red);margin-bottom:8px;">Access denied</div>
@@ -637,7 +671,41 @@ function renderUsers(users) {
   }).join('');
 }
 
+
+// ── SDK / Wrapper Usage ───────────────────────────────────────────────────────
+async function loadSDKUsage() {
+  try {
+    const res = await fetch('/api/workspace/stats/usage', { headers: authH() });
+    if (!res.ok) return;
+    const d = await res.json();
+
+    const wu    = d.wrapper_usage;
+    const total = wu.anthropic + wu.openai + wu.manual || 1;
+    const pct   = n => Math.round(n / total * 100);
+
+    document.getElementById('sdk-total').textContent   = fmt(d.total_commits);
+    document.getElementById('sdk-l3pct').textContent   = d.l3_usage.percent + '%';
+    document.getElementById('sdk-l3n').textContent     = fmt(d.l3_usage.count) + ' L3 commits';
+    document.getElementById('sdk-active7').textContent = d.active_agents.last_7d;
+    document.getElementById('sdk-active30').textContent= d.active_agents.last_30d;
+    document.getElementById('sdk-newagents').textContent= d.momentum?.new_agents_7d ?? '—';
+    document.getElementById('sdk-p50').textContent     = d.commits_per_agent.p50;
+    document.getElementById('sdk-p90').textContent     = d.commits_per_agent.p90;
+
+    // Wrapper bars
+    ['anthropic','openai','manual'].forEach(k => {
+      document.getElementById('sdk-bar-'+k).style.width = pct(wu[k]) + '%';
+      document.getElementById('sdk-cnt-'+k).textContent = wu[k];
+    });
+
+    document.getElementById('s-sdk').style.display = 'block';
+  } catch(e) {
+    console.warn('[SDK usage]', e);
+  }
+}
+
 loadAll();
+loadSDKUsage();
 </script>
 </body>
 </html>

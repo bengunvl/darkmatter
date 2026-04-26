@@ -138,24 +138,27 @@
     const token = getToken();
     if (!token) {
       document.getElementById('error').style.display = '';
-      document.getElementById('error').textContent = 'Not signed in. Go to /dashboard first.';
+      document.getElementById('error').textContent = 'Not signed in. Go to /dashboard first, then return here.';
+      document.getElementById('ts').textContent = 'Not signed in';
       return;
     }
     try {
       const res  = await fetch('/api/workspace/stats/usage', {
         headers: { 'Authorization': 'Bearer ' + token }
       });
+      const text = await res.text();
       if (!res.ok) {
-        const e = await res.json();
         document.getElementById('error').style.display = '';
-        document.getElementById('error').textContent = e.error || 'Failed';
+        document.getElementById('error').textContent = 'Error ' + res.status + ': ' + text;
+        document.getElementById('ts').textContent = 'Error';
         return;
       }
-      const d = await res.json();
+      const d = JSON.parse(text);
       render(d);
     } catch(e) {
       document.getElementById('error').style.display = '';
-      document.getElementById('error').textContent = e.message;
+      document.getElementById('error').textContent = 'Fetch error: ' + e.message;
+      document.getElementById('ts').textContent = 'Failed';
     }
   }
 
@@ -192,9 +195,17 @@
       cp.total_agents_with_commits + ' agents with at least 1 commit';
 
     if (d.momentum?.first_commit_at) {
-      document.getElementById('note-bottom').textContent =
-        'First commit: ' + new Date(d.momentum.first_commit_at).toLocaleDateString() +
-        '  ·  Last commit: ' + new Date(d.momentum.last_commit_at).toLocaleString();
+      const first = new Date(d.momentum.first_commit_at);
+      const last  = new Date(d.momentum.last_commit_at);
+      // Guard against Unix epoch (0) or invalid dates
+      const validFirst = first.getFullYear() > 2020;
+      const validLast  = last.getFullYear()  > 2020;
+      if (validFirst || validLast) {
+        document.getElementById('note-bottom').textContent =
+          (validFirst ? 'First commit: ' + first.toLocaleDateString() : '') +
+          (validFirst && validLast ? '  ·  ' : '') +
+          (validLast  ? 'Last commit: '  + last.toLocaleString() : '');
+      }
     }
 
     document.getElementById('ts').textContent = 'Updated ' + new Date(d._generated_at).toLocaleTimeString();

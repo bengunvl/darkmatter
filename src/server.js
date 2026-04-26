@@ -6037,15 +6037,15 @@ app.get('/api/workspace/stats/usage', requireAuth, async (req, res) => {
         .eq('assurance_level', 'L3')
         .gte('timestamp', new Date(Date.now() - 7 * 86400000).toISOString()),
 
-      // First and last commit times
+      // First and last commit times — use created_at which is always set
       supabaseService.from('commits')
-        .select('timestamp')
-        .order('timestamp', { ascending: true })
+        .select('created_at')
+        .order('created_at', { ascending: true })
         .limit(1),
 
       supabaseService.from('commits')
-        .select('timestamp')
-        .order('timestamp', { ascending: false })
+        .select('created_at')
+        .order('created_at', { ascending: false })
         .limit(1),
     ]);
 
@@ -6121,8 +6121,8 @@ app.get('/api/workspace/stats/usage', requireAuth, async (req, res) => {
       },
       momentum: {
         new_agents_7d:    newAgents7dRes?.count || 0,
-        first_commit_at:  firstCommitRes?.data?.[0]?.timestamp || null,
-        last_commit_at:   lastCommitRes?.data?.[0]?.timestamp  || null,
+        first_commit_at:  firstCommitRes?.data?.[0]?.created_at || null,
+        last_commit_at:   lastCommitRes?.data?.[0]?.created_at  || null,
       },
       _note: 'wrapper_usage derived from metadata.wrapper — only counts commits via SDK wrappers after v1.3.0',
       _generated_at: new Date().toISOString(),
