@@ -5930,8 +5930,11 @@ app.get('/chat', (req, res) => {
 });
 
 
-// Redirect /admin/ → /admin
-app.get('/admin/', (req, res) => res.redirect('/admin'));
+// ── /admin routes — MUST be before catch-all ─────────────────────────────────
+app.get('/admin/', (req, res) => res.redirect(301, '/admin'));
+app.get('/admin', (req, res) => {
+  res.sendFile(require('path').join(__dirname, '../public/admin.html'));
+});
 
 app.get('*', (req, res, next) => {
   // API routes: pass through to registered handlers (or Express default 404)
@@ -6130,10 +6133,6 @@ app.get('/api/workspace/stats/usage', requireAuth, async (req, res) => {
     console.error('[usage stats]', e.message);
     res.status(500).json({ error: e.message });
   }
-});
-
-app.get('/admin', (req, res) => {
-  res.sendFile(require('path').join(__dirname, '../public/admin.html'));
 });
 
 // ── GET /api/debug/me — diagnostic for "no records" issue (admin only) ──────
