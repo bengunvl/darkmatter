@@ -5936,6 +5936,11 @@ app.get('/admin', (req, res) => {
   res.sendFile(require('path').join(__dirname, '../public/admin.html'));
 });
 
+// ── /usage — internal SDK usage dashboard (no auth wall, data is gated) ──────
+app.get('/usage', (req, res) => {
+  res.sendFile(require('path').join(__dirname, '../public/usage.html'));
+});
+
 app.get('*', (req, res, next) => {
   // API routes: pass through to registered handlers (or Express default 404)
   if (req.path.startsWith('/api/') || req.path.startsWith('/proxy/')) {
