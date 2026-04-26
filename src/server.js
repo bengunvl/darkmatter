@@ -6132,7 +6132,7 @@ app.get('/api/workspace/stats/usage', requireAuth, async (req, res) => {
   }
 });
 
-app.get('/admin', requireAuth, (req, res) => {
+app.get('/admin', (req, res) => {
   res.sendFile(require('path').join(__dirname, '../public/admin.html'));
 });
 
