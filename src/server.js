@@ -5930,11 +5930,6 @@ app.get('/chat', (req, res) => {
 });
 
 
-// ── GET /admin/usage — usage analytics page — MUST be before catch-all ───────
-app.get('/admin/usage', (req, res) => {
-  res.sendFile(require('path').join(__dirname, '../public/admin-usage.html'));
-});
-
 // Redirect /admin/ → /admin
 app.get('/admin/', (req, res) => res.redirect('/admin'));
 
