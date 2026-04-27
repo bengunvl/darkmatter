@@ -2324,6 +2324,171 @@ app.post('/enterprise/inquiry', feedbackLimiter, async (req, res) => {
   }
 });
 
+// ── GET /api/workspace/api-keys — list agents/keys for the authenticated user ──
+// Called by the dashboard API Keys section. Returns agents belonging to the
+// user, or all agents in the workspace if the user is an admin.
+app.get('/api/workspace/api-keys', wsAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Find the user's workspace membership
+    const { data: me } = await supabaseService
+      .from('workspace_members')
+      .select('workspace_id, role, agent_id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!me) {
+      // No workspace membership — fall back to user's own agents
+      const { data: agents } = await supabaseService
+        .from('agents')
+        .select('agent_id, agent_name, created_at, user_id')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      return res.json({ keys: (agents || []).map(a => ({
+        id:         a.agent_id,
+        name:       a.agent_name,
+        agent_name: a.agent_name,
+        created_at: a.created_at,
+        created_by: req.user.email,
+      }))});
+    }
+
+    let agentIds;
+    if (me.role === 'admin' || me.role === 'owner') {
+      // Admin sees all agents in the workspace
+      const { data: members } = await supabaseService
+        .from('workspace_members')
+        .select('agent_id, email, display_name, user_id')
+        .eq('workspace_id', me.workspace_id);
+      agentIds = (members || []).map(m => m.agent_id).filter(Boolean);
+    } else {
+      agentIds = me.agent_id ? [me.agent_id] : [];
+    }
+
+    if (!agentIds.length) return res.json({ keys: [] });
+
+    const { data: agents } = await supabaseService
+      .from('agents')
+      .select('agent_id, agent_name, created_at, user_id')
+      .in('agent_id', agentIds)
+      .order('created_at', { ascending: false });
+
+    // Enrich with email from workspace_members
+    const { data: allMembers } = await supabaseService
+      .from('workspace_members')
+      .select('agent_id, email, display_name')
+      .eq('workspace_id', me.workspace_id);
+
+    const memberByAgent = {};
+    (allMembers || []).forEach(m => { if (m.agent_id) memberByAgent[m.agent_id] = m; });
+
+    const keys = (agents || []).map(a => ({
+      id:         a.agent_id,
+      name:       a.agent_name,
+      agent_name: a.agent_name,
+      created_at: a.created_at,
+      created_by: memberByAgent[a.agent_id]?.email || req.user.email,
+      note:       'DarkMatter workspace',
+    }));
+
+    res.json({ keys });
+  } catch (err) {
+    console.error('[workspace/api-keys]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/workspace/api-keys — create a new agent/key ─────────────────────
+app.post('/api/workspace/api-keys', wsAuth, async (req, res) => {
+  try {
+    const { name } = req.body || {};
+    const agentName = sanitizeText(name || 'Agent', 100);
+    const userId    = req.user.id;
+
+    // Generate a new API key
+    const rawKey  = 'dm_sk_' + crypto.randomBytes(24).toString('hex');
+    const keyHash = crypto.createHash('sha256').update(rawKey).digest('hex');
+    const agentId = 'dm_' + crypto.randomBytes(12).toString('hex');
+
+    const { data: agent, error } = await supabaseService.from('agents').insert({
+      agent_id:      agentId,
+      agent_name:    agentName,
+      user_id:       userId,
+      api_key:       rawKey,
+      api_key_hash:  keyHash,
+      created_at:    new Date().toISOString(),
+    }).select().single();
+
+    if (error) throw error;
+
+    // Add to workspace if user has one
+    const { data: me } = await supabaseService
+      .from('workspace_members')
+      .select('workspace_id')
+      .eq('user_id', userId)
+      .single();
+
+    if (me?.workspace_id) {
+      await supabaseService.from('workspace_members').insert({
+        workspace_id: me.workspace_id,
+        user_id:      userId,
+        agent_id:     agentId,
+        email:        req.user.email,
+        role:         'member',
+        display_name: agentName,
+      }).select().single().catch(() => null); // ignore if already exists
+    }
+
+    res.json({
+      id:         agentId,
+      name:       agentName,
+      agent_name: agentName,
+      api_key:    rawKey,   // only returned on creation
+      created_at: agent.created_at,
+      created_by: req.user.email,
+    });
+  } catch (err) {
+    console.error('[workspace/api-keys POST]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── DELETE /api/workspace/api-keys/:keyId — delete an agent/key ───────────────
+app.delete('/api/workspace/api-keys/:keyId', wsAuth, async (req, res) => {
+  try {
+    const { keyId } = req.params;
+    const userId    = req.user.id;
+
+    // Verify ownership — user must own this agent or be workspace admin
+    const { data: agent } = await supabaseService
+      .from('agents')
+      .select('agent_id, user_id')
+      .eq('agent_id', keyId)
+      .single();
+
+    if (!agent) return res.status(404).json({ error: 'Key not found' });
+
+    if (agent.user_id !== userId) {
+      // Check if user is workspace admin
+      const { data: me } = await supabaseService
+        .from('workspace_members')
+        .select('role')
+        .eq('user_id', userId)
+        .in('role', ['admin', 'owner'])
+        .single();
+      if (!me) return res.status(403).json({ error: 'Not authorized to delete this key' });
+    }
+
+    await supabaseService.from('agents').delete().eq('agent_id', keyId);
+    res.json({ deleted: true });
+  } catch (err) {
+    console.error('[workspace/api-keys DELETE]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── POST /api/contact — footer contact modal ─────────────────────────────────
 app.post('/api/contact', feedbackLimiter, async (req, res) => {
   try {
