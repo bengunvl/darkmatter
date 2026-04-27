@@ -265,10 +265,80 @@ footer .top{max-width:80rem;margin:0 auto;padding:3.5rem 1.5rem;display:grid;gri
       <ul><li><a href="/docs#quickstart">Python</a></li><li><a href="/docs#typescript-sdk">TypeScript</a></li><li><a href="/docs#api-commit">REST API</a></li><li><a href="#" style="cursor:default;opacity:.5;">LangGraph (soon)</a></li><li><a href="#" style="cursor:default;opacity:.5;">Self-host (soon)</a></li></ul>
     </div>
     <div class="footer-col"><div class="h">Company</div>
-      <ul><li><a href="/">About</a></li><li><a href="/integrity">Security</a></li><li><a href="mailto:hello@darkmatterhub.ai?subject=DarkMatter inquiry">Contact</a></li></ul>
+      <ul><li><a href="/why">About</a></li><li><a href="/security">Security</a></li><li><a href="#" onclick="openContact();return false;">Contact</a></li></ul>
     </div>
   </div>
   <div class="footer-bottom"><div class="inner">&#169; 2026 DarkMatter</div></div>
 </footer>
+
+<!-- Contact modal -->
+<div id="contact-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(10,10,9,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1.5rem">
+  <div style="background:hsl(var(--background));border:1px solid hsl(var(--void-line));max-width:420px;width:100%;position:relative">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.875rem 1.25rem;border-bottom:1px solid hsl(var(--void-line))">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:hsl(var(--trace))">Contact</span>
+      <button onclick="closeContact()" style="background:none;border:none;cursor:pointer;color:hsl(var(--trace));font-size:18px;line-height:1;padding:0 4px">&times;</button>
+    </div>
+    <div style="padding:1.5rem">
+      <div id="contact-error" style="display:none;border-left:2px solid hsl(0 60% 50%);padding:.5rem .75rem;font-family:'JetBrains Mono',monospace;font-size:11px;color:hsl(0 60% 55%);margin-bottom:1rem;background:hsl(var(--void-elevated))"></div>
+      <div id="contact-success" style="display:none;border-left:2px solid hsl(var(--signal));padding:.5rem .75rem;font-family:'JetBrains Mono',monospace;font-size:11px;color:hsl(var(--signal));margin-bottom:1rem;background:hsl(var(--void-elevated))">&#10003; Sent. We&#8217;ll be in touch.</div>
+      <form id="contact-form">
+        <div style="margin-bottom:.875rem">
+          <label style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:hsl(var(--trace));margin-bottom:.3rem">Name</label>
+          <input id="c-name" type="text" placeholder="Your name" style="width:100%;background:hsl(var(--void-elevated));border:1px solid hsl(var(--void-line));padding:.55rem .7rem;color:hsl(var(--foreground));font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border-color .15s" onfocus="this.style.borderColor='hsl(var(--signal))'" onblur="this.style.borderColor='hsl(var(--void-line))'"/>
+        </div>
+        <div style="margin-bottom:.875rem">
+          <label style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:hsl(var(--trace));margin-bottom:.3rem">Email</label>
+          <input id="c-email" type="email" placeholder="you@company.com" required style="width:100%;background:hsl(var(--void-elevated));border:1px solid hsl(var(--void-line));padding:.55rem .7rem;color:hsl(var(--foreground));font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border-color .15s" onfocus="this.style.borderColor='hsl(var(--signal))'" onblur="this.style.borderColor='hsl(var(--void-line))'"/>
+        </div>
+        <div style="margin-bottom:1.25rem">
+          <label style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:hsl(var(--trace));margin-bottom:.3rem">Message</label>
+          <textarea id="c-message" rows="4" placeholder="How can we help?" required style="width:100%;background:hsl(var(--void-elevated));border:1px solid hsl(var(--void-line));padding:.55rem .7rem;color:hsl(var(--foreground));font-family:'Inter',sans-serif;font-size:13px;outline:none;resize:vertical;transition:border-color .15s" onfocus="this.style.borderColor='hsl(var(--signal))'" onblur="this.style.borderColor='hsl(var(--void-line))'"></textarea>
+        </div>
+        <button id="c-submit" type="submit" style="width:100%;background:hsl(var(--foreground));color:hsl(var(--background));font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;padding:.75rem;border:none;cursor:pointer;transition:background .15s" onmouseover="this.style.background='hsl(var(--signal))'" onmouseout="this.style.background='hsl(var(--foreground))'">Send message &#8594;</button>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+function openContact(){
+  var m=document.getElementById('contact-modal');
+  m.style.display='flex';
+  document.body.style.overflow='hidden';
+}
+function closeContact(){
+  document.getElementById('contact-modal').style.display='none';
+  document.body.style.overflow='';
+}
+document.getElementById('contact-modal').addEventListener('click',function(e){
+  if(e.target===this)closeContact();
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeContact();});
+document.getElementById('contact-form').addEventListener('submit',async function(e){
+  e.preventDefault();
+  var btn=document.getElementById('c-submit');
+  var name=document.getElementById('c-name').value.trim();
+  var email=document.getElementById('c-email').value.trim();
+  var message=document.getElementById('c-message').value.trim();
+  if(!email||!message){
+    var err=document.getElementById('contact-error');
+    err.textContent='Please fill in email and message.';
+    err.style.display='block';
+    return;
+  }
+  btn.textContent='Sending…';btn.disabled=true;
+  document.getElementById('contact-error').style.display='none';
+  try{
+    await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,email,message})});
+    document.getElementById('contact-success').style.display='block';
+    document.getElementById('contact-form').style.display='none';
+  }catch(e){
+    var err=document.getElementById('contact-error');
+    err.textContent='Something went wrong. Email us at hello@darkmatterhub.ai';
+    err.style.display='block';
+    btn.textContent='Send message →';btn.disabled=false;
+  }
+});
+</script>
 </body>
 </html>
