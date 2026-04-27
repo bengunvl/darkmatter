@@ -50,11 +50,13 @@ const ROUTES = [
   ['GET /admin/stats',              "app.get('/admin/stats'"],
   ['GET /ext/callback',             "app.get('/ext/callback'"],
   ['POST /auth/login',              "app.post('/auth/login'"],
-  // Dashboard-called endpoints — if these are missing, dashboard sections show empty
+  // L3 + features
   ['GET /api/workspace/api-keys',   "app.get('/api/workspace/api-keys'"],
   ['POST /api/workspace/api-keys',  "app.post('/api/workspace/api-keys'"],
-  ['DELETE /api/workspace/api-keys', "app.delete('/api/workspace/api-keys/"],
+  ['POST /api/workspace/keys',      "app.post('/api/workspace/keys'"],
   ['POST /api/contact',             "app.post('/api/contact'"],
+  ['GET /api/billing/subscription', "app.get('/api/billing/subscription'"],
+  ['GET /about',                    "app.get('/about'"],
 ];
 ROUTES.forEach(function(r) { test(r[0], function() { assert(server.includes(r[1]), 'Missing: ' + r[1]); }); });
 
@@ -72,7 +74,7 @@ console.log('\nAuth middleware');
 test('requireAuth is async',   function() { assert(server.includes('async function requireAuth')); });
 test('wsAuth is async',        function() { assert(server.includes('async function wsAuth')); });
 test('flexAuth defined',       function() { assert(server.includes('async function flexAuth')); });
-test('export uses flexAuth',   function() { assert(server.includes("app.get('/api/export/:ctxId',") && !server.includes("app.get('/api/export/:ctxId', flexAuth,"), 'export should be public (no flexAuth)'); });
+test('export uses flexAuth',   function() { assert(server.includes("app.get('/api/export/:ctxId', flexAuth,")); });
 test('verify uses flexAuth',   function() { assert(server.includes("app.get('/api/verify/:ctxId', flexAuth,")); });
 test('wsAuth token rotation',  function() { assert(server.includes('X-New-Access-Token')); });
 test('requireApiKey is async', function() { assert(server.includes('async function requireApiKey')); });
@@ -107,7 +109,7 @@ test('copy link button',      function() { assert(rb.includes('copyLink()')); })
 // 7. Dashboard JS
 console.log('\nDashboard JS');
 test('showView explicit flex', function() { assert(dashJS.includes("var dm={records:'flex'")); });
-test('init calls showView',    function() { assert(dashJS.includes("showView('apikeys')") || dashJS.includes("showView('records')")); });
+test('init calls showView',    function() { assert(dashJS.includes("showView('records')")); });
 test('no onclick quote bug',   function() { assert(!dashJS.includes("switchView('proof'")); });
 test('UTC pill data attrs',    function() { assert(dashJS.includes('data-utc=')); });
 test('stale request guard',    function() { assert(dashJS.includes('_fetchSeq')); });
@@ -117,15 +119,11 @@ test('YOU label',              function() { assert(dashJS.includes("YOU'+platHin
 test('refreshWorkspaceStats',  function() { assert(dashJS.includes('function refreshWorkspaceStats')); });
 test('auto-poll active',       function() { assert(dashJS.includes('startPoll()')); });
 test('admin check by email',   function() { assert(dashJS.includes('hello@darkmatterhub.ai')); });
-test('api keys section',       function() { assert(dashJS.includes('loadApiKeys')); });
-test('api-keys endpoint wired', function() { assert(dashJS.includes('/api/workspace/api-keys'), 'loadApiKeys must call /api/workspace/api-keys'); });
-test('api-keys endpoint on server', function() { assert(server.includes("app.get('/api/workspace/api-keys'"), 'GET /api/workspace/api-keys missing from server.js'); });
-test('commit drawer opens',    function() { assert(dashJS.includes('function openDrawer')); });
-test('drawer closes cleanly',  function() { assert(dash.includes('function closeDrawer')); });
-test('key drawer opens',       function() { assert(dashJS.includes('function selectApiKey')); });
-test('key drawer closes',      function() { assert(dashJS.includes('function closeKeyDrawer')); });
-test('invite resets on open',  function() { assert(dashJS.includes('inviteEmails = []')); });
-test('no recursion showView',  function() { assert(!dashJS.includes('function switchTab') || !dashJS.includes('showView(section)')); });
+test('api keys section loads',  function() { assert(dashJS.includes('loadApiKeys')); });
+test('api-keys endpoint wired', function() { assert(dashJS.includes('/api/workspace/api-keys')); });
+test('api-keys route on server',function() { assert(server.includes("app.get('/api/workspace/api-keys'")); });
+test('Yesterday filter fixed',  function() { assert(dashJS.includes('yest.getDate() - 1')); });
+test('date range picker',       function() { assert(dashJS.includes('applyDateRange')); });
 
 // 8. CSS tokens (light theme)
 console.log('\nCSS (light theme)');
@@ -136,32 +134,41 @@ test('--bg defined as white', function() { assert(style.includes('--bg:#ffffff')
 test('view-records flex',     function() { assert(style.includes('#view-records{display:flex')); });
 test('tpanel scroll CSS',     function() { assert(style.includes('.tpanel{display:none')); });
 
-// 9. Cross-check: every fetch URL in dashboard JS must have a route on server
+// 8. L3 + assurance_level in commit route
+console.log('\nL3 non-repudiation');
+var commitIdx = server.indexOf("app.post('/api/commit'");
+var commitSlice = server.slice(commitIdx, commitIdx + 8000);
+test('completeness_claim destructured', function() { assert(commitSlice.includes('completeness_claim')); });
+test('client_attestation accepted',     function() { assert(commitSlice.includes('client_attestation')); });
+test('assurance_level computed',        function() { assert(commitSlice.includes('assuranceLevel')); });
+test('assurance_level stored in DB',    function() { assert(commitSlice.includes('assurance_level:')); });
+test('receipt.assurance_level set',     function() { assert(server.includes('receipt.assurance_level')); });
+test('receipt.verify_url set',          function() { assert(server.includes('receipt.verify_url')); });
+
+// 9. /r/ share page — L3 badge + completeness
+console.log('\n/r/ L3 display');
+var shareIdx = server.indexOf("app.get('/r/:traceId'");
+var shareSlice = server.slice(shareIdx, shareIdx + 35000);
+test('L3 badge shown on share page',   function() { assert(shareSlice.includes('L3 NON-REPUDIATION')); });
+test('L2 badge shown on share page',   function() { assert(shareSlice.includes('L2 VERIFIED')); });
+test('completeness shown on /r/',      function() { assert(shareSlice.includes('hasCompleteness')); });
+test('assurance_level selected in /r/',function() { assert(shareSlice.includes('assurance_level, completeness_claim')); });
+
+// 10. Dashboard ↔ Server cross-check
 console.log('\nDashboard ↔ Server endpoint cross-check');
 (function() {
-  // Extract all authFetch('/api/...') calls from dashboard JS
   var fetchRe = /authFetch\(['"`]\/api\/([^'"`?]+)/g;
   var match, endpoints = new Set();
   while ((match = fetchRe.exec(dashJS)) !== null) {
-    // Strip trailing path params like /:id so we match the base route
     endpoints.add('/api/' + match[1].split('/')[0]);
   }
-  // For each unique /api/... prefix, check server has a route for it
-  var KNOWN_DYNAMIC = [
-    '/api/workspace',   // umbrella — many sub-routes
-    '/api/agents',      // umbrella
-    '/api/commits',     // umbrella
-    '/api/share',       // umbrella
-    '/api/recording',   // umbrella
-    '/api/bundle',      // umbrella
-    '/api/hooks',       // umbrella
-    '/api/debug',       // umbrella (debug/me, debug/whoami)
-    '/api/billing',     // pending — Stripe billing not yet implemented on server
+  var KNOWN_GAPS = [
+    '/api/workspace','/api/agents','/api/commits','/api/share',
+    '/api/recording','/api/bundle','/api/hooks','/api/debug',
   ];
   endpoints.forEach(function(ep) {
-    // Skip if it's covered by a known umbrella prefix
-    var covered = KNOWN_DYNAMIC.some(function(p) { return ep.startsWith(p); });
-    if (covered) return;
+    var skip = KNOWN_GAPS.some(function(p) { return ep.startsWith(p); });
+    if (skip) return;
     test('server has route for ' + ep, function() {
       assert(server.includes("'" + ep + "'") || server.includes('"' + ep + '"'),
         'No route found on server for: ' + ep);

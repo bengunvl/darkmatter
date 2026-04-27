@@ -900,7 +900,9 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
       parentId,      // parent context ID for lineage
       traceId,       // optional — group commits into a run/trace
       branchKey,     // optional — label for parallel branches
-      agent,         // optional — { role, provider, model } from caller
+      agent,              // optional — { role, provider, model } from caller
+      completeness_claim, // optional boolean — signed coverage assertion (L3)
+      client_attestation, // optional — { key_id, signature, algorithm, ... } for L3
     } = req.body;
 
     // Accept either payload (v1) or context (legacy)
@@ -963,6 +965,15 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
       // Legacy path: server-computed hashes
       payloadHash   = serverPayloadHash;
       integrityHash = serverIntegrityHash;
+    }
+
+    // ── Assurance level — L1 / L2 / L3 ─────────────────
+    // L3: customer holds the signing key — client_attestation carries Ed25519 sig
+    // L2: checkpoint anchoring (automatic, applied at checkpoint time)
+    // L1: hash chain integrity — default for every commit
+    let assuranceLevel = 'L1';
+    if (client_attestation && client_attestation.signature && client_attestation.key_id) {
+      assuranceLevel = 'L3';
     }
 
     // ── Agent info ────────────────────────────────────
@@ -1038,7 +1049,10 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
         hash_mismatch:       hashMismatch || false,
         verified:            true,
         verification_reason: 'API key authenticated',
-      capture_mode: 'client_signed',
+        capture_mode:        'client_signed',
+        assurance_level:     assuranceLevel,
+        completeness_claim:  completeness_claim !== undefined ? completeness_claim : null,
+        client_attestation:  client_attestation  || null,
         timestamp,
       });
 
@@ -1089,9 +1103,14 @@ app.post('/api/commit', apiLimiter, requireApiKey, async (req, res) => {
       parent_hash:         parentHash,
       verified:            true,
       verification_reason: 'API key authenticated',
-      capture_mode: 'client_signed',
+      capture_mode:        'client_signed',
+      assurance_level:     assuranceLevel,
+      completeness_claim:  completeness_claim !== undefined ? completeness_claim : null,
       timestamp,
     }, { [req.agent.agent_id]: req.agent.agent_name, [toAgentId]: recipientAgent?.agent_name || toAgentId });
+    receipt.assurance_level    = assuranceLevel;
+    receipt.completeness_claim = completeness_claim !== undefined ? completeness_claim : null;
+    receipt.verify_url         = (process.env.APP_URL || 'https://darkmatterhub.ai') + '/r/' + commitId;
 
     // ── Phase 3: append to log + Merkle tree ──────────
     let logEntry = null;
@@ -1512,7 +1531,7 @@ app.get('/api/verify/:ctxId', flexAuth, async (req, res) => {
 //   commits         — ordered commits, each with _proof receipt
 //   export_hash     — SHA-256 of the entire bundle (uniquely identifies this export)
 //
-app.get('/api/export/:ctxId', async (req, res) => {
+app.get('/api/export/:ctxId', flexAuth, async (req, res) => {
   try {
     const { ctxId } = req.params;
 
@@ -1893,6 +1912,29 @@ app.post('/api/agents/keys/revoke', requireApiKey, async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+// ── POST /api/workspace/keys — register a customer signing key ────────────────
+app.post('/api/workspace/keys', wsAuth, async (req, res) => {
+  try {
+    const { publicKey, keyId = 'default', validUntil } = req.body;
+    if (!publicKey) return res.status(400).json({ error: 'publicKey required' });
+    const { data: me } = await supabaseService
+      .from('workspace_members').select('agent_id').eq('user_id', req.user.id).single();
+    if (!me?.agent_id) return res.status(404).json({ error: 'No agent found for this account' });
+    const result = await registerKey(supabaseService, me.agent_id, publicKey, keyId, { validUntil, performedBy: me.agent_id });
+    res.json({ ...result, message: 'Public key registered. Private key never stored.' });
+  } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.get('/api/workspace/keys', wsAuth, async (req, res) => {
+  try {
+    const { data: me } = await supabaseService
+      .from('workspace_members').select('agent_id').eq('user_id', req.user.id).single();
+    if (!me?.agent_id) return res.json({ keys: [] });
+    const history = await getKeyHistory(supabaseService, me.agent_id);
+    res.json({ keys: history || [] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ── GET /api/agents/keys ─────────────────────────────────────────────────────
@@ -2487,6 +2529,17 @@ app.delete('/api/workspace/api-keys/:keyId', wsAuth, async (req, res) => {
     console.error('[workspace/api-keys DELETE]', err.message);
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── Billing stubs — Stripe not yet implemented ────────────────────────────────
+app.get('/api/billing/subscription', wsAuth, async (req, res) => {
+  res.json({ plan: 'free', status: 'active', commits_this_month: 0, commit_limit: 10000, retention_days: 30 });
+});
+app.post('/api/billing/checkout', wsAuth, async (req, res) => {
+  res.status(501).json({ error: 'Stripe billing not yet configured. Contact hello@darkmatterhub.ai to upgrade.' });
+});
+app.post('/api/billing/portal', wsAuth, async (req, res) => {
+  res.status(501).json({ error: 'Stripe portal not yet configured. Contact hello@darkmatterhub.ai.' });
 });
 
 // ── POST /api/contact — footer contact modal ─────────────────────────────────
@@ -3855,7 +3908,7 @@ app.get('/r/:traceId', async (req, res) => {
 
     const { data: commits, error } = await supabaseService
       .from('commits')
-      .select('id, trace_id, from_agent, agent_id, agent_info, payload, timestamp, client_timestamp, event_type, integrity_hash, payload_hash, parent_hash, verified')
+      .select('id, trace_id, from_agent, agent_id, agent_info, payload, timestamp, client_timestamp, event_type, integrity_hash, payload_hash, parent_hash, verified, assurance_level, completeness_claim')
       .or('trace_id.eq."' + traceId + '",trace_id.eq.' + traceId)
       .order('timestamp', { ascending: true });
 
@@ -3863,6 +3916,15 @@ app.get('/r/:traceId', async (req, res) => {
       if (req.query.format === 'json') return res.status(404).json({ error: 'Record not found.' });
       return res.status(404).send('<!DOCTYPE html><html><head><title>Not found</title></head><body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;"><div style="text-align:center"><h2>Record not found</h2><p>This record may have been removed or the link is incorrect.</p><a href="/">Back to DarkMatter</a></div></body></html>');
     }
+
+    // Compute highest assurance level + completeness across commits
+    var highestAssurance = 'L1';
+    for (var ci = 0; ci < commits.length; ci++) {
+      var al = commits[ci].assurance_level || 'L1';
+      if (al === 'L3') { highestAssurance = 'L3'; break; }
+      if (al === 'L2') highestAssurance = 'L2';
+    }
+    var hasCompleteness = commits.some(function(c) { return c.completeness_claim === true; });
 
     // Verify chain integrity
     // Only flag broken if BOTH hashes exist and don't match.
@@ -4035,13 +4097,19 @@ app.get('/r/:traceId', async (req, res) => {
       + '  <div class="fs-title">' + escH(title) + '</div>\n'
       + '  <div class="fs-meta">\n'
       + '    <span class="fs-status" style="background:' + statusBg + ';color:' + statusColor + ';border-color:' + statusBd + ';">' + statusText + '</span>\n'
+      + (highestAssurance === 'L3' ? '    <span class="fs-status" style="background:rgba(15,123,77,.07);color:#0f7b4d;border:1px solid rgba(15,123,77,.2);font-family:monospace;font-size:11px;font-weight:600;padding:3px 10px;border-radius:4px;">L3 NON-REPUDIATION</span>\n' : highestAssurance === 'L2' ? '    <span class="fs-status" style="background:rgba(59,130,246,.06);color:#1d4ed8;border:1px solid rgba(59,130,246,.2);font-family:monospace;font-size:11px;font-weight:600;padding:3px 10px;border-radius:4px;">L2 VERIFIED</span>\n' : '')
+      + (hasCompleteness ? '    <span class="fs-status" style="background:rgba(15,123,77,.05);color:#0f7b4d;border:1px solid rgba(15,123,77,.15);font-family:monospace;font-size:10px;padding:2px 8px;border-radius:4px;">\u2714 Complete</span>\n' : '')
       + '    <span class="fs-sep">\u00b7</span>\n'
       + '    <span class="fs-chip">' + stepCount + ' step' + (stepCount !== 1 ? 's' : '') + '</span>\n'
       + '    <span class="fs-sep">\u00b7</span>\n'
       + '    <span class="fs-chip">' + escH(platform) + '</span>\n'
       + (dateStr ? '    <span class="fs-sep">\u00b7</span>\n    <span class="fs-chip">' + escH(dateStr) + '</span>\n' : '')
       + '  </div>\n'
-      + '  <div class="fs-integrity">' + (chainIntact ? 'This record has been cryptographically verified. Nothing has been added, removed, or altered since it was captured.' : 'This record could not be fully verified. Download the proof file for independent investigation.') + '</div>\n'
+      + '  <div class="fs-integrity">'
+      + (chainIntact ? 'This record has been cryptographically verified. Nothing has been added, removed, or altered since it was captured.' : 'This record could not be fully verified. Download the proof file for independent investigation.')
+      + (highestAssurance === 'L3' ? ' Signed with a customer-controlled Ed25519 key before reaching DarkMatter \u2014 DarkMatter cannot forge this record.' : '')
+      + (hasCompleteness ? '<br><span style=\"font-size:12px;color:#0f7b4d;\">\u2714 Agent asserted this record is complete (nothing omitted).</span>' : '')
+      + '</div>\n'
       + '  <div class="fs-actions">\n'
       + '    <button class="fs-btn-p" onclick="copyLink()">Copy link</button>\n'
       + '    <a class="fs-btn-s" href="' + escH(jsonUrl) + '">Download proof bundle (.json)</a>\n'

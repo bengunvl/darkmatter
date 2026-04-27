@@ -1056,11 +1056,11 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
         </button>
       </div>
       <div class="nav-links">
-        <a class="nav-link active" id="nav-apikeys" onclick="showView('apikeys')" title="API Keys">
+        <a class="nav-link" id="nav-apikeys" onclick="showView('apikeys')" title="API Keys">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
           <span>API Keys</span>
         </a>
-        <a class="nav-link" id="nav-records" onclick="showView('records')" title="Commits">
+        <a class="nav-link active" id="nav-records" onclick="showView('records')" title="Commits">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           <span>Commits</span>
         </a>
@@ -1121,7 +1121,7 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
     <div class="page-content" id="page-content">
 
       <!-- ── SECTION: API KEYS (default landing) ── -->
-      <div class="dm-section active" id="section-apikeys">
+      <div class="dm-section" id="section-apikeys">
         <div class="section-page-header">
           <div>
             <div class="section-page-title">Your API keys</div>
@@ -1179,7 +1179,7 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
       </div>
 
       <!-- ── SECTION: RECORDS ── -->
-      <div class="dm-section" id="section-records">
+      <div class="dm-section active" id="section-records">
         <div class="section-page-header">
           <div>
             <div class="section-page-title">Commits</div>
@@ -2529,7 +2529,7 @@ document.addEventListener('DOMContentLoaded', () => {
   startAutoPoll();
   startPoll();
   // Load immediately — session is guaranteed after login redirect
-  showView('apikeys');
+  showView('records');
   // If URL is /dashboard/keys/:id, auto-open that key's drawer after keys load
   const m = location.pathname.match(/\/dashboard\/keys\/(.+)/);
   if (m) {
