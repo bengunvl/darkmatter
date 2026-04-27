@@ -285,8 +285,19 @@ document.addEventListener('keydown',function(e){if(e.key==='Enter')handleSignup(
 <script>
 function openContact(){
   var m=document.getElementById('contact-modal');
+  // Reset form state every time modal opens
+  var form=document.getElementById('contact-form');
+  if(form)form.style.display='';
+  var succ=document.getElementById('contact-success');
+  if(succ)succ.style.display='none';
+  var err=document.getElementById('contact-error');
+  if(err){err.style.display='none';err.textContent='';}
+  var btn=document.getElementById('c-submit');
+  if(btn){btn.disabled=false;btn.textContent='Send message →';}
   m.style.display='flex';
   document.body.style.overflow='hidden';
+  // Focus first input
+  setTimeout(function(){var f=m.querySelector('input');if(f)f.focus();},50);
 }
 function closeContact(){
   document.getElementById('contact-modal').style.display='none';
