@@ -3,39 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DarkMatter | Dashboard</title>
+<title>DarkMatter &#8212; Dashboard</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg:#ffffff;
-  --bg-0: #f7f7f5;
-  --bg-1: #f0f0ee;
-  --bg-2: #e8e8e4;
-  --brd: #e4e4e0;
-  --brd-mid: #d4d4ce;
-  --t0: #0a0a09;
-  --t1: #2a2a27;
-  --t2: #5a5a54;
-  --t3: #9a9a92;
-  --t4: #c4c4bc;
-  --purple: #6b4fbb;
-  --purple-light: rgba(107,79,187,0.08);
-  --purple-brd: rgba(107,79,187,0.2);
-  --teal: #4ab8c8;
-  --grn: #0f7b4d;
-  --grn-bg: rgba(15,123,77,0.07);
-  --grn-brd: rgba(15,123,77,0.18);
-  --amber: #b45309;
-  --amber-bg: rgba(180,83,9,0.07);
-  --amber-brd: rgba(180,83,9,0.2);
-  --red: #c8102e;
-  --red-bg: rgba(200,16,46,0.06);
-  --red-brd: rgba(200,16,46,0.18);
-  --mono: 'IBM Plex Mono', monospace;
-  --sans: 'IBM Plex Sans', sans-serif;
+  /* Backgrounds — void palette from marketing site */
+  --bg:    #ffffff;
+  --bg-0:  hsl(38 30% 97%);
+  --bg-1:  hsl(38 24% 94%);
+  --bg-2:  hsl(38 14% 84%);
+  --brd:     hsl(38 14% 84%);
+  --brd-mid: hsl(38 10% 76%);
+  /* Text */
+  --t0: hsl(220 20% 10%);
+  --t1: hsl(220 12% 18%);
+  --t2: hsl(220 10% 38%);
+  --t3: hsl(220  8% 55%);
+  --t4: hsl(220  6% 72%);
+  /* Accent — signal green (from marketing site) */
+  --purple:       hsl(152 64% 34%);
+  --purple-light: hsl(152 64% 34% / 0.07);
+  --purple-brd:   hsl(152 64% 34% / 0.22);
+  --teal:         hsl(195 85% 40%);
+  /* Status colours */
+  --grn:     hsl(152 64% 34%);
+  --grn-bg:  hsl(152 64% 34% / 0.07);
+  --grn-brd: hsl(152 64% 34% / 0.22);
+  --amber:     hsl(30 80% 40%);
+  --amber-bg:  hsl(30 80% 40% / 0.07);
+  --amber-brd: hsl(30 80% 40% / 0.22);
+  --red:     hsl(350 82% 46%);
+  --red-bg:  hsl(350 82% 46% / 0.06);
+  --red-brd: hsl(350 82% 46% / 0.2);
+  /* Fonts — JetBrains Mono + Inter from marketing site */
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+  --sans: 'Inter', system-ui, sans-serif;
   --nav-w: 220px;
-  --topbar-h: 56px;
+  --topbar-h: 54px;
 }
 
 html, body { height: 100%; }
@@ -106,8 +111,8 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
   text-decoration: none;
   margin-bottom: 18px;
 }
-.logo-name { font-family: var(--mono); font-size: 15px; font-weight: 700; letter-spacing: -0.03em; color: var(--t0); }
-.logo-grad { background: linear-gradient(90deg, var(--purple) 0%, var(--teal) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.logo-name { font-family: var(--mono); font-size: 13px; font-weight: 600; letter-spacing: .04em; color: var(--t0); text-transform: uppercase; }
+.logo-grad { color: var(--purple); -webkit-text-fill-color: var(--purple); }
 
 .nav-links { display: flex; flex-direction: column; gap: 2px; }
 .nav-link {
@@ -115,9 +120,10 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
   align-items: center;
   gap: 9px;
   padding: 8px 10px;
-  border-radius: 7px;
+  border-radius: 4px;
   text-decoration: none;
-  font-size: 13.5px;
+  font-size: 12.5px;
+  letter-spacing: .01em;
   color: var(--t2);
   transition: background .12s, color .12s;
   cursor: pointer;
@@ -225,21 +231,22 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
 .topbar-search input::placeholder { color: var(--t4); }
 .topbar-search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--t4); pointer-events: none; }
 .topbar-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 14px;
+  padding: 6px 14px;
   background: var(--t0);
-  color: #fff;
+  color: var(--bg);
   border: none;
-  border-radius: 7px;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: opacity .15s;
+  transition: background .15s;
 }
-.topbar-btn:hover { opacity: .85; }
+.topbar-btn:hover { background: var(--purple); }
 
 /* ── PAGE CONTENT ── */
 .page-content { padding: 28px 32px 48px; max-width: 1100px; width: 100%; }
@@ -277,24 +284,25 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
   margin-bottom: 24px;
 }
 .section-page-title {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -.03em;
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: -.02em;
   color: var(--t0);
 }
 .section-page-btn {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 600;
-  padding: 7px 16px;
+  padding: 6px 14px;
   background: var(--t0);
-  color: #fff;
+  color: var(--bg);
   border: none;
-  border-radius: 7px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: opacity .15s;
+  transition: background .15s;
 }
-.section-page-btn:hover { opacity: .85; }
+.section-page-btn:hover { background: var(--purple); }
 
 /* ── API KEY TABLE ── */
 .apikey-table {
@@ -406,7 +414,7 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
   left: 12px;
   width: 196px;
   background: var(--t0);
-  border-radius: 10px;
+  border-radius: 3px;
   overflow: hidden;
   z-index: 1000;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
@@ -450,7 +458,7 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
   gap: 20px;
   background: var(--bg);
   border: 1px solid var(--brd);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 18px 22px;
   margin-bottom: 28px;
 }
@@ -598,9 +606,9 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
 /* ── STATS ROW ── */
 .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
 .stat-card {
-  background: var(--bg);
+  background: var(--bg-0);
   border: 1px solid var(--brd);
-  border-radius: 9px;
+  border-radius: 0;
   padding: 16px 18px;
 }
 .stat-label { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); margin-bottom: 8px; }
@@ -612,7 +620,7 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
 .activity-card {
   background: var(--bg);
   border: 1px solid var(--brd);
-  border-radius: 10px;
+  border-radius: 2px;
   overflow: hidden;
   margin-bottom: 28px;
 }
@@ -626,10 +634,12 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
 }
 .filter-btn {
   padding: 4px 10px;
-  border-radius: 5px;
+  border-radius: 2px;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
+  letter-spacing: .06em;
+  text-transform: uppercase;
   cursor: pointer;
   transition: all .12s;
   border: 1px solid var(--brd);
@@ -714,7 +724,7 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
 .panel {
   background: var(--bg);
   border: 1px solid var(--brd);
-  border-radius: 10px;
+  border-radius: 2px;
   overflow: hidden;
 }
 .panel-header {
@@ -843,7 +853,7 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
 .modal {
   background: var(--bg);
   border: 1px solid var(--brd);
-  border-radius: 12px;
+  border-radius: 2px;
   width: 100%;
   max-width: 480px;
   padding: 28px;
@@ -991,8 +1001,8 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
   right: 24px;
   background: var(--t0);
   color: #fff;
-  padding: 11px 18px;
-  border-radius: 8px;
+  padding: 10px 16px;
+  border-radius: 2px;
   font-family: var(--mono);
   font-size: 12.5px;
   z-index: 500;
@@ -1028,18 +1038,16 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
   <nav class="leftnav" id="leftnav">
     <div class="leftnav-top">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
-        <a href="/" class="nav-logo" style="margin-bottom:0;">
-          <svg width="22" height="22" viewBox="0 0 80 80" fill="none">
-            <circle cx="40" cy="40" r="34" stroke="#c4bce8" stroke-width="1.4" stroke-dasharray="4 3"/>
-            <line x1="40" y1="13" x2="16" y2="55" stroke="#b0c8e8" stroke-width="1.8"/>
-            <line x1="40" y1="13" x2="64" y2="55" stroke="#b0c8e8" stroke-width="1.8"/>
-            <line x1="16" y1="55" x2="64" y2="55" stroke="#7edce8" stroke-width="1.8"/>
-            <circle cx="40" cy="13" r="6" fill="#6b4fbb"/>
-            <circle cx="16" cy="55" r="5" fill="#4ab8c8"/>
-            <circle cx="64" cy="55" r="5" fill="#3d6fd4"/>
-          </svg>
-          <span class="logo-name">Dark<span class="logo-grad">Matter</span></span>
-        </a>
+        <a href="/" class="nav-logo">
+        <svg viewBox="0 0 32 32" width="22" height="22" fill="none" style="flex-shrink:0">
+          <circle cx="16" cy="16" r="10" stroke="currentColor" stroke-opacity="0.35" stroke-width="0.8"/>
+          <path d="M 16 6 L 24.66 21 L 7.34 21 Z" stroke="currentColor" stroke-opacity="0.15" stroke-width="0.5" stroke-dasharray="1 1.5"/>
+          <circle cx="16" cy="6"    r="2.1" fill="var(--purple)"/>
+          <circle cx="24.66" cy="21" r="1.5" fill="currentColor" fill-opacity="0.7"/>
+          <circle cx="7.34"  cy="21" r="1.5" fill="currentColor" fill-opacity="0.55"/>
+        </svg>
+        <span class="logo-name">DARK<span class="logo-grad">MATTER</span></span>
+      </a>
         <button onclick="document.getElementById('leftnav').classList.toggle('collapsed')" title="Toggle sidebar" class="sidebar-toggle-btn" style="background:none;border:none;cursor:pointer;color:var(--t3);padding:4px;border-radius:5px;display:flex;align-items:center;flex-shrink:0;transition:color .12s,background .12s;" onmouseover="this.style.color='var(--t0)';this.style.background='var(--bg-0)'" onmouseout="this.style.color='var(--t3)';this.style.background='none'">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
         </button>
@@ -1514,6 +1522,10 @@ body { font-family: var(--sans); background:var(--bg); color: var(--t0); display
       <span class="drawer-meta-label">Committed</span>
       <span class="drawer-meta-value" id="drawer-time"></span>
     </div>
+    <div class="drawer-meta-item" id="drawer-completeness-row" style="display:none;">
+      <span class="drawer-meta-label">Coverage</span>
+      <span class="drawer-meta-value" id="drawer-completeness"></span>
+    </div>
   </div>
 
   <div class="drawer-section-label">Summary</div>
@@ -1750,6 +1762,22 @@ async function openDrawer(record) {
   document.getElementById('drawer-time').textContent      = record.time  || '—';
   document.getElementById('drawer-preview').textContent   = record.preview || '';
   document.getElementById('drawer-record-id').textContent = record.record || record.traceId || '—';
+
+  // Completeness coverage assertion
+  const ccRow = document.getElementById('drawer-completeness-row');
+  const ccVal = document.getElementById('drawer-completeness');
+  if (ccRow && ccVal) {
+    const cc = record.completeness_claim;
+    if (cc === true) {
+      ccRow.style.display = '';
+      ccVal.innerHTML = '<span class="cc-badge cc-complete">Complete</span> <span style="font-size:11px;color:var(--t3);font-family:var(--mono);">Agent asserted no steps omitted</span>';
+    } else if (cc === false) {
+      ccRow.style.display = '';
+      ccVal.innerHTML = '<span class="cc-badge cc-partial">Partial</span> <span style="font-size:11px;color:var(--t3);font-family:var(--mono);">Agent asserted partial record</span>';
+    } else {
+      ccRow.style.display = 'none';
+    }
+  }
 
   // Reset transcript
   const tc = document.getElementById('drawer-transcript-content');
@@ -2238,13 +2266,7 @@ let _activityRecords = [];
 
 const COMMIT_PAGE_SIZE = 10;
 let _commitPage   = 0;
-let _commitFilter = 'all';
 
-function setCommitFilter(f) {
-  _commitFilter = f;
-  _commitPage   = 0;
-  renderActivity(_activityAll);
-}
 let _activityAll = [];
 
 function renderActivity(data) {
@@ -2262,23 +2284,12 @@ function renderActivity(data) {
     return;
   }
 
-  // Apply completeness filter
-  const filtered = _commitFilter === 'complete'  ? data.filter(a => a.completeness_claim === true)
-                 : _commitFilter === 'partial'   ? data.filter(a => a.completeness_claim === false)
-                 : _commitFilter === 'no-claim'  ? data.filter(a => a.completeness_claim === null || a.completeness_claim === undefined)
-                 : data;
-
-  if (_commitFilter !== 'all' && !filtered.length) {
-    feed.innerHTML = `<div style="padding:40px 24px;text-align:center;color:var(--t3);font-size:13px;">No commits match this filter.</div>`;
-    return;
-  }
-
-  const total    = filtered.length;
+  const total    = data.length;
   const pages    = Math.ceil(total / COMMIT_PAGE_SIZE);
   _commitPage    = Math.min(_commitPage, pages - 1);
   const start    = _commitPage * COMMIT_PAGE_SIZE;
   const end      = Math.min(start + COMMIT_PAGE_SIZE, total);
-  const pageData = filtered.slice(start, end);
+  const pageData = data.slice(start, end);
   pageData.forEach((a, i) => { _activityIndex[start + i] = a; });
 
   const prevDis  = _commitPage === 0;
@@ -2292,19 +2303,12 @@ function renderActivity(data) {
         <button onclick="commitPageNext()" ${nextDis ? 'disabled' : ''} style="font-size:12.5px;color:${nextDis ? 'var(--t4)' : 'var(--t2)'};background:none;border:none;cursor:${nextDis ? 'default' : 'pointer'};padding:4px 8px;border-radius:5px;">Next &rsaquo;</button>
       </div>
     </div>
-    <div style="display:flex;gap:6px;margin:8px 20px 4px;flex-wrap:wrap;">
-      ${['all','complete','no-claim','partial'].map(f => {
-        const label = f === 'all' ? 'All' : f === 'complete' ? 'Complete' : f === 'no-claim' ? 'No claim' : 'Partial';
-        const active = (_commitFilter || 'all') === f;
-        return '<button onclick="setCommitFilter(\'' + f + '\')" style="font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;padding:3px 10px;border-radius:4px;cursor:pointer;transition:all .15s;border:1px solid ' + (active ? 'var(--accent)' : 'var(--brd)') + ';background:' + (active ? 'var(--accent)' : 'var(--bg)') + ';color:' + (active ? '#fff' : 'var(--t3)') + ';">' + label + '</button>';
-      }).join('')}
-    </div>
     <table class="apikey-table">
       <thead><tr>
         <th>Decision</th>
         <th>Agent</th>
         <th onclick="toggleUTC()" title="Click to toggle UTC / local time" style="cursor:pointer;user-select:none;white-space:nowrap;">Date created <span style="font-family:var(--mono);font-size:9px;font-weight:500;color:var(--t4);border:1px solid var(--brd);border-radius:3px;padding:1px 4px;margin-left:3px;">${_showUTC ? 'UTC' : 'local'}</span></th>
-        <th style="white-space:nowrap;font-weight:400;color:var(--t3);font-size:11px;">Completeness</th>
+
       </tr></thead>
       <tbody>
         ${pageData.map((a, i) => {
@@ -2312,11 +2316,6 @@ function renderActivity(data) {
           const modelType  = (a.provider === 'openai') ? 'gpt' : (a.provider === 'anthropic' || a.provider === 'claude') ? 'claude' : '';
           const modelLabel = (a.provider === 'openai') ? 'GPT-4o' : (a.provider === 'anthropic' || a.provider === 'claude') ? 'Claude' : '';
           const utc        = new Date(a.timestamp).toISOString();
-          const ccBadge    = a.completeness_claim === true
-            ? '<span class="cc-badge cc-complete">Complete</span>'
-            : a.completeness_claim === false
-            ? '<span class="cc-badge cc-partial">Partial</span>'
-            : '<span class="cc-badge cc-no-claim">No claim</span>';
           return `
           <tr data-idx="${idx}" data-utc="${utc}" onclick="openDrawerByIdx(this)" style="cursor:pointer;">
             <td class="td-name">
@@ -2325,7 +2324,6 @@ function renderActivity(data) {
             </td>
             <td class="td-email">${escHtml(a.agentName || '—')}</td>
             <td class="td-date">${localTimestamp(a.timestamp)}</td>
-            <td style="white-space:nowrap;">${ccBadge}</td>
           </tr>`;
         }).join('')}
       </tbody>
@@ -2353,8 +2351,9 @@ function openDrawerByIdx(el) {
     model:   modelType,
     time:    localTimestamp(a.timestamp),
     record:  a.id,
-    traceId: a.traceId,   // backend conversation ID — used for transcript fetch
+    traceId: a.traceId,
     preview: a.title,
+    completeness_claim: a.completeness_claim !== undefined ? a.completeness_claim : null,
   });
 }
 
@@ -2755,7 +2754,7 @@ function renderApiKeys(keys) {
         <th>Name</th>
         <th>Created by</th>
         <th onclick="toggleUTC()" title="Click to toggle UTC / local time" style="cursor:pointer;user-select:none;white-space:nowrap;">Date created <span style="font-family:var(--mono);font-size:9px;font-weight:500;color:var(--t4);border:1px solid var(--brd);border-radius:3px;padding:1px 4px;margin-left:3px;">${_showUTC ? 'UTC' : 'local'}</span></th>
-        <th style="white-space:nowrap;font-weight:400;color:var(--t3);font-size:11px;">Completeness</th>
+
       </tr></thead>
       <tbody>
         ${pageKeys.map((k, i) => `
