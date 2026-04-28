@@ -34,7 +34,11 @@ let _stripe = null;
 function getStripe() {
   if (!_stripe) {
     if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY not set');
-    _stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    try {
+      _stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    } catch(e) {
+      throw new Error('Stripe npm package not installed. Run: npm install stripe');
+    }
   }
   return _stripe;
 }
