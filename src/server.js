@@ -47,7 +47,7 @@ function getStripe() {
 const STRIPE_PRICES = {
   pro:        process.env.STRIPE_PRICE_PRO   || null,
   teams:      process.env.STRIPE_PRICE_TEAMS || null,
-  enterprise: process.env.STRIPE_PRICE_ENT   || null,
+  enterprise: process.env.STRIPE_PRICE_ENTERPRISE || null,
 };
 
 // Plan metadata map — single source of truth
@@ -62,7 +62,7 @@ function priceIdToPlan(priceId) {
   if (!priceId) return 'free';
   if (priceId === process.env.STRIPE_PRICE_PRO)   return 'pro';
   if (priceId === process.env.STRIPE_PRICE_TEAMS) return 'teams';
-  if (priceId === process.env.STRIPE_PRICE_ENT)   return 'enterprise';
+  if (priceId === process.env.STRIPE_PRICE_ENTERPRISE) return 'enterprise';
   return 'free';
 }
 
