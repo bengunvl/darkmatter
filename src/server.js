@@ -5418,20 +5418,6 @@ app.get('/chat', (req, res) => {
 });
 
 
-app.get('*', (req, res, next) => {
-  // API routes: pass through to registered handlers (or Express default 404)
-  if (req.path.startsWith('/api/') || req.path.startsWith('/proxy/')) {
-    return next();
-  }
-  // Serve the requested HTML file if it exists, else 404
-  let filePath = path.join(publicDir, req.path === '/' ? 'index.html' : req.path);
-  // If path has no extension, try .html
-  if (!path.extname(filePath)) filePath = filePath + '.html';
-  res.sendFile(filePath, err => {
-    if (err) res.status(404).send('Not found');
-  });
-});
-
 // ── GET /admin/stats — admin check + basic stats ──────────────────────────
 app.get('/admin/stats', requireAuth, async (req, res) => {
   try {
@@ -5472,6 +5458,21 @@ app.get('/admin/stats', requireAuth, async (req, res) => {
 // ── GET /admin — serve admin panel ────────────────────────────────────────
 app.get('/admin', requireAuth, (req, res) => {
   res.sendFile(require('path').join(__dirname, '../public/admin.html'));
+});
+
+
+app.get('*', (req, res, next) => {
+  // API routes: pass through to registered handlers (or Express default 404)
+  if (req.path.startsWith('/api/') || req.path.startsWith('/proxy/')) {
+    return next();
+  }
+  // Serve the requested HTML file if it exists, else 404
+  let filePath = path.join(publicDir, req.path === '/' ? 'index.html' : req.path);
+  // If path has no extension, try .html
+  if (!path.extname(filePath)) filePath = filePath + '.html';
+  res.sendFile(filePath, err => {
+    if (err) res.status(404).send('Not found');
+  });
 });
 
 // ── GET /api/debug/me — diagnostic for "no records" issue (admin only) ──────
