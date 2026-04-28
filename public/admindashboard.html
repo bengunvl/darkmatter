@@ -179,7 +179,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t0);display:flex;f
 <!-- Not admin -->
 <div id="not-admin">
   <h2>Access denied</h2>
-  <p>This page is restricted to admin accounts. <a href="/dashboard" style="color:var(--signal)">Go to dashboard</a></p>
+  <p id="not-admin-msg">This page is restricted to admin accounts. <a href="/dashboard" style="color:var(--signal)">Go to dashboard</a></p>
 </div>
 
 <!-- Layout -->
@@ -525,7 +525,8 @@ const session = getSession();
 if (!session) {
   document.getElementById('not-admin').style.display = 'block';
 } else {
-  document.getElementById('tb-email').textContent = session.user?.email || '';
+  const userEmail = session.user?.email || '';
+  document.getElementById('tb-email').textContent = userEmail;
   // Verify admin status then show layout
   fetch('/admin/stats', { headers: { 'Authorization': `Bearer ${session.access_token}` } })
     .then(r => r.json())
@@ -535,9 +536,14 @@ if (!session) {
         loadAll();
       } else {
         document.getElementById('not-admin').style.display = 'block';
+        const msg = document.getElementById('not-admin-msg');
+        if (msg) msg.innerHTML = `Not authorized as admin (signed in as <strong>${userEmail}</strong>). Contact support or check SUPERUSER_EMAIL on Railway. <a href="/dashboard" style="color:var(--signal)">Go to dashboard</a>`;
       }
     })
-    .catch(() => { document.getElementById('not-admin').style.display = 'block'; });
+    .catch(e => {
+      console.error('[admin] stats fetch failed:', e);
+      document.getElementById('not-admin').style.display = 'block';
+    });
 }
 
 function signOut() { localStorage.removeItem('dm_session'); location.href = '/login'; }

@@ -5436,7 +5436,14 @@ app.get('*', (req, res, next) => {
 app.get('/admin/stats', requireAuth, async (req, res) => {
   try {
     // Check if the authenticated user is an admin email
-    const adminEmails = (process.env.ADMIN_EMAILS || 'hello@darkmatterhub.ai').split(',').map(e => e.trim());
+    const superuser = process.env.SUPERUSER_EMAIL || '';
+    const adminList  = process.env.ADMIN_EMAILS    || '';
+    const adminEmails = [...new Set([
+      ...superuser.split(','),
+      ...adminList.split(','),
+      'hello@darkmatterhub.ai',
+      'hello@darkmatterhub.ai',
+    ].map(e => e.trim()).filter(Boolean))];
     if (!adminEmails.includes(req.user.email)) {
       return res.status(403).json({ error: 'Admin only' });
     }
