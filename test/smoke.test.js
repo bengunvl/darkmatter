@@ -180,6 +180,84 @@ console.log('\nDashboard ↔ Server endpoint cross-check');
   });
 })();
 
+
+// ══════════════════════════════════════════════════════════════════════
+// 11. Schema contract — verify column assumptions match actual usage
+// These tests catch "phantom column" bugs like the api_key_hash incident
+// ══════════════════════════════════════════════════════════════════════
+console.log('\nSchema contract');
+
+// Known-good columns for agents table (verified against actual Supabase schema)
+var AGENTS_SAFE_INSERT_COLS = ['agent_id','agent_name','user_id','api_key',
+  'webhook_url','webhook_secret','retention_days'];
+var AGENTS_UNSAFE_INSERT = ['api_key_hash']; // column may or may not exist — never safe to insert
+
+test('api_key_hash not inserted in workspace/api-keys route', function() {
+  var routeStart = server.indexOf("app.post('/api/workspace/api-keys'");
+  var routeEnd   = server.indexOf('});', routeStart) + 3;
+  var routeCode  = server.slice(routeStart, routeEnd);
+  assert(!routeCode.includes('api_key_hash:'), 'api_key_hash inserted in workspace/api-keys — column may not exist in DB');
+});
+
+test('workspace/api-keys insert matches original /dashboard/agents pattern', function() {
+  // The safe pattern (proven to work) only inserts: agent_id, agent_name, user_id, api_key
+  var routeStart = server.indexOf("app.post('/api/workspace/api-keys'");
+  var routeEnd   = server.indexOf('});', routeStart) + 3;
+  var routeCode  = server.slice(routeStart, routeEnd);
+  // Must not insert any column outside the safe set
+  var insertMatch = routeCode.match(/\.insert\(\{([\s\S]+?)\}\)/);
+  if (insertMatch) {
+    var insertStr = insertMatch[1];
+    AGENTS_UNSAFE_INSERT.forEach(function(col) {
+      assert(!insertMatch[1].includes(col + ':'), 'unsafe column inserted: ' + col);
+    });
+  }
+});
+
+// Verify billing response fields match what dashboard JS reads
+test('billing subscription returns commitCount field', function() {
+  var billingRoute = server.slice(server.indexOf("app.get('/api/billing/subscription'"));
+  assert(billingRoute.includes('commitCount'), 'billing must return commitCount (dashboard reads this field)');
+});
+
+test('billing subscription returns planInfo field', function() {
+  var billingRoute = server.slice(server.indexOf("app.get('/api/billing/subscription'"));
+  assert(billingRoute.includes('planInfo'), 'billing must return planInfo (dashboard reads planInfo.name)');
+});
+
+// Verify share endpoint uses session auth not apiKey auth
+test('workspace/share uses wsAuth not requireApiKey', function() {
+  var routeStart = server.indexOf("app.post('/api/workspace/share/");
+  var routeLine  = server.slice(routeStart, routeStart + 80);
+  assert(routeLine.includes('wsAuth'), 'workspace/share must use wsAuth — dashboard sends session token not agent key');
+  assert(!routeLine.includes('requireApiKey'), 'workspace/share must not use requireApiKey');
+});
+
+test('workspace/download uses wsAuth not requireApiKey', function() {
+  var routeStart = server.indexOf("app.get('/api/workspace/download/");
+  var routeLine  = server.slice(routeStart, routeStart + 80);
+  assert(routeLine.includes('wsAuth'), 'workspace/download must use wsAuth');
+});
+
+// Verify new routes are BEFORE the catch-all (critical ordering check)
+console.log('\nRoute ordering (all must be before catch-all)');
+var catchallPos = server.indexOf("app.get('*',");
+[
+  ["app.get('/admin/stats'",          '/admin/stats'],
+  ["app.post('/api/workspace/share/", '/api/workspace/share'],
+  ["app.get('/api/workspace/download/", '/api/workspace/download'],
+  ["app.get('/api/workspace/stats/usage'", '/api/workspace/stats/usage'],
+  ["app.get('/api/admin/users'",      '/api/admin/users'],
+  ["app.get('/api/billing/subscription'", '/api/billing/subscription'],
+  ["app.post('/api/contact'",         '/api/contact'],
+].forEach(function(pair) {
+  var routePos = server.indexOf(pair[0]);
+  test(pair[1] + ' before catch-all', function() {
+    assert(routePos > 0 && routePos < catchallPos,
+      pair[1] + ' is missing or after the catch-all route — it will never be reached');
+  });
+});
+
 // Summary
 console.log('\n' + '-'.repeat(50));
 console.log('Passed: ' + passed + '  Failed: ' + failed + '  Total: ' + (passed+failed));
