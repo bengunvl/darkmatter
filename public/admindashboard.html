@@ -120,7 +120,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t0);display:flex;f
 .btn.danger:hover{background:var(--red-bg);}
 
 /* ── System health grid ─────────────────────────────────────────────────────── */
-.health-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1px;background:var(--brd);border:1px solid var(--brd);margin-bottom:20px;}
+.health-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--brd);border:1px solid var(--brd);margin-bottom:20px;}
 .health-cell{background:var(--bg);padding:16px 18px;}
 .health-label{font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px;}
 .health-val{font-size:14px;font-weight:500;color:var(--t0);display:flex;align-items:center;gap:6px;}
@@ -402,7 +402,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t0);display:flex;f
       <div class="slbl">Services</div>
       <div class="health-grid" id="health-grid">
         <div class="health-cell"><div class="health-label">API server</div><div class="health-val"><span class="health-dot ok"></span>Railway · running</div></div>
-        <div class="health-cell"><div class="health-label">Database</div><div class="health-val"><span class="health-dot ok" id="hd-db"></span><span id="ht-db">Supabase · checking…</span></div></div>
+        <div class="health-cell"><div class="health-label">Database</div><div class="health-val"><span class="health-dot ok" id="hd-db"></span><span id="ht-db">Supabase · reachable</span></div></div>
         <div class="health-cell"><div class="health-label">Auth</div><div class="health-val"><span class="health-dot ok"></span>Supabase Auth</div></div>
         <div class="health-cell"><div class="health-label">Merkle log</div><div class="health-val"><span class="health-dot ok"></span>Append-only · active</div></div>
         <div class="health-cell"><div class="health-label">Checkpoint scheduler</div><div class="health-val"><span class="health-dot ok"></span>Running</div></div>
@@ -583,6 +583,7 @@ document.querySelectorAll('.sb-item[data-pane]').forEach(btn => {
       'p-commits': loadCommits,
       'p-keys':    loadKeys,
       'p-growth':  loadGrowth,
+      'p-system':  pingSystem,
     };
     if (loaders[btn.dataset.pane]) loaders[btn.dataset.pane]();
   });
@@ -865,6 +866,29 @@ function renderGrowth(d) {
       <span style="font-family:var(--mono);font-size:10px;color:var(--t3);width:28px;text-align:right;">${b.val}</span>
     </div>`;
   }).join('');
+}
+
+// ── System ping ──────────────────────────────────────────────────────────────
+async function pingSystem() {
+  const dbEl = document.getElementById('ht-db');
+  const dbDot = document.getElementById('hd-db');
+  if (!dbEl) return;
+  dbEl.textContent = 'Supabase · pinging…';
+  try {
+    const start = Date.now();
+    const d = await fetch('/api/me', { headers: authH() }).then(r => r.json());
+    const ms = Date.now() - start;
+    if (d && !d.error) {
+      dbEl.textContent = `Supabase · ${ms}ms`;
+      dbDot.className = 'health-dot ok';
+    } else {
+      dbEl.textContent = 'Supabase · error';
+      dbDot.className = 'health-dot err';
+    }
+  } catch {
+    dbEl.textContent = 'Supabase · unreachable';
+    if (dbDot) dbDot.className = 'health-dot err';
+  }
 }
 
 // ── Drawer ────────────────────────────────────────────────────────────────────
