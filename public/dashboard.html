@@ -1772,7 +1772,7 @@ async function openDrawer(record) {
   const modelLabel = record.model === 'gpt' ? 'GPT-4o' : record.model === 'claude' ? 'Claude' : '';
 
   // Populate fields
-  document.getElementById('drawer-title').textContent     = record.title || 'Commit record';
+  document.getElementById('drawer-title').textContent     = record.title || ('Commit · ' + (record.user || 'unknown agent'));
   document.getElementById('drawer-user').textContent      = record.user  || '—';
   document.getElementById('drawer-model').textContent     = modelLabel;
   document.getElementById('drawer-time').textContent      = record.time  || '—';
@@ -2043,21 +2043,23 @@ async function exportFromDrawer(e) {
   const btn = e?.target || event?.target;
   if (btn) { btn.textContent = 'Generating…'; btn.disabled = true; }
   const traceId = activeDrawerRecord?.traceId || activeDrawerRecord?.record;
-  if (traceId) {
-    try {
-      const shareUrl = await getShareUrl(traceId);
-      const downloadUrl = shareUrl + '&format=json';
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = 'darkmatter_proof_' + traceId.slice(-12) + '.json';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      if (btn) { btn.textContent = '✓ Downloaded'; }
-    } catch(err) {
-      showToast('Error: ' + err.message);
-      if (btn) { btn.textContent = 'Download proof (.json)'; btn.disabled = false; return; }
-    }
+  if (!traceId) { showToast('No record selected'); if (btn) { btn.textContent = 'Download proof (.json)'; btn.disabled = false; } return; }
+  try {
+    const res = await authFetch('/api/workspace/download/' + encodeURIComponent(traceId));
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Download failed');
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'darkmatter-proof-' + traceId.slice(-16) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    if (btn) { btn.textContent = '✓ Downloaded'; }
+  } catch(err) {
+    showToast('Error: ' + err.message);
+    if (btn) { btn.textContent = 'Download proof (.json)'; btn.disabled = false; return; }
   }
   if (btn) setTimeout(() => { btn.textContent = 'Download proof (.json)'; btn.disabled = false; }, 2200);
 }
@@ -2384,15 +2386,15 @@ function openDrawerByIdx(el) {
   if (!a) return;
   const modelType = (a.provider === 'openai') ? 'gpt' : (a.provider === 'anthropic' || a.provider === 'claude') ? 'claude' : '';
   openDrawer({
-    user:    a.agentName,
-    initials: getInitials(a.agentName),
-    color:   getAvatarColor(a.agentName),
-    title:   a.title,
+    user:    a.agentName || a.from_agent || '—',
+    initials: getInitials(a.agentName || a.from_agent || '?'),
+    color:   getAvatarColor(a.agentName || a.from_agent || ''),
+    title:   a.title || getRecordTitle(a),
     model:   modelType,
     time:    localTimestamp(a.timestamp),
     record:  a.id,
-    traceId: a.traceId,
-    preview: a.title,
+    traceId: a.traceId || a.id,
+    preview: a.title || getRecordTitle(a),
     completeness_claim: a.completeness_claim !== undefined ? a.completeness_claim : null,
   });
 }

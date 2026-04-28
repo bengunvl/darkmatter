@@ -2455,12 +2455,10 @@ app.post('/api/workspace/api-keys', wsAuth, async (req, res) => {
     const agentId = 'dm_' + crypto.randomBytes(12).toString('hex');
 
     const { data: agent, error } = await supabaseService.from('agents').insert({
-      agent_id:      agentId,
-      agent_name:    agentName,
-      user_id:       userId,
-      api_key:       rawKey,
-      api_key_hash:  keyHash,
-      created_at:    new Date().toISOString(),
+      agent_id:   agentId,
+      agent_name: agentName,
+      user_id:    userId,
+      api_key:    rawKey,
     }).select().single();
 
     if (error) throw error;
@@ -2533,7 +2531,30 @@ app.delete('/api/workspace/api-keys/:keyId', wsAuth, async (req, res) => {
 
 // ── Billing stubs — Stripe not yet implemented ────────────────────────────────
 app.get('/api/billing/subscription', wsAuth, async (req, res) => {
-  res.json({ plan: 'free', status: 'active', commits_this_month: 0, commit_limit: 10000, retention_days: 30 });
+  try {
+    // Count commits this month for this user's agents
+    const { data: agents } = await supabaseService
+      .from('agents').select('agent_id').eq('user_id', req.user.id);
+    const agentIds = (agents || []).map(a => a.agent_id);
+    let commitCount = 0;
+    if (agentIds.length) {
+      const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0,0,0,0);
+      const { count } = await supabaseService
+        .from('commits').select('id', { count: 'exact', head: true })
+        .gte('timestamp', startOfMonth.toISOString());
+      commitCount = count || 0;
+    }
+    res.json({
+      plan:        'free',
+      status:      'active',
+      planInfo:    { name: 'Free', price: null },
+      commitCount,
+      commitLimit: 500,   // Free plan: 500/month per pricing page
+      retention_days: 30,
+    });
+  } catch (err) {
+    res.json({ plan: 'free', status: 'active', planInfo: { name: 'Free', price: null }, commitCount: 0, commitLimit: 500 });
+  }
 });
 app.post('/api/billing/checkout', wsAuth, async (req, res) => {
   res.status(501).json({ error: 'Stripe billing not yet configured. Contact hello@darkmatterhub.ai to upgrade.' });
@@ -5412,10 +5433,7 @@ const publicDir = path.join(__dirname, '../public');
 app.use(express.static(publicDir));
 
 // SPA fallback — serve dashboard for unknown routes when user is likely logged in
-// ── GET /chat ── serve chat page (must be before SPA catch-all)
-app.get('/chat', (req, res) => {
-  res.sendFile(require('path').join(__dirname, '../public/chat.html'));
-});
+// /chat route removed — page no longer used
 
 
 // ── GET /admin/stats — admin check + basic stats ──────────────────────────
@@ -5643,6 +5661,61 @@ app.get('/api/admin/ping', requireAuth, async (req, res) => {
     res.json({ ok: true, db_ms: ms, commits: count || 0 });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── POST /api/workspace/share/:traceId — create share link (session auth) ───────
+app.post('/api/workspace/share/:traceId', wsAuth, async (req, res) => {
+  try {
+    const { traceId } = req.params;
+    const days = parseInt(req.body?.days || 30);
+    // Verify the commit belongs to a user the session has access to
+    const { data: commit } = await supabaseService
+      .from('commits')
+      .select('id, trace_id, from_agent')
+      .or(`id.eq.${traceId},trace_id.eq.${traceId}`)
+      .limit(1)
+      .single();
+    if (!commit) return res.status(404).json({ error: 'Commit not found' });
+    const shareId  = commit.id;
+    const shareUrl = (process.env.APP_URL || 'https://darkmatterhub.ai') + '/r/' + shareId;
+    res.json({ shareUrl, traceId: shareId, expiresIn: days + 'd' });
+  } catch (err) {
+    console.error('[workspace/share]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/workspace/share/:traceId/markdown ────────────────────────────────
+app.get('/api/workspace/share/:traceId/markdown', wsAuth, async (req, res) => {
+  const { traceId } = req.params;
+  const shareUrl = (process.env.APP_URL || 'https://darkmatterhub.ai') + '/r/' + traceId;
+  res.json({ markdown: `[View commit record](${shareUrl})` });
+});
+
+// ── GET /api/workspace/download/:traceId — proof bundle via session auth ─────────
+app.get('/api/workspace/download/:traceId', wsAuth, async (req, res) => {
+  try {
+    const { traceId } = req.params;
+    // Walk the chain for this traceId
+    const { data: commits } = await supabaseService
+      .from('commits')
+      .select('id, trace_id, from_agent, agent_info, payload, timestamp, integrity_hash, payload_hash, parent_hash, event_type, verified, assurance_level, completeness_claim')
+      .or(`id.eq.${traceId},trace_id.eq.${traceId}`)
+      .order('timestamp', { ascending: true });
+    if (!commits || !commits.length) return res.status(404).json({ error: 'Not found' });
+    const bundle = {
+      schema_version: '1.0',
+      exported_at:    new Date().toISOString(),
+      exporter:       'darkmatterhub.ai',
+      commits:        commits,
+      verify_url:     (process.env.APP_URL || 'https://darkmatterhub.ai') + '/r/' + traceId,
+    };
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="darkmatter-proof-${traceId.slice(0,16)}.json"`);
+    res.json(bundle);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

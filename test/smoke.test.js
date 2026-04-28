@@ -58,7 +58,9 @@ const ROUTES = [
   ['GET /api/billing/subscription', "app.get('/api/billing/subscription'"],
   ['GET /about',                    "app.get('/about'"],
   ['GET /api/workspace/stats/usage', "app.get('/api/workspace/stats/usage'"],
-  ['GET /api/admin/users',           "app.get('/api/admin/users'"],
+  ['GET /api/admin/users',            "app.get('/api/admin/users'"],
+  ['POST /api/workspace/share',       "app.post('/api/workspace/share/:traceId'"],
+  ['GET /api/workspace/download',     "app.get('/api/workspace/download/:traceId'"],
 ];
 ROUTES.forEach(function(r) { test(r[0], function() { assert(server.includes(r[1]), 'Missing: ' + r[1]); }); });
 
