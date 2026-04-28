@@ -1988,15 +1988,12 @@ async function loadBilling() {
 }
 
 async function upgradePlan(plan) {
-  // Stripe not yet wired — show contact message and open mailto
+  // Stripe not yet wired — show friendly message and open pre-filled mailto
   const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
   showToast('Billing coming soon. Email hello@darkmatterhub.ai to upgrade to ' + planName + '.');
   setTimeout(() => {
     window.location.href = 'mailto:hello@darkmatterhub.ai?subject=Upgrade to ' + planName + ' plan&body=Hi, I would like to upgrade my DarkMatter account to the ' + planName + ' plan.';
   }, 1200);
-  if (false) { // placeholder to match original try/catch structure
-  try {
-  }
 }
 
 async function openStripePortal() {
