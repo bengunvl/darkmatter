@@ -57,6 +57,7 @@ const ROUTES = [
   ['POST /api/contact',             "app.post('/api/contact'"],
   ['GET /api/billing/subscription', "app.get('/api/billing/subscription'"],
   ['GET /about',                    "app.get('/about'"],
+  ['GET /api/workspace/stats/usage', "app.get('/api/workspace/stats/usage'"],
 ];
 ROUTES.forEach(function(r) { test(r[0], function() { assert(server.includes(r[1]), 'Missing: ' + r[1]); }); });
 

@@ -5461,6 +5461,109 @@ app.get('/admin', requireAuth, (req, res) => {
 });
 
 
+// ── GET /api/workspace/stats/usage — admin KPI endpoint ──────────────────────
+app.get('/api/workspace/stats/usage', requireAuth, async (req, res) => {
+  try {
+    // Admin only — same check as /admin/stats
+    const superuser  = process.env.SUPERUSER_EMAIL || '';
+    const adminList  = process.env.ADMIN_EMAILS    || '';
+    const adminEmails = [...new Set([
+      ...superuser.split(','),
+      ...adminList.split(','),
+      'hello@darkmatterhub.ai',
+      'hello@darkmatterhub.ai',
+    ].map(e => e.trim()).filter(Boolean))];
+    if (!adminEmails.includes(req.user.email)) {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+
+    const now    = new Date();
+    const ago7d  = new Date(now - 7  * 86400000).toISOString();
+    const ago30d = new Date(now - 30 * 86400000).toISOString();
+
+    // Total commits + unique agents
+    const { count: totalCommits } = await supabaseService
+      .from('commits').select('id', { count: 'exact', head: true });
+
+    const { data: agentRows } = await supabaseService
+      .from('commits').select('from_agent').not('from_agent', 'is', null);
+    const uniqueAgents = new Set((agentRows || []).map(r => r.from_agent)).size;
+
+    // Active agents 7d / 30d
+    const { data: active7d } = await supabaseService
+      .from('commits').select('from_agent').gte('timestamp', ago7d).not('from_agent', 'is', null);
+    const active7dCount  = new Set((active7d  || []).map(r => r.from_agent)).size;
+
+    const { data: active30d } = await supabaseService
+      .from('commits').select('from_agent').gte('timestamp', ago30d).not('from_agent', 'is', null);
+    const active30dCount = new Set((active30d || []).map(r => r.from_agent)).size;
+
+    // L3 usage
+    const { count: l3Count } = await supabaseService
+      .from('commits').select('id', { count: 'exact', head: true }).eq('assurance_level', 'L3');
+    const l3Count7d_res = await supabaseService
+      .from('commits').select('id', { count: 'exact', head: true })
+      .eq('assurance_level', 'L3').gte('timestamp', ago7d);
+    const l3Count7d = l3Count7d_res.count || 0;
+    const l3Pct = totalCommits > 0 ? Math.round((l3Count || 0) / totalCommits * 100) : 0;
+
+    // Wrapper usage (from metadata.wrapper or agent_info)
+    const { data: wrapperRows } = await supabaseService
+      .from('commits').select('agent_info').not('agent_info', 'is', null).limit(5000);
+    let anthropic = 0, openai = 0, manual = 0;
+    (wrapperRows || []).forEach(r => {
+      const wrapper = r.agent_info?.wrapper || r.agent_info?.metadata?.wrapper || '';
+      if (wrapper === 'anthropic') anthropic++;
+      else if (wrapper === 'openai') openai++;
+      else manual++;
+    });
+
+    // New agents in last 7d
+    const { data: allAgents } = await supabaseService
+      .from('agents').select('agent_id, created_at');
+    const newAgents7d = (allAgents || []).filter(a => a.created_at >= ago7d).length;
+
+    // Commits per agent p50/p90
+    const agentCommitCounts = {};
+    (agentRows || []).forEach(r => {
+      if (r.from_agent) agentCommitCounts[r.from_agent] = (agentCommitCounts[r.from_agent] || 0) + 1;
+    });
+    const counts = Object.values(agentCommitCounts).sort((a,b) => a - b);
+    const p50 = counts.length ? counts[Math.floor(counts.length * 0.5)] : 0;
+    const p90 = counts.length ? counts[Math.floor(counts.length * 0.9)] : 0;
+
+    // First / last commit
+    const { data: firstRow } = await supabaseService.from('commits')
+      .select('timestamp').order('timestamp', { ascending: true }).limit(1).single();
+    const { data: lastRow } = await supabaseService.from('commits')
+      .select('timestamp').order('timestamp', { ascending: false }).limit(1).single();
+
+    res.json({
+      total_commits: totalCommits || 0,
+      unique_agents: uniqueAgents,
+      active_agents: { last_7d: active7dCount, last_30d: active30dCount },
+      l3_usage: {
+        count:   l3Count  || 0,
+        percent: l3Pct,
+        last_7d: l3Count7d,
+      },
+      wrapper_usage: { anthropic, openai, manual },
+      commits_per_agent: {
+        p50, p90,
+        total_agents_with_commits: counts.length,
+      },
+      momentum: {
+        new_agents_7d:    newAgents7d,
+        first_commit_at:  firstRow?.timestamp || null,
+        last_commit_at:   lastRow?.timestamp  || null,
+      },
+    });
+  } catch (err) {
+    console.error('[stats/usage]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('*', (req, res, next) => {
   // API routes: pass through to registered handlers (or Express default 404)
   if (req.path.startsWith('/api/') || req.path.startsWith('/proxy/')) {

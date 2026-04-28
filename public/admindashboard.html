@@ -19,7 +19,7 @@
   --blue:hsl(215 80% 50%); --blue-bg:hsl(215 80% 50% / 0.07);
   --mono:'JetBrains Mono',ui-monospace,monospace;
   --sans:'Inter',system-ui,sans-serif;
-  --topbar-h:52px; --sidebar-w:220px; --sidebar-mini:52px;
+  --topbar-h:52px; --sidebar-w:228px; --sidebar-mini:52px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:var(--sans);background:var(--bg);color:var(--t0);display:flex;flex-direction:column;min-height:100vh;-webkit-font-smoothing:antialiased;}
@@ -47,7 +47,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t0);display:flex;f
 .sidebar::-webkit-scrollbar-thumb{background:var(--brd);}
 .sb-group{padding:12px 0;border-bottom:1px solid var(--brd);}
 .sb-group:last-child{border-bottom:none;}
-.sb-label{font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--t4);padding:0 14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;}
+.sb-label{font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--t4);padding:4px 14px 2px;margin-bottom:2px;white-space:nowrap;overflow:hidden;}
 .sidebar.collapsed .sb-label{opacity:0;pointer-events:none;}
 .sb-item{display:flex;align-items:center;gap:8px;padding:5px 14px;font-size:12px;color:var(--t2);cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:all .1s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:2px solid transparent;}
 .sb-item:hover{background:var(--bg-0);color:var(--t0);}
@@ -262,7 +262,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t0);display:flex;f
       </div>
 
       <div class="slbl">Volume</div>
-      <div class="kgrid" id="kg-volume">
+      <div class="kgrid" style="grid-template-columns:repeat(auto-fill,minmax(155px,1fr));" id="kg-volume">
         <div class="kcard"><div class="klbl">Total commits</div><div class="kval" id="k-total">—</div></div>
         <div class="kcard"><div class="klbl">Unique agents</div><div class="kval" id="k-agents">—</div></div>
         <div class="kcard"><div class="klbl">Active 7d</div><div class="kval" id="k-a7">—</div></div>
@@ -272,7 +272,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t0);display:flex;f
       </div>
 
       <div class="slbl">Platform</div>
-      <div class="kgrid">
+      <div class="kgrid" style="grid-template-columns:repeat(4,1fr);">
         <div class="kcard"><div class="klbl">Total users</div><div class="kval" id="k-users">—</div></div>
         <div class="kcard"><div class="klbl">Total orgs</div><div class="kval" id="k-orgs">—</div></div>
         <div class="kcard"><div class="klbl">Registered keys (L3)</div><div class="kval" id="k-keys">—</div></div>
@@ -630,9 +630,20 @@ async function loadAll() {
 
 function renderDashStats(d) {
   if (!d) return;
-  document.getElementById('k-users').textContent = fmt(d.users);
-  document.getElementById('k-agents').textContent = fmt(d.agents);
-  document.getElementById('k-total').textContent = fmt(d.commits);
+  if (d.users  != null) document.getElementById('k-users').textContent  = fmt(d.users);
+  if (d.agents != null) document.getElementById('k-agents').textContent = fmt(d.agents);
+  if (d.commits!= null) document.getElementById('k-total').textContent  = fmt(d.commits);
+  // Load org count separately
+  fetch('/api/workspace/members', { headers: authH() })
+    .then(r => r.ok ? r.json() : {}).then(d => {
+      const orgs = d?.members ? new Set(d.members.map(m => m.workspace_id).filter(Boolean)).size : '—';
+      document.getElementById('k-orgs').textContent = orgs || '—';
+    }).catch(() => {});
+  // Load L3 key count
+  fetch('/api/agents/keys', { headers: authH() })
+    .then(r => r.ok ? r.json() : {}).then(d => {
+      document.getElementById('k-keys').textContent = fmt((d?.keys || []).filter(k => !k.revoked).length) || '—';
+    }).catch(() => {});
 }
 
 function renderUsageKPIs(d) {
