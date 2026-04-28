@@ -227,6 +227,8 @@ footer .top{max-width:80rem;margin:0 auto;padding:3.5rem 1.5rem;display:grid;gri
     <span class="docs-sb-label">Framework integrations</span>
     <a class="docs-sb-link" href="#langgraph">LangGraph</a>
     <a class="docs-sb-link" href="#langchain">LangChain</a>
+    <a class="docs-sb-link" href="#jupyter-quickstart">Jupyter / Colab</a>
+    <a class="docs-sb-link" href="#otel">OpenTelemetry</a>
     <a class="docs-sb-link" href="#crewai">CrewAI <span class="soon">manual</span></a>
     <a class="docs-sb-link" href="#local-models">Local models</a>
     <a class="docs-sb-link" href="#aws-bedrock">AWS Bedrock <span class="soon">manual</span></a>
@@ -652,6 +654,7 @@ curl -X POST https://darkmatterhub.ai/enterprise/commit   -H "Authorization: Bea
     <tr><td><code>agent.model</code></td><td>string</td><td><span class="badge-opt">optional</span></td><td>Model name</td></tr>
   </tbody>
 </table>
+<div class="callout info" style="margin-top:1rem"><span class="callout-title">Response includes</span>The commit response now includes <code>assurance_level</code> (<code>L1</code>, <code>L2</code>, or <code>L3</code>), <code>completeness_claim</code>, and <code>verify_url</code> &#8212; the shareable link to the <code>/r/</code> page.</div>
 
 <h2 id="api-pull">GET /api/pull</h2>
 <div class="endpoint"><div class="endpoint-title"><span class="badge-get">GET</span> https://darkmatterhub.ai/api/pull</div></div>
