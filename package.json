@@ -1,6 +1,6 @@
 {
   "name": "darkmatter",
-  "version": "0.2.0",
+  "version": "2.1.0",
   "description": "Git for AI agents — signed context handoffs, API key auth, agent management",
   "main": "src/server.js",
   "scripts": {
