@@ -1966,7 +1966,7 @@ async function loadBilling() {
     const upgradeEl = document.getElementById('billing-upgrade-btn');
     if (upgradeEl) {
       if (data.plan === 'free') {
-        upgradeEl.innerHTML = `<button onclick="switchBillingTab(document.querySelector('.billing-tab:last-child'),'pricing')" style="padding:8px 18px;background:var(--purple);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;">Upgrade plan →</button>`;
+        upgradeEl.innerHTML = `<button onclick="upgradePlan('pro')" style="padding:8px 18px;background:var(--purple);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;">Upgrade plan →</button>`;
       } else if (data.cancelAtPeriodEnd) {
         upgradeEl.innerHTML = `<div style="font-size:12px;color:var(--red);">Cancels at end of period.</div><button onclick="openStripePortal()" style="margin-top:8px;padding:7px 14px;background:var(--bg-0);border:1px solid var(--brd);border-radius:7px;font-size:12.5px;cursor:pointer;">Reactivate</button>`;
       } else {
@@ -1988,23 +1988,37 @@ async function loadBilling() {
 }
 
 async function upgradePlan(plan) {
-  // Stripe not yet wired — show friendly message and open pre-filled mailto
-  const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
-  showToast('Billing coming soon. Email hello@darkmatterhub.ai to upgrade to ' + planName + '.');
-  setTimeout(() => {
-    window.location.href = 'mailto:hello@darkmatterhub.ai?subject=Upgrade to ' + planName + ' plan&body=Hi, I would like to upgrade my DarkMatter account to the ' + planName + ' plan.';
-  }, 1200);
+  const btn = event?.target;
+  const orig = btn?.textContent;
+  if (btn) { btn.textContent = 'Redirecting…'; btn.disabled = true; }
+  try {
+    const res = await authFetch('/api/billing/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || 'Could not start checkout');
+      if (btn) { btn.textContent = orig; btn.disabled = false; }
+      return;
+    }
+    if (data.url) window.location.href = data.url;
+  } catch(e) {
+    showToast('Error: ' + e.message);
+    if (btn) { btn.textContent = orig; btn.disabled = false; }
+  }
 }
 
 async function openStripePortal() {
   try {
     const res = await authFetch('/api/billing/portal', { method: 'POST' });
+    const data = await res.json();
     if (!res.ok) {
-      showToast('Could not open billing portal. Contact support@darkmatterhub.ai');
+      showToast(data.error || 'Could not open billing portal.');
       return;
     }
-    const data = await res.json();
-    if (data.url) window.open(data.url, '_blank');
+    if (data.url) window.location.href = data.url;
   } catch(e) {
     showToast('Error: ' + e.message);
   }

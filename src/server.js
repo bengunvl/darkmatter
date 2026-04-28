@@ -29,6 +29,25 @@ const {
 
 const app = express();
 
+// ── Stripe client (lazy init so server starts even if key missing) ────────────
+let _stripe = null;
+function getStripe() {
+  if (!_stripe) {
+    if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY not set');
+    _stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  }
+  return _stripe;
+}
+
+// Plan → Stripe price ID mapping
+const STRIPE_PRICES = {
+  pro:        process.env.STRIPE_PRICE_PRO   || null,
+  teams:      process.env.STRIPE_PRICE_TEAMS || null,
+  enterprise: process.env.STRIPE_PRICE_ENT   || null,
+};
+
+
+
 // ── Trust proxy — required for Railway/Heroku/etc behind reverse proxy ────────
 // Without this, express-rate-limit cannot identify users correctly
 app.set('trust proxy', 1);
@@ -2532,37 +2551,147 @@ app.delete('/api/workspace/api-keys/:keyId', wsAuth, async (req, res) => {
 // ── Billing stubs — Stripe not yet implemented ────────────────────────────────
 app.get('/api/billing/subscription', wsAuth, async (req, res) => {
   try {
-    // Count commits this month for this user's agents
+    const email  = req.user.email;
+    const userId = req.user.id;
+
+    // Admin accounts — show as internal/unlimited
+    const adminEmails = [
+      ...(process.env.SUPERUSER_EMAIL || '').split(','),
+      ...(process.env.ADMIN_EMAILS    || '').split(','),
+      'hello@darkmatterhub.ai', 'hello@darkmatterhub.ai',
+    ].map(e => e.trim()).filter(Boolean);
+    if (adminEmails.includes(email)) {
+      return res.json({
+        plan: 'enterprise', status: 'active',
+        planInfo: { name: 'Internal', price: null },
+        commitCount: null, commitLimit: null,
+      });
+    }
+
+    // Count commits this month
     const { data: agents } = await supabaseService
-      .from('agents').select('agent_id').eq('user_id', req.user.id);
+      .from('agents').select('agent_id').eq('user_id', userId);
     const agentIds = (agents || []).map(a => a.agent_id);
     let commitCount = 0;
     if (agentIds.length) {
       const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0,0,0,0);
-      // Filter by this user's agents AND this month
       const { count } = await supabaseService
         .from('commits').select('id', { count: 'exact', head: true })
         .in('from_agent', agentIds)
         .gte('timestamp', startOfMonth.toISOString());
       commitCount = count || 0;
     }
+
+    // Look up Stripe subscription if Stripe is configured
+    if (process.env.STRIPE_SECRET_KEY) {
+      try {
+        const stripe = getStripe();
+        // Find customer by email
+        const customers = await stripe.customers.list({ email, limit: 1 });
+        if (customers.data.length) {
+          const customer = customers.data[0];
+          const subs = await stripe.subscriptions.list({
+            customer: customer.id, status: 'all', limit: 1,
+            expand: ['data.items.data.price']
+          });
+          if (subs.data.length) {
+            const sub  = subs.data[0];
+            const price = sub.items.data[0]?.price;
+            // Map price ID to plan name
+            let planName = 'Free', commitLimit = 500, retentionDays = 30;
+            if (price?.id === process.env.STRIPE_PRICE_PRO) {
+              planName = 'Pro'; commitLimit = 2000; retentionDays = 90;
+            } else if (price?.id === process.env.STRIPE_PRICE_TEAMS) {
+              planName = 'Teams'; commitLimit = 10000; retentionDays = null;
+            } else if (price?.id === (process.env.STRIPE_PRICE_ENT || '')) {
+              planName = 'Enterprise'; commitLimit = null; retentionDays = null;
+            }
+            return res.json({
+              plan:              planName.toLowerCase(),
+              status:            sub.status,
+              planInfo:          { name: planName, price: price?.unit_amount ? price.unit_amount / 100 : null },
+              commitCount,
+              commitLimit,
+              retention_days:    retentionDays,
+              currentPeriodEnd:  new Date(sub.current_period_end * 1000).toISOString(),
+              cancelAtPeriodEnd: sub.cancel_at_period_end,
+              stripeCustomerId:  customer.id,
+              stripeSubId:       sub.id,
+            });
+          }
+        }
+      } catch (stripeErr) {
+        console.warn('[billing/subscription] Stripe lookup failed:', stripeErr.message);
+      }
+    }
+
+    // No Stripe subscription found — free plan
     res.json({
-      plan:        'free',
-      status:      'active',
-      planInfo:    { name: 'Free', price: null },
-      commitCount,
-      commitLimit: 500,   // Free plan: 500/month per pricing page
-      retention_days: 30,
+      plan: 'free', status: 'active',
+      planInfo: { name: 'Free', price: null },
+      commitCount, commitLimit: 500, retention_days: 30,
     });
   } catch (err) {
+    console.error('[billing/subscription]', err.message);
     res.json({ plan: 'free', status: 'active', planInfo: { name: 'Free', price: null }, commitCount: 0, commitLimit: 500 });
   }
 });
 app.post('/api/billing/checkout', wsAuth, async (req, res) => {
-  res.status(501).json({ error: 'Stripe billing not yet configured. Contact hello@darkmatterhub.ai to upgrade.' });
+  try {
+    const { plan = 'pro' } = req.body || {};
+    const priceId = STRIPE_PRICES[plan];
+    if (!priceId) {
+      return res.status(400).json({ error: 'Unknown plan or price not configured. Set STRIPE_PRICE_' + plan.toUpperCase() + ' on Railway.' });
+    }
+    const stripe   = getStripe();
+    const email    = req.user.email;
+    const appUrl   = process.env.APP_URL || 'https://darkmatterhub.ai';
+
+    // Find or create Stripe customer
+    let customerId;
+    const existing = await stripe.customers.list({ email, limit: 1 });
+    if (existing.data.length) {
+      customerId = existing.data[0].id;
+    } else {
+      const customer = await stripe.customers.create({ email, metadata: { user_id: req.user.id } });
+      customerId = customer.id;
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      customer:   customerId,
+      mode:       'subscription',
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: appUrl + '/dashboard?billing=success&session_id={CHECKOUT_SESSION_ID}',
+      cancel_url:  appUrl + '/dashboard?billing=cancelled',
+      allow_promotion_codes: true,
+      subscription_data: {
+        metadata: { user_id: req.user.id, plan },
+      },
+    });
+    res.json({ url: session.url, sessionId: session.id });
+  } catch (err) {
+    console.error('[billing/checkout]', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 app.post('/api/billing/portal', wsAuth, async (req, res) => {
-  res.status(501).json({ error: 'Stripe portal not yet configured. Contact hello@darkmatterhub.ai.' });
+  try {
+    const stripe  = getStripe();
+    const email   = req.user.email;
+    const appUrl  = process.env.APP_URL || 'https://darkmatterhub.ai';
+    const customers = await stripe.customers.list({ email, limit: 1 });
+    if (!customers.data.length) {
+      return res.status(404).json({ error: 'No billing account found. Upgrade to a paid plan first.' });
+    }
+    const session = await stripe.billingPortal.sessions.create({
+      customer:   customers.data[0].id,
+      return_url: appUrl + '/dashboard?billing=portal_return',
+    });
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error('[billing/portal]', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── POST /api/contact — footer contact modal ─────────────────────────────────
@@ -5719,6 +5848,34 @@ app.get('/api/workspace/download/:traceId', wsAuth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── POST /api/billing/webhook — Stripe webhook ────────────────────────────────
+app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig    = req.headers['stripe-signature'];
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!secret) return res.status(400).json({ error: 'Webhook secret not configured' });
+  let event;
+  try {
+    event = getStripe().webhooks.constructEvent(req.body, sig, secret);
+  } catch (err) {
+    console.error('[webhook] signature verify failed:', err.message);
+    return res.status(400).json({ error: 'Webhook signature invalid' });
+  }
+  console.log('[webhook]', event.type, event.id);
+  // Handle subscription lifecycle events
+  switch (event.type) {
+    case 'checkout.session.completed':
+    case 'customer.subscription.created':
+    case 'customer.subscription.updated':
+    case 'customer.subscription.deleted':
+      // Log for now — future: update user plan in DB
+      console.log('[webhook] subscription event:', event.type, JSON.stringify(event.data.object?.status));
+      break;
+    default:
+      break;
+  }
+  res.json({ received: true });
 });
 
 app.get('*', (req, res, next) => {
