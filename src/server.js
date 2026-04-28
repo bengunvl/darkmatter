@@ -4225,7 +4225,7 @@ app.get('/r/:traceId', async (req, res) => {
       + '<meta name="viewport" content="width=device-width,initial-scale=1"/>\n'
       + '<title>' + escH(title) + ' \u2014 DarkMatter</title>\n'
       + '<link rel="preconnect" href="https://fonts.googleapis.com"/>\n'
-      + '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>\n'
+      + '<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>\n'
       + '<style>\n'
       + '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}\n'
       + ':root{--ink:#0a0e1a;--ink2:#2d3552;--ink3:#5a6480;--ink4:#9199b0;--bg:#f4f6fb;--bg2:#eceef5;--border:#e5e7eb;--border2:#dde1ed;--blue:#3b82f6;--green:#10b981;--mono:"IBM Plex Mono","Courier New",monospace;--sans:"IBM Plex Sans",sans-serif;--grad:linear-gradient(90deg,#7C3AED,#2563EB,#0891b2);}\n'
@@ -4298,16 +4298,7 @@ app.get('/r/:traceId', async (req, res) => {
       + '.page-footer{text-align:center;padding:24px 0;font-size:12px;color:var(--ink4);}\n'
       + '.page-footer a{color:var(--ink3);text-decoration:none;}\n'
       + '</style>\n</head>\n<body>\n'
-      + '<nav class="nav">\n'
-      + '  <a href="/" style="display:flex;align-items:center;gap:8px;text-decoration:none;">\n'
-      + '    <svg style="width:24px;height:24px;" viewBox="0 0 40 40" fill="none"><defs><linearGradient id="dlg-r" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7C3AED"/><stop offset="55%" stop-color="#2563EB"/><stop offset="100%" stop-color="#0891b2"/></linearGradient></defs><circle cx="20" cy="20" r="17" stroke="#e5e7eb" stroke-width="0.8" stroke-dasharray="2 3"/><circle cx="20" cy="5" r="3.2" fill="#7C3AED" opacity="0.95"/><circle cx="33" cy="28" r="2.6" fill="#2563EB" opacity="0.95"/><circle cx="7" cy="28" r="2.2" fill="#22D3EE" opacity="0.9"/><line x1="20" y1="8" x2="31" y2="26" stroke="url(#dlg-r)" stroke-width="0.6" opacity="0.5"/><line x1="20" y1="8" x2="9" y2="26" stroke="#7C3AED" stroke-width="0.6" opacity="0.4"/><line x1="30" y1="27" x2="10" y2="27" stroke="#22D3EE" stroke-width="0.6" opacity="0.4"/><circle cx="20" cy="20" r="2.5" fill="url(#dlg-r)" opacity="0.6"/></svg>\n'
-      + '    <span class="nav-name">Dark<span class="nav-grad">Matter</span></span>\n'
-      + '  </a>\n'
-      + '  <div class="nav-right">\n'
-      + '    <a href="/docs" class="nav-link">Docs</a>\n'
-      + '    <a href="/login" class="nav-link">Sign in</a>\n'
-      + '    <a href="/signup" class="nav-cta">Start free</a>\n'
-      + '  </div>\n</nav>\n'
+      + '<nav class="nav" style="height:56px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:100;">\n  <a href="/" style="display:flex;align-items:center;gap:8px;text-decoration:none;">\n    <svg viewBox="0 0 32 32" width="28" height="28" fill="none"><circle cx="16" cy="16" r="10" stroke="#0a0e1a" stroke-opacity="0.45" stroke-width="0.8"/><path d="M 16 6 L 24.66 21 L 7.34 21 Z" stroke="#0a0e1a" stroke-opacity="0.18" stroke-width="0.5" stroke-dasharray="1 1.5"/><circle cx="16" cy="16" r="0.8" fill="#0a0e1a" fill-opacity="0.55"/><circle cx="16" cy="6" r="2.1" fill="hsl(152,64%,34%)"/><circle cx="16" cy="6" r="3.4" stroke="hsl(152,64%,34%)" stroke-opacity="0.3" stroke-width="0.45"/><circle cx="24.66" cy="21" r="1.5" fill="#0a0e1a"/><circle cx="7.34" cy="21" r="1.5" fill="#0a0e1a" fill-opacity="0.85"/></svg>\n    <span style="font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#0a0e1a;">DARK<span style="font-weight:300;color:#888;">MATTER</span></span>\n  </a>\n  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">\n    <a href="/docs" style="font-size:12px;color:#5a6480;text-decoration:none;padding:4px 8px;">Docs</a>\n    <a href="/login" style="font-size:12px;color:#5a6480;text-decoration:none;padding:4px 8px;">Sign in</a>\n    <a href="/signup" style="font-family:var(--mono);font-size:11px;font-weight:700;background:#0a0e1a;color:#fff;padding:6px 16px;text-decoration:none;">Try it free</a>\n  </div>\n</nav>\n'
       + '<div class="page">\n'
       + '<div class="first-screen">\n'
       + '  <div class="fs-title">' + escH(title) + '</div>\n'
@@ -4375,7 +4366,7 @@ app.get('/r/:traceId', async (req, res) => {
       + '<a href="/integrity#spec" class="ab-btn">Integrity Spec \u2192</a>'
       + '</div></div></div>\n'
       + '<div class="view" id="view-json"><div class="json-area"><pre id="json-pre">Loading...</pre></div></div>\n'
-      + '<div class="page-footer">Recorded and verified by <a href="/">DarkMatter</a> \u00b7 <a href="/integrity">Integrity Spec</a></div>\n'
+      + '<div style="border-top:1px solid #e5e7eb;margin-top:40px;padding:24px 0;text-align:center;font-size:11px;color:#9199b0;">Recorded and verified by <a href="/" style="color:#5a6480;text-decoration:none;">DarkMatter</a> &middot; <a href="/pricing" style="color:#5a6480;text-decoration:none;">Pricing</a> &middot; <a href="/integrity" style="color:#5a6480;text-decoration:none;">Integrity Spec</a> &middot; <a href="/signup" style="color:#5a6480;text-decoration:none;">Start free</a></div>\n'
       + '</div>\n'
       + '<script>\n'
       + 'var jsonLoaded=false;\n'
@@ -4440,7 +4431,7 @@ app.get('/verify/:commitId', async (req, res) => {
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Decision record — DarkMatter</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{--ink:#0a0e1a;--ink2:#2d3552;--ink3:#5a6480;--ink4:#9199b0;--bg:#f4f6fb;--border:#e5e7eb;--border2:#dde1ed;--blue:#3b82f6;--green:#10b981;--mono:"IBM Plex Mono","Courier New",monospace;--sans:"IBM Plex Sans",sans-serif;--grad:linear-gradient(90deg,#7C3AED,#2563EB,#0891b2);}
