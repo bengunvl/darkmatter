@@ -1916,11 +1916,20 @@ let _billingLoaded = false;
 
 async function loadBilling() {
   if (_billingLoaded) return;
+  _billingLoaded = true; // set early so failed loads don't loop
   try {
     const res  = await authFetch('/api/billing/subscription');
-    if (!res.ok) return;
+    if (!res.ok) {
+      // Auth or server error — show safe defaults instead of stuck "Loading…"
+      const planEl  = document.getElementById('billing-plan-name');
+      const usageEl = document.getElementById('billing-usage-text');
+      const upgradeEl = document.getElementById('billing-upgrade-btn');
+      if (planEl)  planEl.textContent = 'Free';
+      if (usageEl) usageEl.textContent = '— commits this month';
+      if (upgradeEl) upgradeEl.innerHTML = '<button onclick="switchBillingTab(document.querySelector(\'.billing-tab:last-child\'),\'pricing\')" style="padding:8px 18px;background:var(--purple);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;">Upgrade plan \u2192</button>';
+      return;
+    }
     const data = await res.json();
-    _billingLoaded = true;
 
     // Plan name & price
     const planEl = document.getElementById('billing-plan-name');
