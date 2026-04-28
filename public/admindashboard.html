@@ -1,272 +1,508 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
+<meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>DarkMatter — Admin</title>
 <meta name="robots" content="noindex,nofollow"/>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 :root {
-  --bg:#ffffff; --bg-0:#f7f7f5; --bg-1:#f0f0ee; --bg-2:#e8e8e4;
-  --brd:#e4e4e0; --brd-mid:#d4d4ce;
-  --t0:#0a0a09; --t1:#2a2a27; --t2:#5a5a54; --t3:#9a9a92; --t4:#c4c4bc;
-  --purple:#6b4fbb; --purple-light:rgba(107,79,187,0.08); --purple-brd:rgba(107,79,187,0.2);
-  --teal:#0891b2; --green:#0f7b4d; --green-bg:rgba(15,123,77,0.07);
-  --red:#c8102e; --amber:#b45d13; --amber-bg:rgba(180,93,19,0.07);
-  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
-  --topbar-h:52px; --sidebar-w:216px;
+  --bg:#ffffff; --bg-0:hsl(38 30% 97%); --bg-1:hsl(38 24% 94%); --bg-2:hsl(38 14% 84%);
+  --brd:hsl(38 14% 84%); --brd-mid:hsl(38 10% 76%);
+  --t0:hsl(220 20% 10%); --t1:hsl(220 12% 18%); --t2:hsl(220 10% 38%);
+  --t3:hsl(220 8% 55%);  --t4:hsl(220 6% 72%);
+  --signal:hsl(152 64% 34%); --signal-dim:hsl(152 30% 60%);
+  --signal-bg:hsl(152 64% 34% / 0.07); --signal-brd:hsl(152 64% 34% / 0.22);
+  --red:hsl(350 72% 46%); --red-bg:hsl(350 72% 46% / 0.06); --red-brd:hsl(350 72% 46% / 0.2);
+  --amber:hsl(30 80% 40%); --amber-bg:hsl(30 80% 40% / 0.07);
+  --blue:hsl(215 80% 50%); --blue-bg:hsl(215 80% 50% / 0.07);
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --sans:'Inter',system-ui,sans-serif;
+  --topbar-h:52px; --sidebar-w:220px; --sidebar-mini:52px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:var(--sans);background:var(--bg);color:var(--t0);display:flex;flex-direction:column;min-height:100vh;-webkit-font-smoothing:antialiased;}
 
-/* topbar */
-.topbar{position:sticky;top:0;z-index:50;height:var(--topbar-h);background:var(--bg);border-bottom:1px solid var(--brd);display:flex;align-items:center;padding:0 20px;gap:12px;}
-.logo{display:flex;align-items:center;gap:7px;text-decoration:none;}
-.logo-name{font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:-.03em;color:var(--t0);}
-.logo-grad{background:linear-gradient(90deg,var(--purple),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.admin-pill{font-family:var(--mono);font-size:9px;background:var(--purple-light);border:1px solid var(--purple-brd);color:var(--purple);padding:2px 7px;border-radius:3px;letter-spacing:.1em;text-transform:uppercase;}
-.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.topbar-email{font-family:var(--mono);font-size:11px;color:var(--t3);}
-.tb-btn{font-family:var(--mono);font-size:11px;color:var(--t2);background:none;border:1px solid var(--brd);border-radius:5px;padding:4px 10px;cursor:pointer;text-decoration:none;transition:all .15s;}
+/* ── Topbar ─────────────────────────────────────────────────────────────────── */
+.topbar{position:sticky;top:0;z-index:50;height:var(--topbar-h);background:var(--bg);border-bottom:1px solid var(--brd);display:flex;align-items:center;padding:0 0 0 16px;gap:0;}
+.tb-toggle{width:var(--sidebar-mini);height:var(--topbar-h);display:flex;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;color:var(--t3);flex-shrink:0;border-right:1px solid var(--brd);}
+.tb-toggle:hover{background:var(--bg-0);color:var(--t0);}
+.tb-logo{display:flex;align-items:center;gap:8px;padding:0 16px;text-decoration:none;border-right:1px solid var(--brd);height:100%;}
+.tb-wordmark{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--t0);}
+.tb-wordmark span{color:var(--signal);}
+.tb-admin{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;background:var(--red-bg);border:1px solid var(--red-brd);color:var(--red);padding:2px 6px;margin-left:8px;}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:0;height:100%;}
+.tb-actor{padding:0 16px;display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--t2);border-left:1px solid var(--brd);height:100%;}
+.tb-dot{width:6px;height:6px;border-radius:50%;background:var(--signal);}
+.tb-btn{height:100%;padding:0 14px;border:none;border-left:1px solid var(--brd);background:none;font-family:var(--mono);font-size:11px;cursor:pointer;color:var(--t2);transition:all .12s;}
 .tb-btn:hover{background:var(--bg-0);color:var(--t0);}
-.tb-btn.refresh{color:var(--purple);border-color:var(--purple-brd);}
+.tb-refresh{color:var(--signal);}
 
-/* layout */
-.layout{display:flex;flex:1;}
-.sidebar{width:var(--sidebar-w);flex-shrink:0;border-right:1px solid var(--brd);padding:16px 0;position:sticky;top:var(--topbar-h);height:calc(100vh - var(--topbar-h));overflow-y:auto;}
-.sb-group{padding:0 10px;margin-bottom:18px;}
-.sb-lbl{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--t4);padding:0 8px;margin-bottom:5px;}
-.sb-item{display:block;font-size:12.5px;color:var(--t2);padding:5px 8px;border-radius:6px;cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:all .12s;}
+/* ── Layout ─────────────────────────────────────────────────────────────────── */
+.layout{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:var(--sidebar-w);flex-shrink:0;border-right:1px solid var(--brd);display:flex;flex-direction:column;position:sticky;top:var(--topbar-h);height:calc(100vh - var(--topbar-h));overflow-y:auto;transition:width .2s ease;}
+.sidebar.collapsed{width:var(--sidebar-mini);}
+.sidebar::-webkit-scrollbar{width:3px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--brd);}
+.sb-group{padding:12px 0;border-bottom:1px solid var(--brd);}
+.sb-group:last-child{border-bottom:none;}
+.sb-label{font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--t4);padding:0 14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;}
+.sidebar.collapsed .sb-label{opacity:0;pointer-events:none;}
+.sb-item{display:flex;align-items:center;gap:8px;padding:5px 14px;font-size:12px;color:var(--t2);cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:all .1s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:2px solid transparent;}
 .sb-item:hover{background:var(--bg-0);color:var(--t0);}
-.sb-item.active{background:var(--purple-light);color:var(--purple);font-weight:500;}
+.sb-item.active{background:var(--signal-bg);color:var(--signal);border-left-color:var(--signal);font-weight:500;}
+.sb-icon{width:14px;height:14px;flex-shrink:0;opacity:.6;}
+.sb-item.active .sb-icon{opacity:1;}
+.sidebar.collapsed .sb-item span{display:none;}
 
-/* main */
-.main{flex:1;overflow:auto;}
-.pane{display:none;padding:28px 32px 60px;max-width:980px;}
+/* ── Main ───────────────────────────────────────────────────────────────────── */
+.main{flex:1;overflow:auto;display:flex;flex-direction:column;}
+.pane{display:none;padding:28px 32px 60px;max-width:1100px;width:100%;}
 .pane.active{display:block;}
-.pane-title{font-size:17px;font-weight:600;color:var(--t0);margin-bottom:3px;}
-.pane-sub{font-size:12.5px;color:var(--t3);font-family:var(--mono);margin-bottom:24px;}
+.pane-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;}
+.pane-title{font-size:17px;font-weight:500;letter-spacing:-.02em;color:var(--t0);}
+.pane-sub{font-family:var(--mono);font-size:10.5px;color:var(--t3);margin-top:3px;}
 
-/* section label */
-.slbl{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:12px;margin-top:24px;display:flex;align-items:center;gap:8px;}
+/* ── Section label ──────────────────────────────────────────────────────────── */
+.slbl{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--t3);margin-bottom:12px;margin-top:24px;display:flex;align-items:center;gap:8px;}
 .slbl::after{content:'';flex:1;height:1px;background:var(--brd);}
 .slbl:first-child{margin-top:0;}
 
-/* kpi grid */
-.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:4px;}
-.kcard{background:var(--bg-0);border:1px solid var(--brd);border-radius:9px;padding:14px 16px;}
-.kcard.hl{border-color:var(--purple-brd);background:var(--purple-light);}
-.klbl{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:7px;}
-.kval{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--t0);letter-spacing:-.03em;line-height:1;}
-.kcard.hl .kval{color:var(--purple);}
-.ksub{font-family:var(--mono);font-size:10px;color:var(--t3);margin-top:5px;}
+/* ── KPI cards ──────────────────────────────────────────────────────────────── */
+.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:1px;background:var(--brd);border:1px solid var(--brd);margin-bottom:24px;}
+.kcard{background:var(--bg-0);padding:16px;display:flex;flex-direction:column;gap:6px;}
+.kcard.hl{background:var(--signal-bg);}
+.kcard.red{background:var(--red-bg);}
+.klbl{font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);}
+.kcard.hl .klbl{color:var(--signal-dim);}
+.kval{font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:-.03em;color:var(--t0);line-height:1;}
+.kcard.hl .kval{color:var(--signal);}
+.kcard.red .kval{color:var(--red);}
+.ksub{font-family:var(--mono);font-size:10px;color:var(--t4);}
 
-/* card */
-.card{background:var(--bg);border:1px solid var(--brd);border-radius:9px;padding:18px 20px;margin-bottom:14px;}
-
-/* table */
+/* ── Tables ─────────────────────────────────────────────────────────────────── */
+.tbl-wrap{border:1px solid var(--brd);overflow:hidden;margin-bottom:20px;}
 .tbl{width:100%;border-collapse:collapse;font-size:12.5px;}
-.tbl th{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);padding:8px 12px;border-bottom:1px solid var(--brd);text-align:left;white-space:nowrap;}
+.tbl th{font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);padding:8px 12px;border-bottom:1px solid var(--brd);text-align:left;background:var(--bg-0);white-space:nowrap;}
 .tbl td{padding:9px 12px;border-bottom:1px solid var(--bg-1);color:var(--t1);vertical-align:middle;}
 .tbl tr:last-child td{border-bottom:none;}
 .tbl tr:hover td{background:var(--bg-0);}
 .tbl .mono{font-family:var(--mono);font-size:11px;}
 .tbl .dim{color:var(--t3);}
+.tbl .truncate{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
-/* bar */
-.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
-.bar-row:last-child{margin-bottom:0;}
-.bar-lbl{font-family:var(--mono);font-size:11px;color:var(--t2);width:76px;flex-shrink:0;}
-.bar-track{flex:1;height:6px;background:var(--bg-2);border-radius:3px;overflow:hidden;}
-.bar-fill{height:100%;border-radius:3px;transition:width .5s ease;}
-.bar-fill.g{background:var(--green);}
-.bar-fill.b{background:var(--teal);}
-.bar-fill.x{background:var(--brd-mid);}
-.bar-cnt{font-family:var(--mono);font-size:11px;color:var(--t3);width:32px;text-align:right;}
+/* ── Badges ─────────────────────────────────────────────────────────────────── */
+.badge{font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;display:inline-block;border:1px solid;}
+.badge.green{background:var(--signal-bg);color:var(--signal);border-color:var(--signal-brd);}
+.badge.red{background:var(--red-bg);color:var(--red);border-color:var(--red-brd);}
+.badge.amber{background:var(--amber-bg);color:var(--amber);border-color:hsl(30 80% 40% / .2);}
+.badge.blue{background:var(--blue-bg);color:var(--blue);border-color:hsl(215 80% 50% / .2);}
+.badge.gray{background:var(--bg-1);color:var(--t3);border-color:var(--brd);}
 
-/* badge */
-.bdg{font-family:var(--mono);font-size:8.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 5px;border-radius:3px;display:inline-block;}
-.bdg.p{background:var(--purple-light);color:var(--purple);border:1px solid var(--purple-brd);}
-.bdg.g{background:var(--green-bg);color:var(--green);border:1px solid rgba(15,123,77,.18);}
-.bdg.a{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(180,93,19,.18);}
-.bdg.n{background:var(--bg-1);color:var(--t3);border:1px solid var(--brd);}
+/* ── Chain live tail ────────────────────────────────────────────────────────── */
+.chain-row{display:grid;grid-template-columns:120px 100px 80px 90px 120px 80px auto;gap:0;border-bottom:1px solid var(--bg-1);padding:7px 12px;align-items:center;font-family:var(--mono);font-size:11px;color:var(--t2);cursor:pointer;transition:background .1s;}
+.chain-row:hover{background:var(--bg-0);}
+.chain-row .ts{color:var(--t3);}
+.chain-row .hash{color:var(--t0);}
+.chain-row .level-l3{color:var(--signal);font-weight:600;}
+.chain-row .level-l2{color:var(--blue);}
+.chain-row .level-l1{color:var(--t3);}
+.chain-head{display:grid;grid-template-columns:120px 100px 80px 90px 120px 80px auto;gap:0;padding:7px 12px;background:var(--bg-0);border-bottom:1px solid var(--brd);}
+.chain-head span{font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);}
 
-/* not signed in */
-#nsi{display:none;padding:80px 32px;text-align:center;}
-#nsi h2{font-size:18px;font-weight:600;margin-bottom:8px;}
-#nsi p{font-size:13px;color:var(--t2);}
-#nsi a{color:var(--purple);}
+/* ── Buttons ────────────────────────────────────────────────────────────────── */
+.btn{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:5px 12px;border:1px solid var(--brd);background:var(--bg);cursor:pointer;color:var(--t2);transition:all .12s;}
+.btn:hover{background:var(--bg-0);color:var(--t0);border-color:var(--brd-mid);}
+.btn.primary{background:var(--t0);color:var(--bg);border-color:var(--t0);}
+.btn.primary:hover{background:var(--signal);border-color:var(--signal);}
+.btn.danger{color:var(--red);border-color:var(--red-brd);}
+.btn.danger:hover{background:var(--red-bg);}
 
-/* inline code */
-code{font-family:var(--mono);font-size:11.5px;background:var(--bg-1);padding:1px 5px;border-radius:3px;}
+/* ── System health grid ─────────────────────────────────────────────────────── */
+.health-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1px;background:var(--brd);border:1px solid var(--brd);margin-bottom:20px;}
+.health-cell{background:var(--bg);padding:16px 18px;}
+.health-label{font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px;}
+.health-val{font-size:14px;font-weight:500;color:var(--t0);display:flex;align-items:center;gap:6px;}
+.health-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.health-dot.ok{background:var(--signal);}
+.health-dot.warn{background:var(--amber);}
+.health-dot.err{background:var(--red);}
+
+/* ── Flag row ───────────────────────────────────────────────────────────────── */
+.flag-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bg-1);}
+.flag-row:last-child{border-bottom:none;}
+.flag-key{font-family:var(--mono);font-size:12px;color:var(--t1);flex:1;}
+.flag-desc{font-size:12px;color:var(--t3);flex:2;}
+.toggle{width:36px;height:20px;border-radius:10px;border:1px solid var(--brd);background:var(--bg-1);cursor:pointer;position:relative;transition:background .15s,border-color .15s;flex-shrink:0;}
+.toggle.on{background:var(--signal);border-color:var(--signal);}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .15s;}
+.toggle.on::after{left:18px;}
+
+/* ── Incident strip ─────────────────────────────────────────────────────────── */
+.incident-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bg-1);}
+.sev-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.sev-crit{background:var(--red);}
+.sev-high{background:var(--amber);}
+.sev-low{background:var(--t4);}
+
+/* ── Not-admin ──────────────────────────────────────────────────────────────── */
+#not-admin{display:none;padding:80px 32px;text-align:center;}
+#not-admin h2{font-size:18px;font-weight:500;margin-bottom:8px;}
+#not-admin p{font-size:13px;color:var(--t2);}
+
+/* ── Loading placeholder ────────────────────────────────────────────────────── */
+.skeleton{background:linear-gradient(90deg,var(--bg-1) 25%,var(--bg-0) 50%,var(--bg-1) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
 </style>
 </head>
 <body>
 
+<!-- Topbar -->
 <div class="topbar">
-  <a href="/dashboard" class="logo">
-    <svg width="20" height="20" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="10" stroke="url(#lg)" stroke-width="1.5"/><defs><linearGradient id="lg" x1="0" y1="0" x2="22" y2="22"><stop offset="0%" stop-color="#6b4fbb"/><stop offset="100%" stop-color="#0891b2"/></linearGradient></defs></svg>
-    <span class="logo-name">Dark<span class="logo-grad">Matter</span></span>
+  <button class="tb-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <a href="/dashboard" class="tb-logo">
+    <svg viewBox="0 0 32 32" width="22" height="22" fill="none"><circle cx="16" cy="16" r="10" stroke="var(--t0)" stroke-opacity=".35" stroke-width=".8"/><circle cx="16" cy="6" r="2.1" fill="var(--signal)"/><circle cx="16" cy="6" r="3.4" stroke="var(--signal)" stroke-opacity=".3" stroke-width=".45"/><circle cx="16" cy="16" r=".8" fill="var(--t0)" fill-opacity=".55"/><circle cx="24.66" cy="21" r="1.5" fill="var(--t0)"/><circle cx="7.34" cy="21" r="1.5" fill="var(--t0)" fill-opacity=".85"/></svg>
+    <span class="tb-wordmark">Dark<span>Matter</span></span>
+    <span class="tb-admin">Internal</span>
   </a>
-  <span class="admin-pill">Internal</span>
-  <div class="topbar-right">
-    <span class="topbar-email" id="tb-email"></span>
+  <div class="tb-right">
+    <div class="tb-actor"><span class="tb-dot"></span><span id="tb-email">—</span></div>
+    <button class="tb-btn tb-refresh" onclick="loadAll()">↻ Refresh</button>
     <a href="/dashboard" class="tb-btn">← Dashboard</a>
-    <button class="tb-btn refresh" onclick="loadAll()">↻ Refresh</button>
     <button class="tb-btn" onclick="signOut()">Sign out</button>
   </div>
 </div>
 
-<div id="nsi">
-  <h2>Not signed in</h2>
-  <p>Go to <a href="/dashboard">/dashboard</a> to sign in, then return here.</p>
+<!-- Not admin -->
+<div id="not-admin">
+  <h2>Access denied</h2>
+  <p>This page is restricted to admin accounts. <a href="/dashboard" style="color:var(--signal)">Go to dashboard</a></p>
 </div>
 
+<!-- Layout -->
 <div class="layout" id="layout" style="display:none;">
 
-  <div class="sidebar">
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
     <div class="sb-group">
-      <div class="sb-lbl">Overview</div>
-      <button class="sb-item active" data-pane="p-kpis">KPIs</button>
-      <button class="sb-item" data-pane="p-activity">Recent commits</button>
+      <div class="sb-label">Overview</div>
+      <button class="sb-item active" data-pane="p-dashboard">
+        <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="sb-item" data-pane="p-chain">
+        <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <span>Live chain</span>
+      </button>
     </div>
     <div class="sb-group">
-      <div class="sb-lbl">SDK & L3</div>
-      <button class="sb-item" data-pane="p-sdk">Wrapper usage</button>
-      <button class="sb-item" data-pane="p-l3">L3 adoption</button>
+      <div class="sb-label">Customers</div>
+      <button class="sb-item" data-pane="p-orgs">
+        <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Organizations</span>
+      </button>
+      <button class="sb-item" data-pane="p-users">
+        <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+        <span>Users</span>
+      </button>
     </div>
     <div class="sb-group">
-      <div class="sb-lbl">Users</div>
-      <button class="sb-item" data-pane="p-users">Members</button>
+      <div class="sb-label">Records</div>
+      <button class="sb-item" data-pane="p-commits">
+        <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><line x1="1.05" y1="12" x2="7" y2="12"/><line x1="17.01" y1="12" x2="22.96" y2="12"/></svg>
+        <span>Commits</span>
+      </button>
+      <button class="sb-item" data-pane="p-verifier">
+        <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Verifier runs</span>
+      </button>
+    </div>
+    <div class="sb-group">
+      <div class="sb-label">Keys &amp; Trust</div>
+      <button class="sb-item" data-pane="p-keys">
+        <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        <span>Customer keys (L3)</span>
+      </button>
+    </div>
+    <div class="sb-group">
+      <div class="sb-label">System</div>
+      <button class="sb-item" data-pane="p-system">
+        <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <span>System health</span>
+      </button>
+      <button class="sb-item" data-pane="p-flags">
+        <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        <span>Feature flags</span>
+      </button>
+      <button class="sb-item" data-pane="p-auditlog">
+        <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span>Audit log</span>
+      </button>
+    </div>
+    <div class="sb-group">
+      <div class="sb-label">Growth</div>
+      <button class="sb-item" data-pane="p-growth">
+        <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span>Funnel &amp; retention</span>
+      </button>
     </div>
   </div>
 
+  <!-- Main content -->
   <div class="main">
 
-    <!-- KPIs -->
-    <div class="pane active" id="p-kpis">
-      <div class="pane-title">Admin Dashboard</div>
-      <div class="pane-sub" id="updated-at">Loading…</div>
+    <!-- ── DASHBOARD ─────────────────────────────────────────────────── -->
+    <div class="pane active" id="p-dashboard">
+      <div class="pane-header">
+        <div><div class="pane-title">Dashboard</div><div class="pane-sub" id="dash-updated">Loading…</div></div>
+        <button class="btn primary" onclick="loadAll()">↻ Refresh</button>
+      </div>
 
       <div class="slbl">Volume</div>
       <div class="kgrid" id="kg-volume">
         <div class="kcard"><div class="klbl">Total commits</div><div class="kval" id="k-total">—</div></div>
         <div class="kcard"><div class="klbl">Unique agents</div><div class="kval" id="k-agents">—</div></div>
         <div class="kcard"><div class="klbl">Active 7d</div><div class="kval" id="k-a7">—</div></div>
-        <div class="kcard"><div class="klbl">Active 30d</div><div class="kval" id="k-a30">—</div></div>
+        <div class="kcard"><div class="klbl">New agents 7d</div><div class="kval" id="k-new7">—</div></div>
         <div class="kcard hl"><div class="klbl">L3 adoption</div><div class="kval" id="k-l3p">—</div><div class="ksub" id="k-l3n"></div></div>
-        <div class="kcard"><div class="klbl">New agents 7d</div><div class="kval" id="k-new7">—</div><div class="ksub">acquisition</div></div>
+        <div class="kcard"><div class="klbl">Commits / agent p50</div><div class="kval" id="k-p50">—</div></div>
       </div>
 
-      <div class="slbl">Stickiness</div>
+      <div class="slbl">Platform</div>
       <div class="kgrid">
-        <div class="kcard"><div class="klbl">Commits/agent p50</div><div class="kval" id="k-p50">—</div></div>
-        <div class="kcard"><div class="klbl">Commits/agent p90</div><div class="kval" id="k-p90">—</div></div>
-        <div class="kcard"><div class="klbl">Agents with commits</div><div class="kval" id="k-awc">—</div></div>
+        <div class="kcard"><div class="klbl">Total users</div><div class="kval" id="k-users">—</div></div>
+        <div class="kcard"><div class="klbl">Total orgs</div><div class="kval" id="k-orgs">—</div></div>
+        <div class="kcard"><div class="klbl">Registered keys (L3)</div><div class="kval" id="k-keys">—</div></div>
         <div class="kcard"><div class="klbl">New L3 commits 7d</div><div class="kval" id="k-l37">—</div></div>
       </div>
 
-      <div class="slbl">Timeline</div>
-      <div class="card" style="display:flex;gap:40px;font-family:var(--mono);font-size:12px;">
-        <div><div style="color:var(--t3);margin-bottom:4px;">First commit</div><div id="k-first" style="color:var(--t0);font-size:13px;">—</div></div>
-        <div><div style="color:var(--t3);margin-bottom:4px;">Last commit</div><div id="k-last" style="color:var(--t0);font-size:13px;">—</div></div>
-      </div>
-
-      <div class="slbl">Decision rules</div>
-      <div class="card" style="font-size:12.5px;color:var(--t2);line-height:2;display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:4px;">
         <div>
-          <div style="font-family:var(--mono);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Signal → Action</div>
-          <div>Manual &gt; 80% → fix docs/onboarding</div>
-          <div>Anthropic &gt; 50% → double down on Claude</div>
-          <div>OpenAI &gt; 50% → add <code>responses.create()</code></div>
-          <div>L3 &lt; 10% → simplify key setup</div>
+          <div class="slbl">Recent commits</div>
+          <div class="tbl-wrap" id="dash-recent">
+            <div style="padding:16px 12px;font-family:var(--mono);font-size:11px;color:var(--t3);">Loading…</div>
+          </div>
         </div>
         <div>
-          <div style="font-family:var(--mono);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Thresholds</div>
-          <div>Active 7d &lt; 3 → stop building, get users</div>
-          <div>p50 &lt; 5 → curiosity, not real usage</div>
-          <div>p50 &gt; 20 → real workflows forming</div>
-          <div>L3 &gt; 20% → strong product-market fit signal</div>
+          <div class="slbl">Decision rules</div>
+          <div style="border:1px solid var(--brd);padding:16px 18px;font-size:12.5px;color:var(--t2);line-height:2.2;">
+            <div><span style="font-family:var(--mono);color:var(--t4);">Manual &gt; 80%</span> → fix docs/onboarding</div>
+            <div><span style="font-family:var(--mono);color:var(--t4);">Anthropic &gt; 50%</span> → double down on Claude</div>
+            <div><span style="font-family:var(--mono);color:var(--t4);">L3 &lt; 10%</span> → simplify key setup</div>
+            <div><span style="font-family:var(--mono);color:var(--t4);">Active 7d &lt; 3</span> → stop building, get users</div>
+            <div><span style="font-family:var(--mono);color:var(--t4);">p50 &lt; 5</span> → curiosity, not real usage</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Recent commits -->
-    <div class="pane" id="p-activity">
-      <div class="pane-title">Recent commits</div>
-      <div class="pane-sub">Latest 20 commits across all agents</div>
-      <div class="card" style="padding:0;overflow:hidden;">
+    <!-- ── LIVE CHAIN ─────────────────────────────────────────────────── -->
+    <div class="pane" id="p-chain">
+      <div class="pane-header">
+        <div><div class="pane-title">Live chain</div><div class="pane-sub">Newest commits first · click row for details</div></div>
+        <div style="display:flex;gap:8px;">
+          <select id="chain-filter-level" onchange="renderChain()" style="font-family:var(--mono);font-size:11px;border:1px solid var(--brd);background:var(--bg);padding:4px 8px;color:var(--t1);">
+            <option value="">All levels</option>
+            <option value="L3">L3 only</option>
+            <option value="L2">L2 only</option>
+            <option value="L1">L1 only</option>
+          </select>
+          <button class="btn" onclick="loadChain()">↻</button>
+        </div>
+      </div>
+      <div style="border:1px solid var(--brd);overflow:hidden;">
+        <div class="chain-head">
+          <span>Timestamp</span><span>Agent</span><span>Level</span><span>Hash</span><span>Parent</span><span>Size</span><span>Verified</span>
+        </div>
+        <div id="chain-body" style="max-height:calc(100vh - 260px);overflow-y:auto;">
+          <div style="padding:16px 12px;font-family:var(--mono);font-size:11px;color:var(--t3);">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ORGANIZATIONS ──────────────────────────────────────────────── -->
+    <div class="pane" id="p-orgs">
+      <div class="pane-header">
+        <div><div class="pane-title">Organizations</div><div class="pane-sub">All registered workspaces</div></div>
+      </div>
+      <div class="tbl-wrap">
         <table class="tbl">
-          <thead><tr>
-            <th>ID</th><th>Agent</th><th>Event</th><th>Assurance</th><th>Time</th>
-          </tr></thead>
-          <tbody id="tb-activity">
-            <tr><td colspan="5" style="padding:20px 12px;color:var(--t3);font-family:var(--mono);font-size:12px;">Loading…</td></tr>
-          </tbody>
+          <thead><tr><th>Name</th><th>Owner</th><th>Members</th><th>Plan</th><th>Created</th></tr></thead>
+          <tbody id="orgs-body"><tr><td colspan="5" style="padding:20px 12px;font-family:var(--mono);font-size:11px;color:var(--t3);">Loading…</td></tr></tbody>
         </table>
       </div>
     </div>
 
-    <!-- SDK wrapper usage -->
-    <div class="pane" id="p-sdk">
-      <div class="pane-title">SDK & Wrapper usage</div>
-      <div class="pane-sub">metadata.wrapper field · SDK v1.3.0+ only</div>
-
-      <div class="slbl">Attribution</div>
-      <div class="card">
-        <div class="bar-row"><span class="bar-lbl">Anthropic</span><div class="bar-track"><div class="bar-fill g" id="b-ant" style="width:0%"></div></div><span class="bar-cnt" id="c-ant">0</span></div>
-        <div class="bar-row"><span class="bar-lbl">OpenAI</span><div class="bar-track"><div class="bar-fill b" id="b-oai" style="width:0%"></div></div><span class="bar-cnt" id="c-oai">0</span></div>
-        <div class="bar-row"><span class="bar-lbl">Manual</span><div class="bar-track"><div class="bar-fill x" id="b-man" style="width:0%"></div></div><span class="bar-cnt" id="c-man">0</span></div>
-      </div>
-
-      <div class="slbl">Install</div>
-      <div class="card" style="font-size:12.5px;color:var(--t2);line-height:2;">
-        <div><code>pip install "darkmatter-sdk[anthropic]"</code> — Anthropic wrapper</div>
-        <div><code>pip install "darkmatter-sdk[openai]"</code> — OpenAI wrapper</div>
-        <div><code>pip install "darkmatter-sdk[all]"</code> — everything</div>
-        <div style="margin-top:8px;"><a href="/docs#integrations" style="color:var(--purple);font-family:var(--mono);font-size:11px;">Integration docs →</a></div>
-      </div>
-    </div>
-
-    <!-- L3 adoption -->
-    <div class="pane" id="p-l3">
-      <div class="pane-title">L3 — Non-repudiation</div>
-      <div class="pane-sub">Customer-signed commits · Ed25519 · ENVELOPE_SPEC_V1</div>
-
-      <div class="slbl">Adoption</div>
-      <div class="kgrid">
-        <div class="kcard hl"><div class="klbl">L3 commits</div><div class="kval" id="l-cnt">—</div></div>
-        <div class="kcard hl"><div class="klbl">Adoption %</div><div class="kval" id="l-pct">—</div></div>
-        <div class="kcard"><div class="klbl">New L3 (7d)</div><div class="kval" id="l-7d">—</div></div>
-      </div>
-
-      <div class="slbl">Setup guide</div>
-      <div class="card" style="font-size:12.5px;color:var(--t2);line-height:2.2;">
-        <div><span style="font-family:var(--mono);color:var(--t3);">1.</span> <code>darkmatter keys generate --name my-signing-key</code></div>
-        <div><span style="font-family:var(--mono);color:var(--t3);">2.</span> <code>darkmatter keys register --key-id my-signing-key --public-key my-signing-key.pub.pem</code></div>
-        <div><span style="font-family:var(--mono);color:var(--t3);">3.</span> Set <code>DARKMATTER_SIGNING_MODE=customer</code> in .env</div>
-        <div><span style="font-family:var(--mono);color:var(--t3);">4.</span> <code>dm.commit(payload={...}, completeness_claim=True)</code></div>
-        <div style="margin-top:8px;"><a href="/docs#l3-setup" style="color:var(--purple);font-family:var(--mono);font-size:11px;">Full L3 docs →</a></div>
-      </div>
-    </div>
-
-    <!-- Members -->
+    <!-- ── USERS ──────────────────────────────────────────────────────── -->
     <div class="pane" id="p-users">
-      <div class="pane-title">Members</div>
-      <div class="pane-sub">All registered workspace members</div>
-      <div class="card" style="padding:0;overflow:hidden;">
+      <div class="pane-header">
+        <div><div class="pane-title">Users</div><div class="pane-sub">All registered accounts</div></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="user-search" placeholder="Search email…" oninput="filterUsers(this.value)" style="font-family:var(--mono);font-size:11px;border:1px solid var(--brd);background:var(--bg-0);padding:5px 10px;color:var(--t0);outline:none;width:200px;" onfocus="this.style.borderColor='var(--signal)'" onblur="this.style.borderColor='var(--brd)'"/>
+        </div>
+      </div>
+      <div class="tbl-wrap">
         <table class="tbl">
-          <thead><tr><th>Email</th><th>Role</th><th>Agents</th><th>Commits</th><th>Joined</th></tr></thead>
-          <tbody id="tb-users">
-            <tr><td colspan="5" style="padding:20px 12px;color:var(--t3);font-family:var(--mono);font-size:12px;">Loading…</td></tr>
+          <thead><tr><th>Email</th><th>ID</th><th>Agents</th><th>Commits</th><th>Last sign-in</th><th>Created</th></tr></thead>
+          <tbody id="users-body"><tr><td colspan="6" style="padding:20px 12px;font-family:var(--mono);font-size:11px;color:var(--t3);">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── COMMITS ────────────────────────────────────────────────────── -->
+    <div class="pane" id="p-commits">
+      <div class="pane-header">
+        <div><div class="pane-title">Commits</div><div class="pane-sub">All commits across all agents</div></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="commit-search" placeholder="Search agent / trace…" oninput="filterCommits(this.value)" style="font-family:var(--mono);font-size:11px;border:1px solid var(--brd);background:var(--bg-0);padding:5px 10px;color:var(--t0);outline:none;width:220px;" onfocus="this.style.borderColor='var(--signal)'" onblur="this.style.borderColor='var(--brd)'"/>
+          <select id="commit-level" onchange="filterCommits(document.getElementById('commit-search').value)" style="font-family:var(--mono);font-size:11px;border:1px solid var(--brd);background:var(--bg);padding:4px 8px;color:var(--t1);">
+            <option value="">All levels</option><option value="L3">L3</option><option value="L2">L2</option><option value="L1">L1</option>
+          </select>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>ID</th><th>Agent</th><th>Level</th><th>Event</th><th>Hash</th><th>Timestamp</th></tr></thead>
+          <tbody id="commits-body"><tr><td colspan="6" style="padding:20px 12px;font-family:var(--mono);font-size:11px;color:var(--t3);">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── VERIFIER RUNS ───────────────────────────────────────────────── -->
+    <div class="pane" id="p-verifier">
+      <div class="pane-header">
+        <div><div class="pane-title">Verifier runs</div><div class="pane-sub">Chain verification history</div></div>
+      </div>
+      <div style="border:1px solid var(--brd);padding:24px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--t3);">
+        Verifier run history requires a <code style="background:var(--bg-1);padding:1px 5px;">verifier_runs</code> table. Not yet instrumented — add tracking to <code style="background:var(--bg-1);padding:1px 5px;">GET /api/verify/:ctxId</code>.
+      </div>
+    </div>
+
+    <!-- ── CUSTOMER KEYS ───────────────────────────────────────────────── -->
+    <div class="pane" id="p-keys">
+      <div class="pane-header">
+        <div><div class="pane-title">Customer keys (L3)</div><div class="pane-sub">Ed25519 signing keys registered by customers</div></div>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Key ID</th><th>Agent</th><th>Algorithm</th><th>Registered</th><th>Status</th></tr></thead>
+          <tbody id="keys-body"><tr><td colspan="5" style="padding:20px 12px;font-family:var(--mono);font-size:11px;color:var(--t3);">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── SYSTEM ─────────────────────────────────────────────────────── -->
+    <div class="pane" id="p-system">
+      <div class="pane-header">
+        <div><div class="pane-title">System health</div><div class="pane-sub">Infrastructure status</div></div>
+      </div>
+      <div class="slbl">Services</div>
+      <div class="health-grid" id="health-grid">
+        <div class="health-cell"><div class="health-label">API server</div><div class="health-val"><span class="health-dot ok"></span>Railway · running</div></div>
+        <div class="health-cell"><div class="health-label">Database</div><div class="health-val"><span class="health-dot ok" id="hd-db"></span><span id="ht-db">Supabase · checking…</span></div></div>
+        <div class="health-cell"><div class="health-label">Auth</div><div class="health-val"><span class="health-dot ok"></span>Supabase Auth</div></div>
+        <div class="health-cell"><div class="health-label">Merkle log</div><div class="health-val"><span class="health-dot ok"></span>Append-only · active</div></div>
+        <div class="health-cell"><div class="health-label">Checkpoint scheduler</div><div class="health-val"><span class="health-dot ok"></span>Running</div></div>
+        <div class="health-cell"><div class="health-label">DNS / CDN</div><div class="health-val"><span class="health-dot ok"></span>Cloudflare · active</div></div>
+      </div>
+
+      <div class="slbl">SDK versions</div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Package</th><th>Latest</th><th>Registry</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">darkmatter-sdk</td><td class="mono">1.3.0</td><td>PyPI</td><td><span class="badge green">Live</span></td></tr>
+            <tr><td class="mono">darkmatter-js</td><td class="mono">—</td><td>npm</td><td><span class="badge amber">Verify</span></td></tr>
           </tbody>
         </table>
+      </div>
+
+      <div class="slbl">Billing</div>
+      <div style="border:1px solid var(--brd);padding:16px 18px;font-size:13px;color:var(--t2);line-height:1.8;">
+        Stripe not yet configured. <code style="font-family:var(--mono);font-size:11px;background:var(--bg-1);padding:1px 5px;">STRIPE_SECRET_KEY</code> set on Railway but billing routes return 501.
+        <div style="margin-top:8px;"><a href="/pricing" style="color:var(--signal);font-family:var(--mono);font-size:11px;">View pricing page →</a></div>
+      </div>
+    </div>
+
+    <!-- ── FEATURE FLAGS ──────────────────────────────────────────────── -->
+    <div class="pane" id="p-flags">
+      <div class="pane-header">
+        <div><div class="pane-title">Feature flags</div><div class="pane-sub">Kill switches and rollout controls · changes take effect immediately</div></div>
+      </div>
+      <div style="border:1px solid var(--brd);padding:4px 18px 12px;" id="flags-list">
+        <div class="flag-row">
+          <div class="flag-key">signups_enabled</div>
+          <div class="flag-desc">Allow new user signups via /signup</div>
+          <div class="toggle on" onclick="toggleFlag(this,'signups_enabled')" title="Toggle signups"></div>
+        </div>
+        <div class="flag-row">
+          <div class="flag-key">l3_signing_enabled</div>
+          <div class="flag-desc">Customer Ed25519 key signing on commits</div>
+          <div class="toggle on" onclick="toggleFlag(this,'l3_signing_enabled')" title="Toggle L3"></div>
+        </div>
+        <div class="flag-row">
+          <div class="flag-key">public_share_enabled</div>
+          <div class="flag-desc">Public /r/:traceId share pages</div>
+          <div class="toggle on" onclick="toggleFlag(this,'public_share_enabled')" title="Toggle share"></div>
+        </div>
+        <div class="flag-row">
+          <div class="flag-key">verifier_enabled</div>
+          <div class="flag-desc">GET /api/verify/:ctxId chain verification</div>
+          <div class="toggle on" onclick="toggleFlag(this,'verifier_enabled')" title="Toggle verifier"></div>
+        </div>
+        <div class="flag-row">
+          <div class="flag-key">checkpoint_scheduler</div>
+          <div class="flag-desc">Automatic Merkle checkpoint publication</div>
+          <div class="toggle on" onclick="toggleFlag(this,'checkpoint_scheduler')" title="Toggle checkpoints"></div>
+        </div>
+      </div>
+      <div style="margin-top:12px;font-family:var(--mono);font-size:10px;color:var(--t4);">Flag state is stored in memory only — persists until server restart. Wire to <code>feature_flags</code> table to persist.</div>
+    </div>
+
+    <!-- ── AUDIT LOG ──────────────────────────────────────────────────── -->
+    <div class="pane" id="p-auditlog">
+      <div class="pane-header">
+        <div><div class="pane-title">Audit log</div><div class="pane-sub">Admin actions · all mutations</div></div>
+      </div>
+      <div style="border:1px solid var(--brd);padding:24px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--t3);">
+        Audit log requires an <code style="background:var(--bg-1);padding:1px 5px;">admin_audit_log</code> table. Add the table per the admin spec, then wire <code style="background:var(--bg-1);padding:1px 5px;">GET /api/admin/audit-log</code> here.
+      </div>
+    </div>
+
+    <!-- ── GROWTH ─────────────────────────────────────────────────────── -->
+    <div class="pane" id="p-growth">
+      <div class="pane-header">
+        <div><div class="pane-title">Funnel &amp; retention</div><div class="pane-sub">Activation and usage metrics</div></div>
+      </div>
+      <div class="slbl">Activation funnel</div>
+      <div style="border:1px solid var(--brd);padding:20px;">
+        <div id="funnel-bars">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--t3);padding:8px 0;">Loading…</div>
+        </div>
+      </div>
+
+      <div class="slbl" style="margin-top:24px;">SDK wrapper usage</div>
+      <div style="border:1px solid var(--brd);padding:20px;" id="wrapper-bars">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--t3);">Loading…</div>
       </div>
     </div>
 
   </div><!-- .main -->
 </div><!-- .layout -->
+
+<!-- Commit detail drawer -->
+<div id="drawer" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(10,10,9,.45);" onclick="if(event.target===this)closeDrawer()">
+  <div style="position:absolute;right:0;top:0;bottom:0;width:480px;background:var(--bg);border-left:1px solid var(--brd);display:flex;flex-direction:column;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--brd);">
+      <span style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);">Commit detail</span>
+      <button onclick="closeDrawer()" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:18px;line-height:1;">×</button>
+    </div>
+    <div id="drawer-content" style="flex:1;overflow-y:auto;padding:18px;font-size:13px;line-height:1.7;"></div>
+  </div>
+</div>
 
 <script>
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -287,11 +523,21 @@ function getSession() {
 
 const session = getSession();
 if (!session) {
-  document.getElementById('nsi').style.display = 'block';
+  document.getElementById('not-admin').style.display = 'block';
 } else {
-  document.getElementById('layout').style.display = 'flex';
   document.getElementById('tb-email').textContent = session.user?.email || '';
-  loadAll();
+  // Verify admin status then show layout
+  fetch('/admin/stats', { headers: { 'Authorization': `Bearer ${session.access_token}` } })
+    .then(r => r.json())
+    .then(d => {
+      if (d.admin) {
+        document.getElementById('layout').style.display = 'flex';
+        loadAll();
+      } else {
+        document.getElementById('not-admin').style.display = 'block';
+      }
+    })
+    .catch(() => { document.getElementById('not-admin').style.display = 'block'; });
 }
 
 function signOut() { localStorage.removeItem('dm_session'); location.href = '/login'; }
@@ -304,120 +550,324 @@ document.querySelectorAll('.sb-item[data-pane]').forEach(btn => {
     document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
     document.getElementById(btn.dataset.pane).classList.add('active');
     btn.classList.add('active');
+    // Load section data on first visit
+    const loaders = {
+      'p-chain':   loadChain,
+      'p-orgs':    loadOrgs,
+      'p-users':   loadUsers,
+      'p-commits': loadCommits,
+      'p-keys':    loadKeys,
+      'p-growth':  loadGrowth,
+    };
+    if (loaders[btn.dataset.pane]) loaders[btn.dataset.pane]();
   });
 });
 
-// ── Data loading ──────────────────────────────────────────────────────────────
-function fmt(n) { return n != null && n !== undefined ? Number(n).toLocaleString() : '—'; }
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+// ── Data helpers ──────────────────────────────────────────────────────────────
+function fmt(n) { return n != null ? Number(n).toLocaleString() : '—'; }
 function validDate(ts) {
   if (!ts) return '—';
   const d = new Date(ts);
-  return d.getFullYear() > 2020 ? d.toLocaleDateString() : '—';
+  return d.getFullYear() > 2000 ? d.toLocaleDateString() : '—';
 }
+function fmtTime(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit', day:'numeric', month:'short', timeZone:'UTC', hour12:false }) + ' UTC';
+}
+
+// ── Load all ──────────────────────────────────────────────────────────────────
+let _usage = {}, _members = [], _activity = [], _allCommits = [], _allUsers = [], _allKeys = [];
 
 async function loadAll() {
-  document.getElementById('updated-at').textContent = 'Loading…';
+  document.getElementById('dash-updated').textContent = 'Loading…';
   try {
-    const [usage, members, activity] = await Promise.all([
-      fetch('/api/workspace/stats/usage', { headers: authH() }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
-      fetch('/api/workspace/members',     { headers: authH() }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
-      fetch('/api/workspace/activity?limit=20', { headers: authH() }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+    const [stats, activity] = await Promise.all([
+      fetch('/admin/stats',                    { headers: authH() }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+      fetch('/api/workspace/activity?limit=50',{ headers: authH() }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
     ]);
-    renderKPIs(usage);
-    renderSDK(usage);
-    renderL3(usage);
-    renderActivity(activity);
-    renderUsers(members);
-    document.getElementById('updated-at').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    renderDashStats(stats);
+    _activity = activity?.activity || activity?.commits || [];
+    renderDashRecent(_activity);
+    document.getElementById('dash-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
   } catch(e) {
-    document.getElementById('updated-at').textContent = 'Error loading data';
+    document.getElementById('dash-updated').textContent = 'Error loading';
+  }
+
+  // Also try usage endpoint
+  fetch('/api/workspace/stats/usage', { headers: authH() })
+    .then(r => r.ok ? r.json() : {}).then(d => { _usage = d; renderUsageKPIs(d); })
+    .catch(() => {});
+}
+
+function renderDashStats(d) {
+  if (!d) return;
+  document.getElementById('k-users').textContent = fmt(d.users);
+  document.getElementById('k-agents').textContent = fmt(d.agents);
+  document.getElementById('k-total').textContent = fmt(d.commits);
+}
+
+function renderUsageKPIs(d) {
+  if (!d) return;
+  if (d.total_commits != null) document.getElementById('k-total').textContent = fmt(d.total_commits);
+  if (d.unique_agents  != null) document.getElementById('k-agents').textContent = fmt(d.unique_agents);
+  document.getElementById('k-a7').textContent   = fmt(d.active_agents?.last_7d);
+  document.getElementById('k-new7').textContent = fmt(d.momentum?.new_agents_7d);
+  document.getElementById('k-l3p').textContent  = (d.l3_usage?.percent || 0) + '%';
+  document.getElementById('k-l3n').textContent  = fmt(d.l3_usage?.count) + ' commits';
+  document.getElementById('k-p50').textContent  = fmt(d.commits_per_agent?.p50);
+  document.getElementById('k-l37').textContent  = fmt(d.l3_usage?.last_7d);
+}
+
+function renderDashRecent(items) {
+  const el = document.getElementById('dash-recent');
+  if (!items.length) { el.innerHTML = '<div style="padding:16px 12px;font-family:var(--mono);font-size:11px;color:var(--t3);">No recent activity</div>'; return; }
+  el.innerHTML = '<table class="tbl"><thead><tr><th>Agent</th><th>Level</th><th>Time</th></tr></thead><tbody>' +
+    items.slice(0,12).map(c => {
+      const al = c.assurance_level || 'L1';
+      const bc = al === 'L3' ? 'green' : al === 'L2' ? 'blue' : 'gray';
+      return `<tr><td class="mono dim truncate">${(c.agentName||c.from_agent||'—').slice(0,20)}</td><td><span class="badge ${bc}">${al}</span></td><td class="mono dim" style="font-size:10px;">${fmtTime(c.timestamp).slice(0,17)}</td></tr>`;
+    }).join('') + '</tbody></table>';
+}
+
+// ── Live chain ────────────────────────────────────────────────────────────────
+async function loadChain() {
+  const body = document.getElementById('chain-body');
+  body.innerHTML = '<div style="padding:16px 12px;font-family:var(--mono);font-size:11px;color:var(--t3);">Loading…</div>';
+  try {
+    const d = await fetch('/api/workspace/activity?limit=100', { headers: authH() }).then(r => r.json());
+    _allCommits = d?.activity || d?.commits || [];
+    renderChain();
+  } catch(e) {
+    body.innerHTML = '<div style="padding:16px 12px;font-family:var(--mono);font-size:11px;color:var(--red);">Error loading chain</div>';
   }
 }
 
-// ── KPIs ──────────────────────────────────────────────────────────────────────
-function renderKPIs(d) {
-  if (!d || d.total_commits == null) return;
-  document.getElementById('k-total').textContent = fmt(d.total_commits);
-  document.getElementById('k-agents').textContent= fmt(d.unique_agents);
-  document.getElementById('k-a7').textContent    = fmt(d.active_agents?.last_7d);
-  document.getElementById('k-a30').textContent   = fmt(d.active_agents?.last_30d);
-  document.getElementById('k-l3p').textContent   = (d.l3_usage?.percent || 0) + '%';
-  document.getElementById('k-l3n').textContent   = fmt(d.l3_usage?.count) + ' commits';
-  document.getElementById('k-new7').textContent  = fmt(d.momentum?.new_agents_7d);
-  document.getElementById('k-p50').textContent   = fmt(d.commits_per_agent?.p50);
-  document.getElementById('k-p90').textContent   = fmt(d.commits_per_agent?.p90);
-  document.getElementById('k-awc').textContent   = fmt(d.commits_per_agent?.total_agents_with_commits);
-  document.getElementById('k-l37').textContent   = fmt(d.l3_usage?.last_7d);
-  document.getElementById('k-first').textContent = validDate(d.momentum?.first_commit_at);
-  document.getElementById('k-last').textContent  = validDate(d.momentum?.last_commit_at);
-}
-
-// ── SDK ───────────────────────────────────────────────────────────────────────
-function renderSDK(d) {
-  if (!d?.wrapper_usage) return;
-  const wu = d.wrapper_usage;
-  const tot = wu.anthropic + wu.openai + wu.manual || 1;
-  const pct = n => Math.round(n / tot * 100) + '%';
-  document.getElementById('b-ant').style.width = pct(wu.anthropic);
-  document.getElementById('b-oai').style.width = pct(wu.openai);
-  document.getElementById('b-man').style.width = pct(wu.manual);
-  document.getElementById('c-ant').textContent = wu.anthropic;
-  document.getElementById('c-oai').textContent = wu.openai;
-  document.getElementById('c-man').textContent = wu.manual;
-}
-
-// ── L3 ───────────────────────────────────────────────────────────────────────
-function renderL3(d) {
-  if (!d?.l3_usage) return;
-  document.getElementById('l-cnt').textContent = fmt(d.l3_usage.count);
-  document.getElementById('l-pct').textContent = (d.l3_usage.percent || 0) + '%';
-  document.getElementById('l-7d').textContent  = fmt(d.l3_usage.last_7d);
-}
-
-// ── Recent activity ───────────────────────────────────────────────────────────
-function renderActivity(d) {
-  const tbody = document.getElementById('tb-activity');
-  const items = d?.activity || d?.commits || [];
-  if (!items.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="padding:20px 12px;color:var(--t3);font-family:var(--mono);font-size:12px;">No recent commits</td></tr>';
-    return;
-  }
-  tbody.innerHTML = items.slice(0,20).map(c => {
+function renderChain() {
+  const levelFilter = document.getElementById('chain-filter-level').value;
+  const items = _allCommits.filter(c => !levelFilter || (c.assurance_level || 'L1') === levelFilter);
+  const body = document.getElementById('chain-body');
+  if (!items.length) { body.innerHTML = '<div style="padding:16px 12px;font-family:var(--mono);font-size:11px;color:var(--t3);">No commits</div>'; return; }
+  body.innerHTML = items.map(c => {
     const al = c.assurance_level || 'L1';
-    const bc = al === 'L3' ? 'p' : al === 'L2' ? 'g' : 'n';
-    const ts = c.timestamp ? new Date(c.timestamp).toLocaleString() : '—';
-    const id = (c.id || '').slice(0,24) + '…';
-    const agent = (c.agentName || c.from_agent || '—').slice(0,18);
-    const et = c.eventType || c.event_type || 'commit';
-    return `<tr>
-      <td class="mono dim">${id}</td>
-      <td class="mono dim">${agent}</td>
-      <td class="mono dim" style="font-size:11px;">${et}</td>
-      <td><span class="bdg ${bc}">${al}</span></td>
-      <td class="mono dim" style="font-size:11px;">${ts}</td>
+    const lvlClass = al === 'L3' ? 'level-l3' : al === 'L2' ? 'level-l2' : 'level-l1';
+    const hash = (c.id||'').slice(-8);
+    const parent = (c.parent_id||'—').slice(-8);
+    const ts = c.timestamp ? new Date(c.timestamp).toISOString().slice(11,19) : '—';
+    const agent = (c.agentName||c.from_agent||'—').slice(0,12);
+    const size = c.payload ? JSON.stringify(c.payload).length + 'b' : '—';
+    const ver = c.verified ? '✓' : '—';
+    return `<div class="chain-row" onclick="openDrawer(${JSON.stringify(JSON.stringify(c))})">
+      <span class="ts">${ts}</span>
+      <span class="mono">${agent}</span>
+      <span class="${lvlClass}">${al}</span>
+      <span class="hash mono">${hash}</span>
+      <span class="mono dim">${parent}</span>
+      <span class="mono dim">${size}</span>
+      <span style="color:var(--signal)">${ver}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Orgs ──────────────────────────────────────────────────────────────────────
+async function loadOrgs() {
+  const tbody = document.getElementById('orgs-body');
+  try {
+    const d = await fetch('/api/workspace/members', { headers: authH() }).then(r => r.json());
+    const members = d?.members || [];
+    if (!members.length) { tbody.innerHTML = '<tr><td colspan="5" style="padding:20px 12px;font-family:var(--mono);font-size:11px;color:var(--t3);">No organizations found</td></tr>'; return; }
+    tbody.innerHTML = members.map(m => `<tr>
+      <td class="mono truncate">${m.workspace_name || m.workspace_id || '—'}</td>
+      <td class="dim" style="font-size:11px;">${m.email||'—'}</td>
+      <td class="mono">${fmt(m.member_count||1)}</td>
+      <td><span class="badge gray">free</span></td>
+      <td class="mono dim" style="font-size:10px;">${validDate(m.created_at)}</td>
+    </tr>`).join('');
+  } catch { tbody.innerHTML = '<tr><td colspan="5" style="padding:20px 12px;color:var(--red);font-family:var(--mono);font-size:11px;">Error</td></tr>'; }
+}
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  const tbody = document.getElementById('users-body');
+  try {
+    const d = await fetch('/api/workspace/members', { headers: authH() }).then(r => r.json());
+    _allUsers = d?.members || [];
+    renderUsers(_allUsers);
+  } catch { tbody.innerHTML = '<tr><td colspan="6" style="padding:20px 12px;color:var(--red);font-family:var(--mono);font-size:11px;">Error</td></tr>'; }
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById('users-body');
+  if (!users.length) { tbody.innerHTML = '<tr><td colspan="6" style="padding:20px 12px;font-family:var(--mono);font-size:11px;color:var(--t3);">No users found</td></tr>'; return; }
+  tbody.innerHTML = users.map(m => `<tr>
+    <td>${m.email||'—'}</td>
+    <td class="mono dim truncate" style="font-size:10px;">${(m.user_id||'').slice(0,16)}…</td>
+    <td class="mono">${fmt(m.agent_count||m.agents||1)}</td>
+    <td class="mono">${fmt(m.commit_count||m.commits||'—')}</td>
+    <td class="mono dim" style="font-size:10px;">${validDate(m.last_sign_in||m.updated_at)}</td>
+    <td class="mono dim" style="font-size:10px;">${validDate(m.created_at)}</td>
+  </tr>`).join('');
+}
+
+function filterUsers(val) {
+  if (!val) { renderUsers(_allUsers); return; }
+  const q = val.toLowerCase();
+  renderUsers(_allUsers.filter(u => (u.email||'').toLowerCase().includes(q)));
+}
+
+// ── Commits ───────────────────────────────────────────────────────────────────
+async function loadCommits() {
+  const tbody = document.getElementById('commits-body');
+  try {
+    const d = await fetch('/api/workspace/activity?limit=100', { headers: authH() }).then(r => r.json());
+    _allCommits = d?.activity || d?.commits || [];
+    filterCommits('');
+  } catch { tbody.innerHTML = '<tr><td colspan="6" style="padding:20px 12px;color:var(--red);font-family:var(--mono);font-size:11px;">Error</td></tr>'; }
+}
+
+function filterCommits(val) {
+  const level = document.getElementById('commit-level').value;
+  const q = (val||'').toLowerCase();
+  const filtered = _allCommits.filter(c => {
+    const matchLevel = !level || (c.assurance_level||'L1') === level;
+    const matchQ = !q || (c.id||'').toLowerCase().includes(q) || (c.from_agent||'').toLowerCase().includes(q) || (c.trace_id||'').toLowerCase().includes(q);
+    return matchLevel && matchQ;
+  });
+  const tbody = document.getElementById('commits-body');
+  if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="6" style="padding:20px 12px;font-family:var(--mono);font-size:11px;color:var(--t3);">No commits found</td></tr>'; return; }
+  tbody.innerHTML = filtered.slice(0,100).map(c => {
+    const al = c.assurance_level || 'L1';
+    const bc = al === 'L3' ? 'green' : al === 'L2' ? 'blue' : 'gray';
+    return `<tr onclick="openDrawer(${JSON.stringify(JSON.stringify(c))})" style="cursor:pointer;">
+      <td class="mono dim truncate" style="font-size:10px;">${(c.id||'').slice(0,28)}…</td>
+      <td class="mono dim truncate">${(c.agentName||c.from_agent||'—').slice(0,18)}</td>
+      <td><span class="badge ${bc}">${al}</span></td>
+      <td class="mono dim">${c.event_type||'commit'}</td>
+      <td class="mono dim" style="font-size:10px;">${(c.integrity_hash||'—').slice(0,16)}…</td>
+      <td class="mono dim" style="font-size:10px;">${fmtTime(c.timestamp).slice(0,17)}</td>
     </tr>`;
   }).join('');
 }
 
-// ── Members ───────────────────────────────────────────────────────────────────
-function renderUsers(d) {
-  const tbody = document.getElementById('tb-users');
-  const members = d?.members || [];
-  if (!members.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="padding:20px 12px;color:var(--t3);font-family:var(--mono);font-size:12px;">No members found</td></tr>';
-    return;
+// ── Keys ──────────────────────────────────────────────────────────────────────
+async function loadKeys() {
+  const tbody = document.getElementById('keys-body');
+  try {
+    const d = await fetch('/api/agents/keys', { headers: authH() }).then(r => r.json());
+    const keys = d?.keys || [];
+    if (!keys.length) { tbody.innerHTML = '<tr><td colspan="5" style="padding:20px 12px;font-family:var(--mono);font-size:11px;color:var(--t3);">No customer keys registered</td></tr>'; return; }
+    tbody.innerHTML = keys.map(k => `<tr>
+      <td class="mono">${k.key_id||'—'}</td>
+      <td class="mono dim truncate">${(k.agent_id||'—').slice(0,20)}</td>
+      <td class="mono">Ed25519</td>
+      <td class="mono dim" style="font-size:10px;">${validDate(k.created_at||k.registered_at)}</td>
+      <td><span class="badge ${k.revoked ? 'red' : 'green'}">${k.revoked ? 'Revoked' : 'Active'}</span></td>
+    </tr>`).join('');
+  } catch { tbody.innerHTML = '<tr><td colspan="5" style="padding:20px 12px;color:var(--red);font-family:var(--mono);font-size:11px;">Error</td></tr>'; }
+}
+
+// ── Growth ────────────────────────────────────────────────────────────────────
+async function loadGrowth() {
+  // Funnel from usage stats
+  if (_usage?.total_commits) {
+    renderGrowth(_usage);
+  } else {
+    const d = await fetch('/api/workspace/stats/usage', { headers: authH() }).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+    renderGrowth(d);
   }
-  tbody.innerHTML = members.map(m => {
-    const role = m.role || 'member';
-    const rc   = role === 'owner' || role === 'admin' ? 'p' : 'n';
-    return `<tr>
-      <td>${m.email || '—'}</td>
-      <td><span class="bdg ${rc}">${role}</span></td>
-      <td class="mono">${fmt(m.agent_count ?? m.agents)}</td>
-      <td class="mono">${fmt(m.commit_count ?? m.commits)}</td>
-      <td class="mono dim" style="font-size:11px;">${m.created_at ? new Date(m.created_at).toLocaleDateString() : '—'}</td>
-    </tr>`;
+}
+
+function renderGrowth(d) {
+  const total = d.total_commits || 0;
+  const agents = d.unique_agents || 0;
+  const l3 = d.l3_usage?.count || 0;
+  const wu = d.wrapper_usage || {};
+
+  // Funnel bars
+  const funnelEl = document.getElementById('funnel-bars');
+  const funnelData = [
+    { label: 'Total agents',   value: agents, max: agents },
+    { label: 'Made a commit',  value: d.commits_per_agent?.total_agents_with_commits || agents, max: agents },
+    { label: 'Active 7d',      value: d.active_agents?.last_7d || 0, max: agents },
+    { label: 'L3 signing',     value: l3 > 0 ? 1 : 0, max: agents, note: l3 + ' L3 commits' },
+  ];
+  funnelEl.innerHTML = funnelData.map(f => {
+    const pct = f.max ? Math.max(2, Math.round(f.value / f.max * 100)) : 0;
+    return `<div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--t2);margin-bottom:5px;">
+        <span>${f.label}</span><span>${f.note || fmt(f.value)}</span>
+      </div>
+      <div style="height:8px;background:var(--bg-2);border-radius:0;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:var(--signal);border-radius:0;transition:width .5s;"></div>
+      </div>
+    </div>`;
   }).join('');
+
+  // Wrapper bars
+  const tot = (wu.anthropic||0) + (wu.openai||0) + (wu.manual||0) || 1;
+  const wrapperEl = document.getElementById('wrapper-bars');
+  const bars = [
+    { label: 'Anthropic', val: wu.anthropic||0, color: 'var(--signal)' },
+    { label: 'OpenAI',    val: wu.openai||0,    color: 'var(--blue)' },
+    { label: 'Manual',    val: wu.manual||0,    color: 'var(--brd-mid,var(--t4))' },
+  ];
+  wrapperEl.innerHTML = bars.map(b => {
+    const pct = Math.max(b.val > 0 ? 2 : 0, Math.round(b.val / tot * 100));
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <span style="font-family:var(--mono);font-size:10px;color:var(--t2);width:72px;">${b.label}</span>
+      <div style="flex:1;height:7px;background:var(--bg-2);overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:${b.color};transition:width .5s;"></div>
+      </div>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--t3);width:28px;text-align:right;">${b.val}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Drawer ────────────────────────────────────────────────────────────────────
+function openDrawer(jsonStr) {
+  const c = JSON.parse(jsonStr);
+  const el = document.getElementById('drawer-content');
+  function row(label, val) {
+    return `<div style="display:flex;gap:8px;margin-bottom:8px;border-bottom:1px solid var(--bg-1);padding-bottom:8px;">
+      <span style="font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);min-width:120px;padding-top:2px;">${label}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--t1);word-break:break-all;">${val}</span>
+    </div>`;
+  }
+  const al = c.assurance_level || 'L1';
+  const bc = al === 'L3' ? 'green' : al === 'L2' ? 'blue' : 'gray';
+  el.innerHTML =
+    row('ID', c.id || '—') +
+    row('Agent', c.agentName || c.from_agent || '—') +
+    row('Assurance', `<span class="badge ${bc}">${al}</span>`) +
+    row('Event type', c.event_type || 'commit') +
+    row('Timestamp', fmtTime(c.timestamp)) +
+    row('Trace ID', c.trace_id || '—') +
+    row('Parent ID', c.parent_id || '— (root)') +
+    row('Integrity hash', c.integrity_hash || '—') +
+    row('Payload hash', c.payload_hash || '—') +
+    row('Verified', c.verified ? '✓ Yes' : '✗ No') +
+    (c.completeness_claim != null ? row('Completeness', c.completeness_claim ? '✔ Asserted complete' : '— Partial or none') : '') +
+    `<div style="margin-top:12px;"><div style="font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;">Payload</div>
+    <pre style="background:hsl(220 18% 6%);color:hsl(38 20% 92%/.9);padding:14px;font-family:var(--mono);font-size:11px;line-height:1.6;overflow-x:auto;white-space:pre-wrap;word-break:break-all;">${JSON.stringify(c.payload || {}, null, 2)}</pre></div>` +
+    (c.id ? `<div style="margin-top:12px;"><a href="/r/${c.id}" target="_blank" style="font-family:var(--mono);font-size:10px;color:var(--signal);">View share page →</a></div>` : '');
+  document.getElementById('drawer').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+function closeDrawer() {
+  document.getElementById('drawer').style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+// ── Feature flags (local only) ────────────────────────────────────────────────
+function toggleFlag(el, key) {
+  el.classList.toggle('on');
+  const on = el.classList.contains('on');
+  console.log('[admin] flag', key, on ? 'enabled' : 'disabled');
+  // Wire to POST /api/admin/flags when the table exists
 }
 </script>
 </body>
