@@ -45,7 +45,7 @@ a{color:inherit;text-decoration:none}
 @media(min-width:768px){.nav-links{display:flex}}
 .nav-links a{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:hsl(var(--trace));transition:color .15s}
 .nav-links a:hover{color:hsl(var(--foreground))}
-.nav-links a.active{color:hsl(var(--foreground));border-bottom:1px solid hsl(var(--signal));padding-bottom:calc(.25rem - 1px)}
+.nav-links a.active{color:hsl(var(--foreground))}
 .nav-cta{display:flex;align-items:center;gap:.5rem}
 .nav-cta .signin{display:none;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:hsl(var(--trace));padding:.5rem .75rem}
 @media(min-width:640px){.nav-cta .signin{display:inline-flex}}
@@ -126,10 +126,10 @@ footer .top{max-width:80rem;margin:0 auto;padding:3.5rem 1.5rem;display:grid;gri
 .docs-sidebar::-webkit-scrollbar-thumb{background:hsl(var(--void-line))}
 @media(max-width:860px){.docs-sidebar{display:none}}
 .docs-sb-group{padding:0 12px;margin-bottom:1.25rem}
-.docs-sb-label{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:hsl(var(--trace-dim));padding:0 8px;margin-bottom:4px;margin-top:4px;display:block}
+.docs-sb-label{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:hsl(var(--trace-dim));padding:0 8px;margin-bottom:4px;display:block}
 .docs-sb-link{display:block;font-size:12px;color:hsl(var(--trace));padding:4px 8px;border-left:2px solid transparent;transition:all .12s;text-decoration:none;line-height:1.4}
 .docs-sb-link:hover{color:hsl(var(--foreground));background:hsl(var(--void-elevated));border-left-color:hsl(var(--void-line))}
-.docs-sb-link.active{color:hsl(var(--signal));border-left:2px solid hsl(var(--signal));padding-left:6px;font-weight:500;background:hsl(var(--signal)/.04)}
+.docs-sb-link.active{color:hsl(var(--signal));border-left-color:hsl(var(--signal));font-weight:500}
 .docs-content{flex:1;max-width:780px;padding:3rem 3rem 6rem;overflow:hidden}
 @media(max-width:860px){.docs-content{padding:2rem 1.5rem 4rem}}
 
@@ -227,8 +227,6 @@ footer .top{max-width:80rem;margin:0 auto;padding:3.5rem 1.5rem;display:grid;gri
     <span class="docs-sb-label">Framework integrations</span>
     <a class="docs-sb-link" href="#langgraph">LangGraph</a>
     <a class="docs-sb-link" href="#langchain">LangChain</a>
-    <a class="docs-sb-link" href="#jupyter-quickstart">Jupyter / Colab</a>
-    <a class="docs-sb-link" href="#otel">OpenTelemetry</a>
     <a class="docs-sb-link" href="#crewai">CrewAI <span class="soon">manual</span></a>
     <a class="docs-sb-link" href="#local-models">Local models</a>
     <a class="docs-sb-link" href="#aws-bedrock">AWS Bedrock <span class="soon">manual</span></a>
@@ -654,7 +652,6 @@ curl -X POST https://darkmatterhub.ai/enterprise/commit   -H "Authorization: Bea
     <tr><td><code>agent.model</code></td><td>string</td><td><span class="badge-opt">optional</span></td><td>Model name</td></tr>
   </tbody>
 </table>
-<div class="callout info" style="margin-top:1rem"><span class="callout-title">Response includes</span>The commit response now includes <code>assurance_level</code> (<code>L1</code>, <code>L2</code>, or <code>L3</code>), <code>completeness_claim</code>, and <code>verify_url</code> &#8212; the shareable link to the <code>/r/</code> page.</div>
 
 <h2 id="api-pull">GET /api/pull</h2>
 <div class="endpoint"><div class="endpoint-title"><span class="badge-get">GET</span> https://darkmatterhub.ai/api/pull</div></div>
@@ -760,145 +757,11 @@ curl -X POST https://darkmatterhub.ai/enterprise/commit   -H "Authorization: Bea
     <div class="footer-col"><div class="h">SDK</div>
       <ul><li><a href="/docs#quickstart">Python</a></li><li><a href="/docs#typescript-sdk">TypeScript</a></li><li><a href="/docs#integrations">Anthropic wrapper</a></li><li><a href="/docs#integrations">OpenAI wrapper</a></li><li><a href="/docs#l3-setup">L3 signing</a></li></ul>
     </div>
-    <div class="footer-col"><div class="h">Links</div>
-      <ul><li><a href="/about">About</a></li><li><a href="/security">Security</a></li><li><a href="#" onclick="openContact();return false;">Contact</a></li></ul>
+    <div class="footer-col"><div class="h">Company</div>
+      <ul><li><a href="/">About</a></li><li><a href="/integrity">Security</a></li><li><a href="mailto:hello@darkmatterhub.ai?subject=DarkMatter inquiry">Contact</a></li></ul>
     </div>
   </div>
-  <div class="footer-bottom"><div class="inner"><div class="inner">&#169; 2026 DarkMatter</div>#169; 2026 DarkMatter &nbsp;&#183;&nbsp; <a href="/tos" style="color:inherit;text-decoration:none;opacity:.7;">Terms</a> &nbsp;&#183;&nbsp; <a href="/privacy" style="color:inherit;text-decoration:none;opacity:.7;">Privacy</a></div></div>
+  <div class="footer-bottom"><div class="inner">&#169; 2026 DarkMatter &nbsp;&#183;&nbsp; <a href="/tos" style="color:inherit;text-decoration:none;opacity:.7;">Terms</a> &nbsp;&#183;&nbsp; <a href="/privacy" style="color:inherit;text-decoration:none;opacity:.7;">Privacy</a></div></div>
 </footer>
-
-<!-- Contact modal -->
-<div id="contact-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(10,10,9,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1.5rem">
-  <div style="background:hsl(var(--background));border:1px solid hsl(var(--void-line));max-width:420px;width:100%;position:relative">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:.875rem 1.25rem;border-bottom:1px solid hsl(var(--void-line))">
-      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:hsl(var(--trace))">Contact</span>
-      <button onclick="closeContact()" style="background:none;border:none;cursor:pointer;color:hsl(var(--trace));font-size:18px;line-height:1;padding:0 4px">&times;</button>
-    </div>
-    <div style="padding:1.5rem">
-      <div id="contact-error" style="display:none;border-left:2px solid hsl(0 60% 50%);padding:.5rem .75rem;font-family:'JetBrains Mono',monospace;font-size:11px;color:hsl(0 60% 55%);margin-bottom:1rem;background:hsl(var(--void-elevated))"></div>
-      <div id="contact-success" style="display:none;border-left:2px solid hsl(var(--signal));padding:.5rem .75rem;font-family:'JetBrains Mono',monospace;font-size:11px;color:hsl(var(--signal));margin-bottom:1rem;background:hsl(var(--void-elevated))">&#10003; Sent. We&#8217;ll be in touch.</div>
-      <form id="contact-form">
-        <div style="margin-bottom:.875rem">
-          <label style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:hsl(var(--trace));margin-bottom:.3rem">Name</label>
-          <input id="c-name" type="text" placeholder="Your name" style="width:100%;background:hsl(var(--void-elevated));border:1px solid hsl(var(--void-line));padding:.55rem .7rem;color:hsl(var(--foreground));font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border-color .15s" onfocus="this.style.borderColor='hsl(var(--signal))'" onblur="this.style.borderColor='hsl(var(--void-line))'"/>
-        </div>
-        <div style="margin-bottom:.875rem">
-          <label style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:hsl(var(--trace));margin-bottom:.3rem">Email</label>
-          <input id="c-email" type="email" placeholder="you@company.com" required style="width:100%;background:hsl(var(--void-elevated));border:1px solid hsl(var(--void-line));padding:.55rem .7rem;color:hsl(var(--foreground));font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border-color .15s" onfocus="this.style.borderColor='hsl(var(--signal))'" onblur="this.style.borderColor='hsl(var(--void-line))'"/>
-        </div>
-        <div style="margin-bottom:1.25rem">
-          <label style="display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:hsl(var(--trace));margin-bottom:.3rem">Message</label>
-          <textarea id="c-message" rows="4" placeholder="How can we help?" required style="width:100%;background:hsl(var(--void-elevated));border:1px solid hsl(var(--void-line));padding:.55rem .7rem;color:hsl(var(--foreground));font-family:'Inter',sans-serif;font-size:13px;outline:none;resize:vertical;transition:border-color .15s" onfocus="this.style.borderColor='hsl(var(--signal))'" onblur="this.style.borderColor='hsl(var(--void-line))'"></textarea>
-        </div>
-        <button id="c-submit" type="submit" style="width:100%;background:hsl(var(--foreground));color:hsl(var(--background));font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;padding:.75rem;border:none;cursor:pointer;transition:background .15s" onmouseover="this.style.background='hsl(var(--signal))'" onmouseout="this.style.background='hsl(var(--foreground))'">Send message &#8594;</button>
-      </form>
-    </div>
-  </div>
-</div>
-<script>
-function openContact(){
-  var m=document.getElementById('contact-modal');
-  // Reset form state every time modal opens
-  var form=document.getElementById('contact-form');
-  if(form)form.style.display='';
-  var succ=document.getElementById('contact-success');
-  if(succ)succ.style.display='none';
-  var err=document.getElementById('contact-error');
-  if(err){err.style.display='none';err.textContent='';}
-  var btn=document.getElementById('c-submit');
-  if(btn){btn.disabled=false;btn.textContent='Send message →';}
-  m.style.display='flex';
-  document.body.style.overflow='hidden';
-  // Focus first input
-  setTimeout(function(){var f=m.querySelector('input');if(f)f.focus();},50);
-}
-function closeContact(){
-  document.getElementById('contact-modal').style.display='none';
-  document.body.style.overflow='';
-}
-document.getElementById('contact-modal').addEventListener('click',function(e){
-  if(e.target===this)closeContact();
-});
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeContact();});
-document.getElementById('contact-form').addEventListener('submit',async function(e){
-  e.preventDefault();
-  var btn=document.getElementById('c-submit');
-  var name=document.getElementById('c-name').value.trim();
-  var email=document.getElementById('c-email').value.trim();
-  var message=document.getElementById('c-message').value.trim();
-  if(!email||!message){
-    var err=document.getElementById('contact-error');
-    err.textContent='Please fill in email and message.';
-    err.style.display='block';
-    return;
-  }
-  btn.textContent='Sending…';btn.disabled=true;
-  document.getElementById('contact-error').style.display='none';
-  try{
-    await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name,email,message})});
-    document.getElementById('contact-success').style.display='block';
-    document.getElementById('contact-form').style.display='none';
-  }catch(e){
-    var err=document.getElementById('contact-error');
-    err.textContent='Something went wrong. Email us at hello@darkmatterhub.ai';
-    err.style.display='block';
-    btn.textContent='Send message →';btn.disabled=false;
-  }
-});
-</script>
-
-<script>
-(function(){
-  var links = document.querySelectorAll('.docs-sb-link[href^="#"]');
-  var headings = [];
-  links.forEach(function(link){
-    var id = link.getAttribute('href').slice(1);
-    var el = document.getElementById(id);
-    if(el) headings.push({id:id, el:el, link:link});
-  });
-  if(!headings.length) return;
-
-  function setActive(id){
-    links.forEach(function(l){ l.classList.remove('active'); });
-    var active = headings.find(function(h){ return h.id === id; });
-    if(active){
-      active.link.classList.add('active');
-      // Scroll sidebar so active link is visible
-      var sidebar = document.querySelector('.docs-sidebar');
-      if(sidebar){
-        var linkTop = active.link.offsetTop;
-        var sidebarH = sidebar.clientHeight;
-        var scrollTop = sidebar.scrollTop;
-        if(linkTop < scrollTop + 40 || linkTop > scrollTop + sidebarH - 40){
-          sidebar.scrollTop = linkTop - sidebarH / 2;
-        }
-      }
-    }
-  }
-
-  // IntersectionObserver — fires when a heading enters the viewport
-  var io = new IntersectionObserver(function(entries){
-    entries.forEach(function(entry){
-      if(entry.isIntersecting){
-        setActive(entry.target.id);
-      }
-    });
-  }, {
-    rootMargin: '0px 0px -70% 0px',  // trigger when heading is in top 30% of viewport
-    threshold: 0
-  });
-
-  headings.forEach(function(h){ io.observe(h.el); });
-
-  // Also handle click — set immediately on click without waiting for scroll
-  links.forEach(function(link){
-    link.addEventListener('click', function(){
-      var id = link.getAttribute('href').slice(1);
-      setActive(id);
-    });
-  });
-})();
-</script>
 </body>
 </html>
