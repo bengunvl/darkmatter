@@ -415,19 +415,15 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t0);display:flex;f
           <thead><tr><th>Package</th><th>Latest</th><th>Registry</th><th>Status</th></tr></thead>
           <tbody>
             <tr><td class="mono">darkmatter-sdk</td><td class="mono">1.3.0</td><td>PyPI</td><td><span class="badge green">Live</span></td></tr>
-            <tr><td class="mono">darkmatter-js</td><td class="mono"><a href="https://www.npmjs.com/package/darkmatter-js" target="_blank" rel="noopener" style="color:var(--signal);">npmjs.com ↗</a></td><td>npm</td><td><span class="badge amber">Verify</span></td></tr>
+            <tr><td class="mono">darkmatter-js</td><td class="mono">—</td><td><a href="https://www.npmjs.com/package/darkmatter-js" target="_blank" rel="noopener" style="color:var(--signal);font-family:var(--mono);font-size:11px;">npm ↗</a></td><td><span class="badge amber">Verify</span></td></tr>
           </tbody>
         </table>
       </div>
 
       <div class="slbl">Billing</div>
-      <div style="border:1px solid var(--brd);padding:16px 18px;font-size:13px;color:var(--t2);line-height:1.8;">
-        Billing routes return <code style="font-family:var(--mono);font-size:11px;background:var(--bg-1);padding:1px 5px;">501</code> — Stripe integration not yet built.
-        To activate: set <code style="font-family:var(--mono);font-size:11px;background:var(--bg-1);padding:1px 5px;">STRIPE_SECRET_KEY</code>,
-        <code style="font-family:var(--mono);font-size:11px;background:var(--bg-1);padding:1px 5px;">STRIPE_WEBHOOK_SECRET</code>, and
-        <code style="font-family:var(--mono);font-size:11px;background:var(--bg-1);padding:1px 5px;">STRIPE_PRICE_PRO</code> on Railway,
-        then implement the billing route handlers.
-        <div style="margin-top:8px;"><a href="/pricing" style="color:var(--signal);font-family:var(--mono);font-size:11px;">View pricing page →</a></div>
+      <div style="border:1px solid var(--brd);padding:14px 18px;font-size:13px;color:var(--t2);display:flex;align-items:center;justify-content:space-between;gap:16px;">
+        <span>Stripe not yet wired. All billing routes return <code style="font-family:var(--mono);font-size:11px;background:var(--bg-1);padding:1px 5px;">501</code>.</span>
+        <a href="/pricing" style="color:var(--signal);font-family:var(--mono);font-size:10px;white-space:nowrap;">View pricing →</a>
       </div>
     </div>
 
@@ -588,6 +584,8 @@ document.querySelectorAll('.sb-item[data-pane]').forEach(btn => {
       'p-keys':    loadKeys,
       'p-growth':  loadGrowth,
       'p-system':  pingSystem,
+      'p-flags':   loadFlags,
+      'p-auditlog': loadAuditLog,
     };
     if (loaders[btn.dataset.pane]) loaders[btn.dataset.pane]();
   });
@@ -872,6 +870,30 @@ function renderGrowth(d) {
   }).join('');
 }
 
+// ── Audit log ─────────────────────────────────────────────────────────────────
+async function loadAuditLog() {
+  const tbody = document.getElementById('audit-body');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5" style="padding:20px 12px;font-family:var(--mono);font-size:11px;color:var(--t3);">Loading…</td></tr>';
+  try {
+    const d = await fetch('/api/admin/audit-log?limit=100', { headers: authH() }).then(r => r.json());
+    const logs = d.logs || [];
+    if (!logs.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="padding:20px 12px;font-family:var(--mono);font-size:11px;color:var(--t3);">No audit events yet. Admin actions will appear here.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = logs.map(l => `<tr>
+      <td class="mono dim" style="font-size:10px;white-space:nowrap;">${new Date(l.created_at).toLocaleString()}</td>
+      <td style="font-size:12px;">${l.actor_email || l.actor_id || '—'}</td>
+      <td class="mono" style="font-size:11px;">${l.action || '—'}</td>
+      <td class="mono dim" style="font-size:10px;">${l.target_type || ''}${l.target_id ? ' · ' + l.target_id.slice(0,20) : ''}</td>
+      <td class="mono dim" style="font-size:10px;">${l.ip || '—'}</td>
+    </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:20px 12px;color:var(--red);font-family:var(--mono);font-size:11px;">Error loading audit log. Table may not exist yet — run migration first.</td></tr>';
+  }
+}
+
 // ── System ping ──────────────────────────────────────────────────────────────
 async function pingSystem() {
   const dbEl = document.getElementById('ht-db');
@@ -931,11 +953,43 @@ function closeDrawer() {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
 
 // ── Feature flags (local only) ────────────────────────────────────────────────
-function toggleFlag(el, key) {
+async function toggleFlag(el, key) {
   el.classList.toggle('on');
   const on = el.classList.contains('on');
-  console.log('[admin] flag', key, on ? 'enabled' : 'disabled');
-  // Wire to POST /api/admin/flags when the table exists
+  try {
+    await fetch('/api/admin/flags', {
+      method: 'POST',
+      headers: authH(),
+      body: JSON.stringify({ key, enabled: on }),
+    });
+    showFlagToast(key, on);
+  } catch(e) {
+    // Revert toggle on error
+    el.classList.toggle('on');
+    console.error('[flags] update failed:', e.message);
+  }
+}
+
+function showFlagToast(key, on) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--t0);color:var(--bg);font-family:var(--mono);font-size:11px;padding:8px 14px;z-index:999;';
+  t.textContent = key + ' → ' + (on ? 'enabled' : 'disabled');
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
+
+async function loadFlags() {
+  try {
+    const d = await fetch('/api/admin/flags', { headers: authH() }).then(r => r.json());
+    const flags = d.flags || [];
+    // Update toggle states from DB
+    flags.forEach(f => {
+      document.querySelectorAll('[onclick*="' + f.key + '"]').forEach(el => {
+        if (f.enabled) el.classList.add('on');
+        else el.classList.remove('on');
+      });
+    });
+  } catch(e) { console.warn('[flags] load failed:', e.message); }
 }
 </script>
 </body>

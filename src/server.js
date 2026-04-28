@@ -50,6 +50,48 @@ const STRIPE_PRICES = {
   enterprise: process.env.STRIPE_PRICE_ENT   || null,
 };
 
+// Plan metadata map — single source of truth
+const PLAN_META = {
+  free:       { commitLimit: 500,   retentionDays: 30,  price: null },
+  pro:        { commitLimit: 2000,  retentionDays: 90,  price: 19   },
+  teams:      { commitLimit: 10000, retentionDays: null, price: 49  },
+  enterprise: { commitLimit: null,  retentionDays: null, price: 199 },
+};
+
+function priceIdToPlan(priceId) {
+  if (!priceId) return 'free';
+  if (priceId === process.env.STRIPE_PRICE_PRO)   return 'pro';
+  if (priceId === process.env.STRIPE_PRICE_TEAMS) return 'teams';
+  if (priceId === process.env.STRIPE_PRICE_ENT)   return 'enterprise';
+  return 'free';
+}
+
+async function upsertSubscription(userId, email, sub, customerId) {
+  const priceId  = sub.items?.data[0]?.price?.id;
+  const plan     = priceIdToPlan(priceId);
+  const meta     = PLAN_META[plan] || PLAN_META.free;
+  const record   = {
+    user_id:                userId,
+    email,
+    plan,
+    status:                 sub.status,
+    stripe_customer_id:     customerId,
+    stripe_subscription_id: sub.id,
+    current_period_end:     new Date(sub.current_period_end * 1000).toISOString(),
+    cancel_at_period_end:   sub.cancel_at_period_end || false,
+    commit_limit:           meta.commitLimit,
+    retention_days:         meta.retentionDays,
+    updated_at:             new Date().toISOString(),
+  };
+  const { error } = await supabaseService
+    .from('subscriptions')
+    .upsert(record, { onConflict: 'user_id' });
+  if (error) console.error('[upsertSubscription]', error.message);
+  return record;
+}
+
+
+
 
 
 // ── Trust proxy — required for Railway/Heroku/etc behind reverse proxy ────────
@@ -2586,37 +2628,55 @@ app.get('/api/billing/subscription', wsAuth, async (req, res) => {
       commitCount = count || 0;
     }
 
-    // Look up Stripe subscription if Stripe is configured
+    // 1. Check DB subscriptions table first (fast, no Stripe API call)
+    const { data: dbSub } = await supabaseService
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .single()
+      .catch(() => ({ data: null }));
+
+    if (dbSub && dbSub.plan && dbSub.plan !== 'free') {
+      const meta = PLAN_META[dbSub.plan] || PLAN_META.free;
+      return res.json({
+        plan:              dbSub.plan,
+        status:            dbSub.status,
+        planInfo:          { name: dbSub.plan.charAt(0).toUpperCase() + dbSub.plan.slice(1), price: meta.price },
+        commitCount,
+        commitLimit:       dbSub.commit_limit ?? meta.commitLimit,
+        retention_days:    dbSub.retention_days ?? meta.retentionDays,
+        currentPeriodEnd:  dbSub.current_period_end,
+        cancelAtPeriodEnd: dbSub.cancel_at_period_end,
+        stripeCustomerId:  dbSub.stripe_customer_id,
+        stripeSubId:       dbSub.stripe_subscription_id,
+      });
+    }
+
+    // 2. Fall back to live Stripe lookup (first login after upgrade, or DB miss)
     if (process.env.STRIPE_SECRET_KEY) {
       try {
-        const stripe = getStripe();
-        // Find customer by email
+        const stripe    = getStripe();
         const customers = await stripe.customers.list({ email, limit: 1 });
         if (customers.data.length) {
           const customer = customers.data[0];
-          const subs = await stripe.subscriptions.list({
-            customer: customer.id, status: 'all', limit: 1,
+          const subs     = await stripe.subscriptions.list({
+            customer: customer.id, status: 'active', limit: 1,
             expand: ['data.items.data.price']
           });
           if (subs.data.length) {
             const sub  = subs.data[0];
-            const price = sub.items.data[0]?.price;
-            // Map price ID to plan name
-            let planName = 'Free', commitLimit = 500, retentionDays = 30;
-            if (price?.id === process.env.STRIPE_PRICE_PRO) {
-              planName = 'Pro'; commitLimit = 2000; retentionDays = 90;
-            } else if (price?.id === process.env.STRIPE_PRICE_TEAMS) {
-              planName = 'Teams'; commitLimit = 10000; retentionDays = null;
-            } else if (price?.id === (process.env.STRIPE_PRICE_ENT || '')) {
-              planName = 'Enterprise'; commitLimit = null; retentionDays = null;
-            }
+            const plan = priceIdToPlan(sub.items.data[0]?.price?.id);
+            const meta = PLAN_META[plan] || PLAN_META.free;
+            // Write to DB so next request is fast
+            await upsertSubscription(userId, email, sub, customer.id);
             return res.json({
-              plan:              planName.toLowerCase(),
+              plan,
               status:            sub.status,
-              planInfo:          { name: planName, price: price?.unit_amount ? price.unit_amount / 100 : null },
+              planInfo:          { name: plan.charAt(0).toUpperCase() + plan.slice(1), price: meta.price },
               commitCount,
-              commitLimit,
-              retention_days:    retentionDays,
+              commitLimit:       meta.commitLimit,
+              retention_days:    meta.retentionDays,
               currentPeriodEnd:  new Date(sub.current_period_end * 1000).toISOString(),
               cancelAtPeriodEnd: sub.cancel_at_period_end,
               stripeCustomerId:  customer.id,
@@ -2629,7 +2689,7 @@ app.get('/api/billing/subscription', wsAuth, async (req, res) => {
       }
     }
 
-    // No Stripe subscription found — free plan
+    // 3. No subscription found — free plan
     res.json({
       plan: 'free', status: 'active',
       planInfo: { name: 'Free', price: null },
@@ -5869,17 +5929,139 @@ app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), asyn
   console.log('[webhook]', event.type, event.id);
   // Handle subscription lifecycle events
   switch (event.type) {
-    case 'checkout.session.completed':
     case 'customer.subscription.created':
     case 'customer.subscription.updated':
-    case 'customer.subscription.deleted':
-      // Log for now — future: update user plan in DB
-      console.log('[webhook] subscription event:', event.type, JSON.stringify(event.data.object?.status));
+    case 'customer.subscription.deleted': {
+      const sub        = event.data.object;
+      const customerId = sub.customer;
+      try {
+        // Look up user_id from customer metadata or email
+        const stripe    = getStripe();
+        const customer  = await stripe.customers.retrieve(customerId);
+        const email     = customer.email;
+        const userId    = customer.metadata?.user_id;
+        if (email || userId) {
+          // Expand price info for plan mapping
+          const fullSub = await stripe.subscriptions.retrieve(sub.id, {
+            expand: ['items.data.price']
+          });
+          // Find user_id if not in metadata
+          let resolvedUserId = userId;
+          if (!resolvedUserId && email) {
+            const { data: authUsers } = await supabaseService.auth.admin.listUsers();
+            const found = (authUsers?.users || []).find(u => u.email === email);
+            if (found) resolvedUserId = found.id;
+          }
+          if (resolvedUserId) {
+            await upsertSubscription(resolvedUserId, email, fullSub, customerId);
+            console.log('[webhook]', event.type, '→ subscriptions updated for', email, 'plan:', priceIdToPlan(fullSub.items?.data[0]?.price?.id));
+          }
+        }
+      } catch(e) {
+        console.error('[webhook] subscription upsert failed:', e.message);
+      }
       break;
+    }
+    case 'checkout.session.completed': {
+      const session = event.data.object;
+      if (session.mode === 'subscription' && session.subscription) {
+        try {
+          const stripe   = getStripe();
+          const sub      = await stripe.subscriptions.retrieve(session.subscription, {
+            expand: ['items.data.price']
+          });
+          const email    = session.customer_email || session.customer_details?.email;
+          const userId   = session.metadata?.user_id || sub.metadata?.user_id;
+          let resolvedUserId = userId;
+          if (!resolvedUserId && email) {
+            const { data: authUsers } = await supabaseService.auth.admin.listUsers();
+            const found = (authUsers?.users || []).find(u => u.email === email);
+            if (found) resolvedUserId = found.id;
+          }
+          if (resolvedUserId) {
+            await upsertSubscription(resolvedUserId, email, sub, session.customer);
+            console.log('[webhook] checkout.completed → subscriptions updated for', email);
+          }
+        } catch(e) {
+          console.error('[webhook] checkout upsert failed:', e.message);
+        }
+      }
+      break;
+    }
     default:
       break;
   }
   res.json({ received: true });
+});
+
+
+// ── Feature flags — persistent via Supabase ───────────────────────────────────
+const _flagCache = {}; // in-memory cache — refreshed on GET
+
+async function getFlag(key) {
+  if (key in _flagCache) return _flagCache[key];
+  const { data } = await supabaseService
+    .from('feature_flags').select('enabled').eq('key', key).single().catch(() => ({ data: null }));
+  const val = data?.enabled !== undefined ? data.enabled : true; // default on
+  _flagCache[key] = val;
+  return val;
+}
+
+app.get('/api/admin/flags', requireAuth, async (req, res) => {
+  try {
+    const { data, error } = await supabaseService.from('feature_flags').select('*').order('key');
+    if (error) throw error;
+    res.json({ flags: data || [] });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/admin/flags', requireAuth, async (req, res) => {
+  try {
+    const { key, enabled, updated_by } = req.body;
+    if (!key) return res.status(400).json({ error: 'key required' });
+    const { data, error } = await supabaseService
+      .from('feature_flags')
+      .upsert({ key, enabled: !!enabled, updated_at: new Date().toISOString(), updated_by: updated_by || req.user.email })
+      .select().single();
+    if (error) throw error;
+    _flagCache[key] = !!enabled; // update cache
+    // Write audit log
+    await writeAuditLog(req.user.id, req.user.email, 'flag_update', 'feature_flag', key, { key, enabled }, req);
+    res.json({ flag: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Admin audit log ───────────────────────────────────────────────────────────
+async function writeAuditLog(actorId, actorEmail, action, targetType, targetId, meta, req) {
+  try {
+    await supabaseService.from('admin_audit_log').insert({
+      actor_id:    actorId,
+      actor_email: actorEmail,
+      action,
+      target_type: targetType,
+      target_id:   String(targetId || ''),
+      meta:        meta || {},
+      ip:          req?.ip || req?.headers?.['x-forwarded-for'] || null,
+      user_agent:  req?.headers?.['user-agent'] || null,
+      created_at:  new Date().toISOString(),
+    });
+  } catch(e) {
+    console.warn('[auditLog] write failed:', e.message);
+  }
+}
+
+app.get('/api/admin/audit-log', requireAuth, async (req, res) => {
+  try {
+    const limit  = Math.min(parseInt(req.query.limit  || 100), 500);
+    const offset = parseInt(req.query.offset || 0);
+    const { data, error, count } = await supabaseService
+      .from('admin_audit_log')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) throw error;
+    res.json({ logs: data || [], total: count || 0 });
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 app.get('*', (req, res, next) => {
